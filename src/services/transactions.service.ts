@@ -253,10 +253,7 @@ export const getTransactionsForUser = (
     return unsubscribe;
 };
 
-export const getBusinessExpenses = (
-  dealerId: string,
-  callback: (transactions: Transaction[]) => void
-): Unsubscribe => {
+export const getBusinessExpenses = async (dealerId: string): Promise<Transaction[]> => {
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -264,15 +261,14 @@ export const getBusinessExpenses = (
         where('isBusinessExpense', '==', true),
         orderBy('date', 'desc')
     );
-
-    return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
-        const transactions: Transaction[] = [];
-        querySnapshot.forEach((doc) => {
-            const data = processTransactionDoc(doc);
-            transactions.push(data);
-        });
-        callback(transactions);
+    
+    const querySnapshot = await getDocs(q);
+    const transactions: Transaction[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = processTransactionDoc(doc);
+        transactions.push(data);
     });
+    return transactions;
 };
 
 

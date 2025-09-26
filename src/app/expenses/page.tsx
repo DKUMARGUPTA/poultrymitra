@@ -41,22 +41,22 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
+    } else if(user) {
+      fetchExpenses(user.uid);
     }
   }, [user, loading, router]);
   
-  useEffect(() => {
-    if (user) {
-      setExpensesLoading(true);
-      const unsubscribe = getBusinessExpenses(user.uid, (newExpenses) => {
-        setExpenses(newExpenses);
-        setExpensesLoading(false);
-      });
-      return () => unsubscribe();
-    }
-  }, [user]);
+  const fetchExpenses = async (uid: string) => {
+    setExpensesLoading(true);
+    const newExpenses = await getBusinessExpenses(uid);
+    setExpenses(newExpenses);
+    setExpensesLoading(false);
+  }
 
   const handleExpenseAdded = (newExpense: Transaction) => {
-    setExpenses(prev => [newExpense, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    if(user) {
+      fetchExpenses(user.uid);
+    }
   };
 
   const toggleRow = (id: string) => {
