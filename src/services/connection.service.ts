@@ -1,3 +1,4 @@
+
 // src/services/connection.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import {
@@ -54,8 +55,7 @@ export const createConnectionRequest = async (db: Firestore, requesterId: string
 /**
  * Subscribes to pending connection requests for a dealer.
  */
-export const getConnectionRequestsForDealer = (dealerId: string, callback: (requests: ConnectionRequest[]) => void) => {
-  const db = getFirestore();
+export const getConnectionRequestsForDealer = (db: Firestore, dealerId: string, callback: (requests: ConnectionRequest[]) => void) => {
   const q = query(
     collection(db, 'connectionRequests'),
     where('recipientId', '==', dealerId),

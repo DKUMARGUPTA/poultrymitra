@@ -1,3 +1,4 @@
+
 // src/services/billing.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, Unsubscribe, serverTimestamp, doc, updateDoc, writeBatch, orderBy } from 'firebase/firestore';
@@ -70,17 +71,15 @@ export const getPendingPaymentVerifications = (
  */
 export const approvePaymentVerification = async (db: Firestore, requestId: string, userId: string, reason: string): Promise<void> => {
   const requestRef = doc(db, 'paymentVerifications', requestId);
-  const batch = writeBatch(db);
-
+  
+  // We are not using a batch here because updateUserPremiumStatus is a separate service call
+  // which might have its own transaction logic.
+  
   // 1. Update the request status and reason
-  batch.update(requestRef, { status: 'approved', reason: reason });
+  await updateDoc(requestRef, { status: 'approved', reason: reason });
 
   // 2. Update the user's premium status (using the function from users.service)
   await updateUserPremiumStatus(db, userId, true);
-  
-  // No need to batch this as it's a separate operation in another service.
-  // The function handles its own write. Let's commit the request status update.
-  await batch.commit();
 
   // 3. Notify the user
   await createNotification(db, {
