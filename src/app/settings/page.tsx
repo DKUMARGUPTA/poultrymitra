@@ -36,6 +36,7 @@ import { moderateContent } from '@/ai/flows/moderate-content';
 import { VCard } from '@/components/v-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirebase } from '@/firebase/provider';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 // Schema for updating profile details
 const ProfileFormSchema = z.object({
@@ -66,7 +67,7 @@ type DeleteAccountValues = z.infer<typeof DeleteAccountSchema>;
 
 
 export default function SettingsPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { loading } = useAuth();
   const router = useRouter();
 
   if(loading) return (

@@ -112,7 +112,6 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
       <LandingPageHeader />
 
       <main className="flex-1 pt-16">
-        {!user && <BreakingNewsTicker />}
         {/* Hero Section */}
         <section className="w-full py-16 md:py-20 lg:py-24">
           <div className="container grid md:grid-cols-2 gap-8 items-center px-4 md:px-6">
