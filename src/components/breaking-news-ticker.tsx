@@ -29,7 +29,7 @@ export function BreakingNewsTicker() {
       {latestRates.map((rate, index) => (
         <span key={index} className="flex items-center flex-shrink-0 mx-4">
           <Megaphone className="mr-2 h-5 w-5 flex-shrink-0" />
-          <p className="text-sm font-medium">
+          <p className="text-base font-semibold">
             <span className="text-primary-foreground/70">({format(parseISO(rate.date), 'MMM dd')})</span> {rate.district}: <span className="font-bold">₹{rate.rate.toFixed(2)}/kg</span> ({rate.size})
           </p>
         </span>
@@ -38,14 +38,14 @@ export function BreakingNewsTicker() {
   );
 
   return (
-    <div className="bg-primary text-primary-foreground">
+    <div className="bg-gradient-to-r from-primary to-green-600 text-primary-foreground shadow-md">
       <div className="container mx-auto px-4">
-        <div className="relative flex h-8 items-center overflow-hidden">
+        <div className="relative flex h-10 items-center overflow-hidden">
           <div className="flex animate-ticker items-center whitespace-nowrap">
             <TickerContent />
           </div>
           {/* Duplicate for seamless loop */}
-           <div className="absolute top-0 flex animate-ticker2 items-center whitespace-nowrap pt-1">
+           <div className="absolute top-0 flex animate-ticker2 items-center whitespace-nowrap pt-2">
             <TickerContent />
           </div>
         </div>

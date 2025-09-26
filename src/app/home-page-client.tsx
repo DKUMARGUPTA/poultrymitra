@@ -13,12 +13,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { AnimatedLogo } from '@/components/animated-logo';
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker';
 import { RecentPosts } from '@/components/recent-posts';
-import { SerializablePost } from '@/services/blog.service';
+import { SerializablePost } from './page';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
+import { Timestamp } from 'firebase/firestore';
 
 
 const features = [
@@ -111,10 +112,10 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
       <LandingPageHeader />
 
       <main className="flex-1 pt-16">
+        {!user && <BreakingNewsTicker />}
         {/* Hero Section */}
         <section className="w-full py-16 md:py-20 lg:py-24">
-            {!user && <BreakingNewsTicker />}
-          <div className="container grid md:grid-cols-2 gap-8 md:gap-16 items-center px-4 md:px-6">
+          <div className="container grid md:grid-cols-2 gap-8 items-center px-4 md:px-6">
             <div className="flex flex-col items-start space-y-6 text-left">
                <div className="inline-block rounded-full bg-green-100 dark:bg-green-900/50 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300">
                 Trusted by 10,000+ Farmers & Dealers
