@@ -1,4 +1,3 @@
-
 // src/hooks/use-auth.ts
 "use client";
 
@@ -10,13 +9,5 @@ export const useAuth = (): AuthContextType => {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
-  // A more robust loading check.
-  // If we have a user object but no profile yet, we are still loading.
-  const isLoading = context.loading || (!!context.user && !context.userProfile);
-
-  return {
-    ...context,
-    loading: isLoading,
-  };
+  return context;
 };

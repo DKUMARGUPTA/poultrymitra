@@ -6,8 +6,8 @@ import { AuthProvider } from "@/components/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "next-themes";
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { SidebarProvider } from './ui/sidebar';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 
 export function Providers({ children }: { children: React.ReactNode }) {

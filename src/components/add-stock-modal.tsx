@@ -1,4 +1,4 @@
-
+// src/components/add-stock-modal.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -384,7 +384,7 @@ export function AddStockModal({ children, onStockAdded }: AddStockModalProps) {
                              <FormField
                                 control={form.control}
                                 name={`additionalCosts.${index}.paidTo`}
-                                render={({ field }) => ( <FormItem><FormLabel>Paid To</FormLabel><FormControl><Input placeholder="e.g., Transport Co." {...field} /></FormControl><FormMessage /></FormItem>)}
+                                render={({ field }) => ( <FormItem><RequiredLabel>Paid To</RequiredLabel><FormControl><Input placeholder="e.g., Transport Co." {...field} /></FormControl><FormMessage /></FormItem>)}
                             />
                             <FormField
                             control={form.control}

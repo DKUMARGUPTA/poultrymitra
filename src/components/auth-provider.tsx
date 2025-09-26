@@ -1,10 +1,10 @@
 // src/components/auth-provider.tsx
 "use client";
 
-import { createContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { getUserProfile, UserProfile } from '@/services/users.service';
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase'; // Direct import
 
 export interface AuthContextType {
   user: User | null;
@@ -25,9 +25,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setLoading(true);
       setUser(currentUser);
       if (currentUser) {
+        // Fetch profile only when we have a valid user
         try {
             const profile = await getUserProfile(currentUser.uid); 
             setUserProfile(profile);
@@ -44,8 +44,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  const value = React.useMemo(() => ({
+      user,
+      userProfile,
+      loading: loading || (!!user && !userProfile) // More robust loading state
+  }), [user, userProfile, loading]);
+
+
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
