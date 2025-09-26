@@ -1,4 +1,3 @@
-
 // src/services/batches.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';

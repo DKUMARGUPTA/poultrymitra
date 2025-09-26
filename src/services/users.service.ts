@@ -1,4 +1,3 @@
-
 // src/services/users.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, updatePassword, sendPasswordResetEmail, deleteUser as deleteAuthUser, reauthenticateWithCredential, EmailAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -7,8 +6,9 @@ import { generateAlphanumericCode } from '@/lib/utils';
 import { deleteBatch } from './batches.service';
 import { createFarmer, Farmer } from './farmers.service';
 import { createNotification } from './notifications.service';
-import { createConnectionRequest } from './connection.service';
 import { app } from '@/lib/firebase';
+
+const db = getFirestore(app);
 
 export type UserRole = 'farmer' | 'dealer' | 'admin';
 export type UserStatus = 'active' | 'suspended';
@@ -138,28 +138,32 @@ export const createUser = async (db: Firestore, userProfile: Omit<UserProfile, '
   if (role === 'farmer' && userProfile.dealerCode) {
     const dealerQuery = query(usersCollection, where("invitationCode", "==", userProfile.dealerCode));
     const dealerSnapshot = await getDocs(dealerQuery);
-    if (dealerSnapshot.empty) {
-        throw new Error("Invalid Dealer Invitation Code provided.");
+    if (!dealerSnapshot.empty) {
+       const dealerDoc = dealerSnapshot.docs[0];
+        dealerIdForFarmer = dealerDoc.id;
+        profileToCreate.dealerCode = dealerIdForFarmer;
+    } else {
+         throw new Error("Invalid Dealer Invitation Code provided.");
     }
-    const dealerDoc = dealerSnapshot.docs[0];
-    dealerIdForFarmer = dealerDoc.id;
-    profileToCreate.dealerCode = dealerIdForFarmer;
   }
 
 
   if (role === 'farmer') {
     profileToCreate.farmerCode = await generateUniqueCode(db, 'farmerCode', 10);
-    // Create the associated farmer document right away
-    await createFarmer(db, {
-        uid: userProfile.uid,
-        name: userProfile.name,
-        location: 'Not Specified', // Can be updated later by user
-        batchSize: 1, // Default value, can be updated
-        dealerId: dealerIdForFarmer || '', // Set if found, otherwise empty
-        outstanding: 0,
-        isPlaceholder: false,
-        farmerCode: profileToCreate.farmerCode,
-    });
+    // Create the associated farmer document only if it doesn't already exist for this UID
+    const farmerDoc = await getDoc(doc(db, 'farmers', userProfile.uid));
+    if (!farmerDoc.exists()) {
+        await createFarmer(db, {
+            uid: userProfile.uid,
+            name: userProfile.name,
+            location: 'Not Specified', // Can be updated later by user
+            batchSize: 1, // Default value, can be updated
+            dealerId: dealerIdForFarmer || '', // Set if found, otherwise empty
+            outstanding: 0,
+            isPlaceholder: false,
+            farmerCode: profileToCreate.farmerCode,
+        });
+    }
 
     // If a dealer was found, notify them
     if (dealerIdForFarmer) {
