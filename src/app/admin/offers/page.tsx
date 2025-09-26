@@ -21,22 +21,14 @@ import { SubscriptionOffer, getActiveOffers } from '@/services/offers.service';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { CreateOfferModal } from '@/components/create-offer-modal';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirestore } from '@/firebase/provider';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminOffersPage() {
+  useAdminAuth();
   const { userProfile } = useAuth();
-  const router = useRouter();
-  const db = useFirestore();
   const [offers, setOffers] = useState<SubscriptionOffer[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (userProfile && userProfile.role !== 'admin') {
-      router.push('/dashboard');
-    }
-  }, [userProfile, router]);
-  
   useEffect(() => {
     if(userProfile?.role === 'admin') {
       fetchOffers();
@@ -45,7 +37,7 @@ export default function AdminOffersPage() {
 
   const fetchOffers = async () => {
     setLoading(true);
-    const activeOffers = await getActiveOffers(db);
+    const activeOffers = await getActiveOffers();
     setOffers(activeOffers);
     setLoading(false);
   }

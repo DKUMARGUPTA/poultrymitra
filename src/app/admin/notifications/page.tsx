@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getUserProfile, UserProfile } from '@/services/users.service';
+import { UserProfile } from '@/services/users.service';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,8 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { createAnnouncement } from '@/services/notifications.service';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirestore } from '@/firebase/provider';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 const AnnouncementSchema = z.object({
@@ -42,12 +41,9 @@ type AnnouncementFormValues = z.infer<typeof AnnouncementSchema>;
 
 
 export default function AdminNotificationsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const db = useFirestore();
+  useAdminAuth();
+  const { userProfile, loading } = useAuth();
   const { toast } = useToast();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
   const form = useForm<AnnouncementFormValues>({
@@ -55,27 +51,10 @@ export default function AdminNotificationsPage() {
     defaultValues: { title: '', message: '', link: '' },
   });
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push('/');
-      } else {
-        getUserProfile(user.uid).then((profile) => {
-          if (profile && profile.role !== 'admin') {
-            router.push('/dashboard');
-          } else {
-            setUserProfile(profile);
-            setProfileLoading(false);
-          }
-        });
-      }
-    }
-  }, [user, authLoading, router]);
-
   const onSubmit = async (values: AnnouncementFormValues) => {
     setIsSending(true);
     try {
-        await createAnnouncement(db, values.title, values.message, values.link || undefined);
+        await createAnnouncement(values.title, values.message, values.link || undefined);
         toast({
             title: "Announcement Sent!",
             description: "Your announcement has been sent to all users.",
@@ -93,7 +72,7 @@ export default function AdminNotificationsPage() {
   }
   
 
-  if (authLoading || profileLoading || !user) {
+  if (loading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">

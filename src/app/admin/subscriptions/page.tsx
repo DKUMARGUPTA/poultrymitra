@@ -24,13 +24,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getSubscriptionSettings, updateSubscriptionSettings, SubscriptionSettingsSchema, SubscriptionSettings } from '@/services/settings.service';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirestore } from '@/firebase/provider';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminSubscriptionsPage() {
+  useAdminAuth();
   const { userProfile } = useAuth();
-  const router = useRouter();
-  const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,20 +44,18 @@ export default function AdminSubscriptionsPage() {
   });
 
   useEffect(() => {
-    if (userProfile && userProfile.role !== 'admin') {
-      router.push('/dashboard');
-    } else if (userProfile) {
-        getSubscriptionSettings(db).then(settings => {
+    if (userProfile?.role === 'admin') {
+        getSubscriptionSettings().then(settings => {
             form.reset(settings);
             setLoading(false);
         });
     }
-  }, [userProfile, router, form, db]);
+  }, [userProfile, form]);
 
   const onSubmit = async (values: SubscriptionSettings) => {
     setSaving(true);
     try {
-        await updateSubscriptionSettings(db, values);
+        await updateSubscriptionSettings(values);
         toast({ title: "Settings Saved", description: "Subscription settings have been updated successfully." });
     } catch(e: any) {
         toast({ variant: "destructive", title: "Save Failed", description: e.message });

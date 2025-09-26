@@ -14,59 +14,32 @@ import {
   SidebarInset,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getUserProfile, UserProfile } from '@/services/users.service';
 import { getAdminDashboardStats, AdminStats } from '@/services/dashboard.service';
 import { StatCard } from '@/components/stat-card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirestore } from '@/firebase/provider';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 export default function AdminPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const db = useFirestore();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  useAdminAuth(); // Centralized auth check
+  const { userProfile, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push('/');
-      } else {
-        getUserProfile(user.uid).then((profile) => {
-          if (profile && profile.role !== 'admin') {
-            router.push('/dashboard');
-          } else {
-            setUserProfile(profile);
-            setProfileLoading(false);
-          }
-        });
-      }
-    }
-  }, [user, authLoading, router]);
-
   useEffect(() => {
     if (userProfile?.role === 'admin') {
-      getAdminDashboardStats(db).then(adminStats => {
+      getAdminDashboardStats().then(adminStats => {
         setStats(adminStats);
         setStatsLoading(false);
       });
     }
-  }, [userProfile, db]);
+  }, [userProfile]);
 
-  const isLoading = authLoading || profileLoading;
+  const isLoading = authLoading || !userProfile || statsLoading;
   
   const StatSkeleton = () => (
     <Card>
@@ -81,7 +54,7 @@ export default function AdminPage() {
     </Card>
   )
 
-  if (isLoading || !userProfile) {
+  if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -106,6 +79,8 @@ export default function AdminPage() {
     </div>
     )
   }
+  
+  if (!userProfile) return null;
 
   return (
     <SidebarProvider>
@@ -119,8 +94,6 @@ export default function AdminPage() {
         <SidebarContent>
           <MainNav />
         </SidebarContent>
-        <SidebarFooter>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">

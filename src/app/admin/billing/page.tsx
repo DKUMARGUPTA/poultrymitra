@@ -24,38 +24,30 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { PaymentVerificationDialog } from '@/components/payment-verification-dialog';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirestore } from '@/firebase/provider';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminBillingPage() {
-  const { user, userProfile } = useAuth();
-  const router = useRouter();
-  const db = useFirestore();
+  useAdminAuth();
+  const { userProfile } = useAuth();
   const { toast } = useToast();
   const [requests, setRequests] = useState<PaymentVerificationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (userProfile && userProfile.role !== 'admin') {
-      router.push('/dashboard');
-    }
-  }, [userProfile, router]);
   
   useEffect(() => {
     if(userProfile?.role === 'admin') {
-      const unsubscribe = getPendingPaymentVerifications(db, (newRequests) => {
+      const unsubscribe = getPendingPaymentVerifications((newRequests) => {
         setRequests(newRequests);
         setLoading(false);
       });
       return () => unsubscribe();
     }
-  }, [userProfile, db]);
+  }, [userProfile]);
   
   const handleApprove = async (request: PaymentVerificationRequest, reason: string) => {
     setUpdatingId(request.id);
     try {
-      await approvePaymentVerification(db, request.id, request.userId, reason);
+      await approvePaymentVerification(request.id, request.userId, reason);
       toast({ title: "Payment Approved", description: `${request.userName}'s premium plan has been activated.`});
     } catch (error: any) {
        toast({ variant: "destructive", title: "Approval Failed", description: error.message });
@@ -67,7 +59,7 @@ export default function AdminBillingPage() {
   const handleReject = async (request: PaymentVerificationRequest, reason: string) => {
      setUpdatingId(request.id);
     try {
-      await rejectPaymentVerification(db, request.id, reason, request.userId);
+      await rejectPaymentVerification(request.id, reason, request.userId);
        toast({ title: "Payment Rejected", description: `The request from ${request.userName} has been rejected.`});
     } catch (error: any) {
        toast({ variant: "destructive", title: "Rejection Failed", description: error.message });
