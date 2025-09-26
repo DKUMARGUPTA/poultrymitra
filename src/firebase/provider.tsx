@@ -3,8 +3,9 @@
 
 import React, { createContext, useContext } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Auth } from 'firebase/auth';
-import { Firestore } from 'firebase/firestore';
+import { Auth, getAuth } from 'firebase/auth';
+import { Firestore, getFirestore } from 'firebase/firestore';
+import { app } from '@/lib/firebase'; // Import the initialized app
 
 interface FirebaseContextType {
   app: FirebaseApp;
@@ -16,9 +17,9 @@ const FirebaseContext = createContext<FirebaseContextType | null>(null);
 
 export function FirebaseProvider({
   children,
-  app,
-  auth,
-  db
+  app: firebaseApp, // Rename to avoid conflict
+  auth: firebaseAuth, // Rename to avoid conflict
+  db: firestoreDb,   // Rename to avoid conflict
 }: {
   children: React.ReactNode;
   app: FirebaseApp;
@@ -26,32 +27,21 @@ export function FirebaseProvider({
   db: Firestore;
 }) {
   return (
-    <FirebaseContext.Provider value={{ app, auth, db }}>
+    <FirebaseContext.Provider value={{ app: firebaseApp, auth: firebaseAuth, db: firestoreDb }}>
       {children}
     </FirebaseContext.Provider>
   );
 }
 
+// These hooks no longer need the context. They can directly use the singleton instances.
 export const useFirebase = () => {
-  const context = useContext(FirebaseContext);
-  if (!context) {
-    throw new Error('useFirebase must be used within a FirebaseProvider.');
-  }
-  return context;
+  return { app };
 };
 
 export const useFirestore = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error('useFirestore must be used within a FirebaseProvider.');
-    }
-    return context.db;
+    return getFirestore(app);
 }
 
 export const useFirebaseAuth = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error('useFirebaseAuth must be used within a FirebaseProvider.');
-    }
-    return context.auth;
+    return getAuth(app);
 }

@@ -20,19 +20,20 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const auth = useFirebaseAuth();
-  const db = useFirestore();
+  const db = useFirestore(); // Get db instance via hook
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth || !db) return; // Guard against uninitialized auth/db
+    // Hooks guarantee auth and db are initialized
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
       setUser(currentUser);
       if (currentUser) {
         try {
-            const profile = await getUserProfile(db, currentUser.uid);
+            // No need to pass db anymore, getUserProfile will get it
+            const profile = await getUserProfile(currentUser.uid); 
             setUserProfile(profile);
         } catch (error) {
             console.error("Failed to fetch user profile:", error);
@@ -45,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, db]);
+  }, [auth]); // Dependency array is now just auth
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
