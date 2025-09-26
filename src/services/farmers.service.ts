@@ -4,7 +4,9 @@ import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapsh
 import { z } from 'zod';
 import { generateAlphanumericCode } from '@/lib/utils';
 import { getUserProfile } from './users.service';
+import { app } from '@/lib/firebase';
 
+const db = getFirestore(app);
 
 export const FarmerSchema = z.object({
     uid: z.string(), // This should match the User's UID if they have an account, or be the doc ID if not.
@@ -20,11 +22,11 @@ export const FarmerSchema = z.object({
 export type Farmer = z.infer<typeof FarmerSchema> & { id: string };
 export type FarmerInput = z.infer<typeof FarmerSchema>;
 
-export const createFarmer = async (db: Firestore, farmerData: Partial<FarmerInput>, isPlaceholder: boolean = false): Promise<string> => {
+export const createFarmer = async (farmerData: Partial<FarmerInput>, isPlaceholder: boolean = false): Promise<string> => {
     if (isPlaceholder) {
         if (!farmerData.dealerId) throw new Error("Dealer ID is required for placeholder farmers.");
 
-        const dealerProfile = await getUserProfile(db, farmerData.dealerId);
+        const dealerProfile = await getUserProfile(farmerData.dealerId);
         if (!dealerProfile) throw new Error("Dealer profile not found.");
 
         if (!dealerProfile.isPremium) {
@@ -58,7 +60,7 @@ export const createFarmer = async (db: Firestore, farmerData: Partial<FarmerInpu
 };
 
 
-export const getFarmersByDealer = (db: Firestore, dealerId: string, callback: (farmers: Farmer[]) => void): Unsubscribe => {
+export const getFarmersByDealer = (dealerId: string, callback: (farmers: Farmer[]) => void): Unsubscribe => {
     const q = query(collection(db, 'farmers'), where("dealerId", "==", dealerId));
     
     return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
@@ -70,7 +72,7 @@ export const getFarmersByDealer = (db: Firestore, dealerId: string, callback: (f
     });
 };
 
-export const getAllFarmers = async (db: Firestore): Promise<Farmer[]> => {
+export const getAllFarmers = async (): Promise<Farmer[]> => {
     const querySnapshot = await getDocs(collection(db, 'farmers'));
     const farmers: Farmer[] = [];
     querySnapshot.forEach((doc) => {
@@ -80,7 +82,7 @@ export const getAllFarmers = async (db: Firestore): Promise<Farmer[]> => {
 };
 
 
-export const getFarmer = async (db: Firestore, farmerId: string): Promise<Farmer | null> => {
+export const getFarmer = async (farmerId: string): Promise<Farmer | null> => {
     const docRef = doc(db, 'farmers', farmerId);
     const docSnap = await getDoc(docRef);
 
@@ -92,7 +94,7 @@ export const getFarmer = async (db: Firestore, farmerId: string): Promise<Farmer
     }
 };
 
-export const updateFarmerOutstanding = async (db: Firestore, farmerId: string, amount: number) => {
+export const updateFarmerOutstanding = async (farmerId: string, amount: number) => {
     const farmerRef = doc(db, 'farmers', farmerId);
     // A sale/debit is a positive amount representing money owed.
     // A payment/credit is a negative amount.

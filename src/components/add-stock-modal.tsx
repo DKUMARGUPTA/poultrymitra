@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -39,8 +38,6 @@ const OrderItemSchema = z.object({
 const AdditionalCostSchema = z.object({
     description: z.string().min(1, "Description is required."),
     amount: z.number().min(0.01, "Amount must be positive."),
-    paidTo: z.string().optional(),
-    paymentMethod: z.enum(['Cash', 'Bank Transfer', 'UPI', 'RTGS', 'NEFT']).optional(),
 });
 
 const AddStockFormSchema = z.object({
@@ -360,64 +357,41 @@ export function AddStockModal({ children, onStockAdded }: AddStockModalProps) {
             </Button>
             <Separator />
             
-             <Card>
-                <CardContent className="p-4 space-y-2">
-                    <Label>Additional Costs</Label>
-                    <p className="text-xs text-muted-foreground">These are business expenses (e.g., transport) and will be logged separately. They do not affect the supplier's balance.</p>
-                    <div className="space-y-2 mt-2">
-                        {costFields.map((field, index) => (
-                           <div key={field.id} className="p-2 border rounded-md relative space-y-2">
-                               <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeCost(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                               <div className="grid grid-cols-2 gap-4">
-                                     <FormField
-                                        control={form.control}
-                                        name={`additionalCosts.${index}.description`}
-                                        render={({ field }) => (
-                                            <FormItem><FormLabel>Type</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select expense type" /></SelectTrigger></FormControl>
-                                                    <SelectContent>{expenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name={`additionalCosts.${index}.amount`}
-                                        render={({ field }) => ( <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" placeholder="Amount" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/></FormControl><FormMessage /></FormItem>)}
-                                    />
-                               </div>
-                               <Accordion type="single" collapsible className="w-full">
-                                <AccordionItem value="item-1" className="border-none">
-                                    <AccordionTrigger className="text-xs py-1">Add Details</AccordionTrigger>
-                                    <AccordionContent className="space-y-2 pt-2">
-                                        <FormField
-                                            control={form.control}
-                                            name={`additionalCosts.${index}.paidTo`}
-                                            render={({ field }) => ( <FormItem><FormLabel>Paid To</FormLabel><FormControl><Input placeholder="e.g. Driver Name" {...field} /></FormControl><FormMessage /></FormItem>)}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name={`additionalCosts.${index}.paymentMethod`}
-                                            render={({ field }) => (
-                                                <FormItem><FormLabel>Payment Method</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger></FormControl>
-                                                    <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="UPI">UPI</SelectItem><SelectItem value="Bank Transfer">Bank Transfer</SelectItem></SelectContent>
-                                                </Select><FormMessage /></FormItem>
-                                            )}
-                                        />
-                                    </AccordionContent>
-                                </AccordionItem>
-                               </Accordion>
-                           </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendCost({ description: '', amount: 0, paidTo: '', paymentMethod: 'Cash' })}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Cost
-                        </Button>
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <Label>Additional Costs</Label>
+                <p className="text-xs text-muted-foreground">Log expenses like transport or labor associated with this purchase order. These will be recorded as separate business expenses.</p>
+                <div className="space-y-2 mt-2">
+                  {costFields.map((field, index) => (
+                    <div key={field.id} className="p-2 border rounded-md relative space-y-2">
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeCost(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                            control={form.control}
+                            name={`additionalCosts.${index}.description`}
+                            render={({ field }) => (
+                                <FormItem><FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select expense type" /></SelectTrigger></FormControl>
+                                    <SelectContent>{expenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                            <FormField
+                            control={form.control}
+                            name={`additionalCosts.${index}.amount`}
+                            render={({ field }) => ( <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" placeholder="Amount" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/></FormControl><FormMessage /></FormItem>)}
+                            />
+                        </div>
                     </div>
-                </CardContent>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={() => appendCost({ description: 'Transportation Cost', amount: 0 })}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Cost
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
 
             <Separator />

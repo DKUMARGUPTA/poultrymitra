@@ -1,4 +1,3 @@
-
 // src/services/connection.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import {
@@ -19,6 +18,9 @@ import {
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { getUserProfile, UserProfile } from './users.service';
+import { app } from '@/lib/firebase';
+
+const db = getFirestore(app);
 
 const ConnectionRequestSchema = z.object({
   requesterId: z.string(),
@@ -35,7 +37,7 @@ export type ConnectionRequest = z.infer<typeof ConnectionRequestSchema> & {
 /**
  * Creates a connection request from a farmer to a dealer.
  */
-export const createConnectionRequest = async (db: Firestore, requesterId: string, recipientId: string): Promise<void> => {
+export const createConnectionRequest = async (requesterId: string, recipientId: string): Promise<void> => {
   await addDoc(collection(db, 'connectionRequests'), {
     requesterId,
     recipientId,
@@ -43,7 +45,7 @@ export const createConnectionRequest = async (db: Firestore, requesterId: string
     createdAt: serverTimestamp(),
   });
   // Notify the dealer
-  await createNotification(db, {
+  await createNotification({
     userId: recipientId,
     title: 'New Connection Request',
     message: 'A farmer wants to connect with you.',
@@ -55,7 +57,7 @@ export const createConnectionRequest = async (db: Firestore, requesterId: string
 /**
  * Subscribes to pending connection requests for a dealer.
  */
-export const getConnectionRequestsForDealer = (db: Firestore, dealerId: string, callback: (requests: ConnectionRequest[]) => void) => {
+export const getConnectionRequestsForDealer = (dealerId: string, callback: (requests: ConnectionRequest[]) => void) => {
   const q = query(
     collection(db, 'connectionRequests'),
     where('recipientId', '==', dealerId),
@@ -65,7 +67,7 @@ export const getConnectionRequestsForDealer = (db: Firestore, dealerId: string, 
   return onSnapshot(q, async (snapshot) => {
     const requestsPromises = snapshot.docs.map(async (docSnap) => {
       const requestData = docSnap.data() as DocumentData;
-      const requesterProfile = await getUserProfile(db, requestData.requesterId);
+      const requesterProfile = await getUserProfile(requestData.requesterId);
       return {
         id: docSnap.id,
         ...requestData,
@@ -81,9 +83,9 @@ export const getConnectionRequestsForDealer = (db: Firestore, dealerId: string, 
 /**
  * Accepts a connection request.
  */
-export const acceptConnectionRequest = async (db: Firestore, requestId: string, farmerId: string, dealerId: string): Promise<void> => {
-  const dealerProfile = await getUserProfile(db, dealerId);
-  const farmerProfile = await getUserProfile(db, farmerId);
+export const acceptConnectionRequest = async (requestId: string, farmerId: string, dealerId: string): Promise<void> => {
+  const dealerProfile = await getUserProfile(dealerId);
+  const farmerProfile = await getUserProfile(farmerId);
   
   if (!dealerProfile || !farmerProfile) {
     throw new Error("Could not find user profiles for this connection.");
@@ -104,14 +106,14 @@ export const acceptConnectionRequest = async (db: Firestore, requestId: string, 
   await batch.commit();
 
   // 4. Send notifications
-  await createNotification(db, {
+  await createNotification({
     userId: farmerId,
     title: 'Connection Accepted',
     message: `You are now connected with dealer ${dealerProfile.name}.`,
     type: 'connection_accepted',
     link: '/dashboard',
   });
-   await createNotification(db, {
+   await createNotification({
     userId: dealerId,
     title: 'Connection Established',
     message: `You are now connected with farmer ${farmerProfile.name}.`,
@@ -123,11 +125,11 @@ export const acceptConnectionRequest = async (db: Firestore, requestId: string, 
 /**
  * Rejects a connection request.
  */
-export const rejectConnectionRequest = async (db: Firestore, requestId: string, farmerId: string): Promise<void> => {
+export const rejectConnectionRequest = async (requestId: string, farmerId: string): Promise<void> => {
     const requestRef = doc(db, 'connectionRequests', requestId);
     await updateDoc(requestRef, { status: 'rejected' });
 
-    await createNotification(db, {
+    await createNotification({
         userId: farmerId,
         title: 'Connection Rejected',
         message: 'Your connection request was rejected by the dealer.',

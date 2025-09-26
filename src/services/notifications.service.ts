@@ -19,6 +19,9 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getAllUsers } from './users.service';
+import { app } from '@/lib/firebase';
+
+const db = getFirestore(app);
 
 export const NotificationTypeSchema = z.enum([
   'announcement',
@@ -46,7 +49,6 @@ export type NotificationInput = z.infer<typeof NotificationSchema>;
  * Creates a single notification for a specific user.
  */
 export const createNotification = async (
-  db: Firestore,
   notificationData: Omit<NotificationInput, 'createdAt' | 'isRead'>
 ): Promise<string> => {
   const validatedData = NotificationSchema.omit({ createdAt: true, isRead: true }).parse(notificationData);
@@ -61,8 +63,8 @@ export const createNotification = async (
 /**
  * Creates an announcement notification for all users.
  */
-export const createAnnouncement = async (db: Firestore, title: string, message: string, link?: string): Promise<void> => {
-    const allUsers = await getAllUsers(db);
+export const createAnnouncement = async (title: string, message: string, link?: string): Promise<void> => {
+    const allUsers = await getAllUsers();
     const batch = writeBatch(db);
 
     allUsers.forEach(user => {
@@ -89,7 +91,6 @@ export const createAnnouncement = async (db: Firestore, title: string, message: 
  * Subscribes to notifications for a specific user.
  */
 export const getNotificationsForUser = (
-  db: Firestore,
   userId: string,
   callback: (notifications: AppNotification[]) => void
 ): Unsubscribe => {
@@ -112,7 +113,7 @@ export const getNotificationsForUser = (
 /**
  * Marks all unread notifications for a user as read.
  */
-export const markNotificationsAsRead = async (db: Firestore, userId: string): Promise<void> => {
+export const markNotificationsAsRead = async (userId: string): Promise<void> => {
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),

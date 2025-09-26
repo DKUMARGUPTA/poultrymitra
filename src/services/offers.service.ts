@@ -14,6 +14,9 @@ import {
   doc,
 } from 'firebase/firestore';
 import { z } from 'zod';
+import { app } from '@/lib/firebase';
+
+const db = getFirestore(app);
 
 export const OfferSchema = z.object({
   code: z.string().min(3, 'Code must be at least 3 characters.').max(20, 'Code can be at most 20 characters.'),
@@ -26,7 +29,7 @@ export const OfferSchema = z.object({
 export type SubscriptionOffer = z.infer<typeof OfferSchema> & { id: string, createdAt: Timestamp };
 export type OfferInput = z.infer<typeof OfferSchema>;
 
-export const createOffer = async (db: Firestore, offerData: Omit<OfferInput, 'createdAt' | 'isActive'>): Promise<string> => {
+export const createOffer = async (offerData: Omit<OfferInput, 'createdAt' | 'isActive'>): Promise<string> => {
   const codeUpper = offerData.code.toUpperCase();
   const existingQuery = query(collection(db, 'offers'), where('code', '==', codeUpper));
   const existingSnap = await getDocs(existingQuery);
@@ -48,7 +51,7 @@ export const createOffer = async (db: Firestore, offerData: Omit<OfferInput, 'cr
   return docRef.id;
 };
 
-export const getActiveOffers = async (db: Firestore): Promise<SubscriptionOffer[]> => {
+export const getActiveOffers = async (): Promise<SubscriptionOffer[]> => {
     const q = query(
         collection(db, 'offers'),
         where('isActive', '==', true),
@@ -58,7 +61,7 @@ export const getActiveOffers = async (db: Firestore): Promise<SubscriptionOffer[
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionOffer));
 };
 
-export const getOfferByCode = async (db: Firestore, code: string): Promise<SubscriptionOffer | null> => {
+export const getOfferByCode = async (code: string): Promise<SubscriptionOffer | null> => {
     if (!code) return null;
     const q = query(collection(db, 'offers'), where('code', '==', code.toUpperCase()), limit(1));
     const snapshot = await getDocs(q);

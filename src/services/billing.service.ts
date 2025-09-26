@@ -1,10 +1,12 @@
-
 // src/services/billing.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, Unsubscribe, serverTimestamp, doc, updateDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { updateUserPremiumStatus } from './users.service';
+import { app } from '@/lib/firebase';
+
+const db = getFirestore(app);
 
 export const PaymentVerificationRequestSchema = z.object({
   userId: z.string(),
@@ -29,7 +31,6 @@ export type PaymentVerificationRequest = z.infer<typeof PaymentVerificationReque
  * Creates a new payment verification request from a user.
  */
 export const createPaymentVerificationRequest = async (
-  db: Firestore,
   requestData: Omit<PaymentVerificationRequest, 'id' | 'status' | 'createdAt' | 'reason'>
 ): Promise<string> => {
   const validatedData = PaymentVerificationRequestSchema.omit({ id: true, status: true, createdAt: true, reason: true }).parse(requestData);
@@ -51,7 +52,6 @@ export const createPaymentVerificationRequest = async (
  * Gets all pending verification requests for the admin.
  */
 export const getPendingPaymentVerifications = (
-  db: Firestore,
   callback: (requests: PaymentVerificationRequest[]) => void
 ): Unsubscribe => {
   const q = query(collection(db, 'paymentVerifications'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
@@ -69,7 +69,7 @@ export const getPendingPaymentVerifications = (
 /**
  * Approves a payment request, updating the request and the user's premium status.
  */
-export const approvePaymentVerification = async (db: Firestore, requestId: string, userId: string, reason: string): Promise<void> => {
+export const approvePaymentVerification = async (requestId: string, userId: string, reason: string): Promise<void> => {
   const requestRef = doc(db, 'paymentVerifications', requestId);
   
   // We are not using a batch here because updateUserPremiumStatus is a separate service call
@@ -79,10 +79,10 @@ export const approvePaymentVerification = async (db: Firestore, requestId: strin
   await updateDoc(requestRef, { status: 'approved', reason: reason });
 
   // 2. Update the user's premium status (using the function from users.service)
-  await updateUserPremiumStatus(db, userId, true);
+  await updateUserPremiumStatus(userId, true);
 
   // 3. Notify the user
-  await createNotification(db, {
+  await createNotification({
     userId: userId,
     title: 'Subscription Activated!',
     message: `Your premium plan is now active. Admin comment: ${reason}`,
@@ -95,12 +95,12 @@ export const approvePaymentVerification = async (db: Firestore, requestId: strin
 /**
  * Rejects a payment request.
  */
-export const rejectPaymentVerification = async (db: Firestore, requestId: string, reason: string, userId: string): Promise<void> => {
+export const rejectPaymentVerification = async (requestId: string, reason: string, userId: string): Promise<void> => {
     const requestRef = doc(db, 'paymentVerifications', requestId);
     await updateDoc(requestRef, { status: 'rejected', reason: reason });
     
     // Notify the user of rejection with a reason.
-     await createNotification(db, {
+     await createNotification({
         userId: userId,
         title: 'Payment Verification Failed',
         message: `Your recent payment could not be verified. Reason: ${reason}`,

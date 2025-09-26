@@ -1,4 +1,3 @@
-
 // src/services/orders.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
@@ -25,6 +24,8 @@ import { z } from 'zod';
 import { TransactionInput, TransactionSchema } from './transactions.service';
 import { createNotification } from './notifications.service';
 import { createFarmer, getFarmer } from './farmers.service';
+
+const db = getFirestore(app);
 
 const OrderItemSchema = z.object({
     itemId: z.string(),
@@ -57,7 +58,6 @@ type CreateOrderData = Omit<OrderInput, 'createdAt' | 'status' | 'farmerId' | 'f
 
 
 export const createOrder = async (
-    db: Firestore,
     orderData: CreateOrderData,
     paymentDetails?: {
         amount: number;
@@ -76,7 +76,7 @@ export const createOrder = async (
 
         // If creating a new farmer, do that first within the transaction
         if (orderData.newFarmer?.name && orderData.newFarmer.location) {
-            const newFarmerId = await createFarmer(db, {
+            const newFarmerId = await createFarmer({
                 name: orderData.newFarmer.name,
                 location: orderData.newFarmer.location,
                 dealerId: orderData.dealerId,
@@ -91,7 +91,7 @@ export const createOrder = async (
         }
         
         if (!farmerName) {
-            const farmerProfile = await getFarmer(db, finalFarmerId);
+            const farmerProfile = await getFarmer(finalFarmerId);
             if (!farmerProfile) throw new Error("Farmer profile not found.");
             farmerName = farmerProfile.name;
         }
@@ -114,7 +114,7 @@ export const createOrder = async (
             const transactionInput: Omit<TransactionInput, 'createdAt'> = {
                 date: paymentDetails.date,
                 description: `Payment for Order #${orderId.substring(0, 6)}`,
-                amount: -Math.abs(paymentDetails.amount), // Payment is a credit for the farmer, negative amount
+                amount: -Math.abs(paymentDetails.amount), // Payment from farmer reduces their outstanding balance
                 status: 'Paid',
                 userId: finalFarmerId,
                 userName: farmerName,
@@ -141,7 +141,7 @@ export const createOrder = async (
 
 
     // Notify the farmer about the new order
-    await createNotification(db, {
+    await createNotification({
         userId: orderData.farmerId!,
         title: "Order Submitted",
         message: `Your order of ₹${orderData.totalAmount.toLocaleString()} has been sent to your dealer.`,
@@ -152,7 +152,7 @@ export const createOrder = async (
     return orderId;
 };
 
-export const getOrdersForFarmer = (db: Firestore, farmerId: string, callback: (orders: Order[]) => void): Unsubscribe => {
+export const getOrdersForFarmer = (farmerId: string, callback: (orders: Order[]) => void): Unsubscribe => {
     const q = query(collection(db, 'orders'), where("farmerId", "==", farmerId), orderBy("createdAt", "desc"));
     return onSnapshot(q, (snapshot) => {
         const orders: Order[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
@@ -160,7 +160,7 @@ export const getOrdersForFarmer = (db: Firestore, farmerId: string, callback: (o
     });
 };
 
-export const getOrdersForDealer = (db: Firestore, dealerId: string, callback: (orders: Order[]) => void): Unsubscribe => {
+export const getOrdersForDealer = (dealerId: string, callback: (orders: Order[]) => void): Unsubscribe => {
     const q = query(collection(db, 'orders'), where("dealerId", "==", dealerId), orderBy("createdAt", "desc"));
     
     return onSnapshot(q, async (snapshot) => {
@@ -169,7 +169,7 @@ export const getOrdersForDealer = (db: Firestore, dealerId: string, callback: (o
     });
 };
 
-export const getOrderById = async (db: Firestore, orderId: string): Promise<Order | null> => {
+export const getOrderById = async (orderId: string): Promise<Order | null> => {
     const orderRef = doc(db, 'orders', orderId);
     const orderSnap = await getDoc(orderRef);
     if (!orderSnap.exists()) {
@@ -180,7 +180,6 @@ export const getOrderById = async (db: Firestore, orderId: string): Promise<Orde
 
 
 export const updateOrderStatus = async (
-    db: Firestore,
     order: Order,
     newStatus: 'Accepted' | 'Rejected' | 'Shipped' | 'Completed'
 ): Promise<void> => {
@@ -260,7 +259,7 @@ export const updateOrderStatus = async (
     });
 
     // Send notification to farmer about the status update
-    await createNotification(db, {
+    await createNotification({
         userId: order.farmerId,
         title: `Order ${newStatus}`,
         message: `Your order #${order.id.substring(0,6)} has been ${newStatus.toLowerCase()}.`,
@@ -269,7 +268,7 @@ export const updateOrderStatus = async (
     });
 };
 
-export const deleteOrder = async (db: Firestore, orderId: string): Promise<void> => {
+export const deleteOrder = async (orderId: string): Promise<void> => {
     const orderRef = doc(db, 'orders', orderId);
     const orderSnap = await getDoc(orderRef);
     if (!orderSnap.exists()) {
