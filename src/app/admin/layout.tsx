@@ -1,41 +1,73 @@
 // src/app/admin/layout.tsx
-import { getUserProfile } from '@/services/users.service';
-import { redirect } from 'next/navigation';
+"use client";
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 import React from 'react';
-import { auth } from '@/lib/firebase';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Bird } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const { userProfile, loading } = useAuth();
+    const router = useRouter();
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-    // This is a server component, so we can't use the useAuth hook directly.
-    // We can check the auth state on the server.
-    // In a real app with proper session management, you'd check the session here.
-    // For this setup, we'll assume that if a user is logged in, we check their role.
-    // This is a simplified check.
-    const getAdminUser = async () => {
-        try {
-            // This is a placeholder for a more robust server-side session check
-            // In this project's context, we don't have a server-side `auth.currentUser`
-            // We'll proceed assuming the client-side check will eventually run,
-            // but this architecture is better.
-            return null;
-        } catch (e) {
-            return null;
+    useEffect(() => {
+        if (!loading) {
+            if (!userProfile || userProfile.role !== 'admin') {
+                router.push('/dashboard');
+            }
         }
+    }, [userProfile, loading, router]);
+
+    if (loading || !userProfile || userProfile.role !== 'admin') {
+        return (
+            <div className="flex flex-col h-screen">
+                <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+                    <Skeleton className="h-8 w-32" />
+                    <div className="w-full flex-1" />
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                </header>
+                <div className="flex flex-1">
+                    <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4">
+                        <Skeleton className="h-8 w-40 mb-4" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                    </aside>
+                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                        <Skeleton className="h-64 w-full" />
+                    </main>
+                </div>
+            </div>
+        );
     }
 
-    const user = await getAdminUser();
-    
-    // The client-side useAuth hook in the UserNav and other components will still
-    // provide the definitive user profile. This layout is primarily for structure.
-
-    // Admins don't get the gold theme by default, they see the standard UI
     return (
         <SidebarProvider>
-            {children}
+             <Sidebar>
+                <SidebarHeader className="p-4">
+                <div className="flex items-center gap-2">
+                    <Bird className="w-8 h-8 text-primary" /><h1 className="text-2xl font-headline text-primary">Poultry Mitra</h1>
+                </div>
+                </SidebarHeader>
+                <SidebarContent>
+                <MainNav />
+                </SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+                <div className="flex flex-col">
+                    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+                        <SidebarTrigger className="md:hidden" />
+                        <div className="w-full flex-1" />
+                        <UserNav />
+                    </header>
+                    {children}
+                </div>
+            </SidebarInset>
         </SidebarProvider>
-    )
+    );
 }
