@@ -4,7 +4,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { getUserProfile, UserProfile } from '@/services/users.service';
-import { auth, db } from '@/lib/firebase'; // Direct import
+import { auth } from '@/lib/firebase';
 
 export interface AuthContextType {
   user: User | null;
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = React.useMemo(() => ({
       user,
       userProfile,
-      loading: loading || (!!user && !userProfile) // More robust loading state
+      loading
   }), [user, userProfile, loading]);
 
 

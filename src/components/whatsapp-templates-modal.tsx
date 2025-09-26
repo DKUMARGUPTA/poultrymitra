@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -44,7 +43,7 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateWhatsAppDraftOutput | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmersLoading, setFarmersLoading] = useState(true);
@@ -56,6 +55,7 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
   const [disease, setDisease] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [language, setLanguage] = useState<'English' | 'Hindi'>('English');
+  const isPremium = !!userProfile?.isPremium;
 
   useEffect(() => {
     if (open && user) {
@@ -96,19 +96,25 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
 
 
   const handleSubmit = async () => {
-    if (!draftType || !contactName) {
+     if (!isPremium) {
+      toast({ variant: 'destructive', title: 'Premium Feature', description: 'Please upgrade to use AI-powered drafts.' });
+      return;
+    }
+    if (!draftType || (!contactName && !selectedFarmerId)) {
       toast({
         variant: 'destructive',
         title: 'Input Required',
-        description: 'Please select a draft type and enter a contact name.',
+        description: 'Please select a draft type and a farmer.',
       });
       return;
     }
+    
+    const finalContactName = farmers.find(f => f.id === selectedFarmerId)?.name || contactName;
 
     const input: GenerateWhatsAppDraftInput = {
       userType: 'dealer', // Assuming dealer is using this
       draftType: draftType,
-      contactName,
+      contactName: finalContactName,
       language: language,
     };
 
@@ -204,7 +210,7 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="draftType">Draft Type</Label>
-                  <Select onValueChange={(value: any) => setDraftType(value)} value={draftType}>
+                  <Select onValueChange={(value: any) => setDraftType(value)} value={draftType} disabled={!isPremium}>
                     <SelectTrigger id="draftType">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -216,7 +222,7 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
                 </div>
                  <div className="space-y-2">
                   <Label htmlFor="contactName">Farmer</Label>
-                  <Select onValueChange={(value: any) => setSelectedFarmerId(value)} value={selectedFarmerId} disabled={farmersLoading}>
+                  <Select onValueChange={(value: any) => setSelectedFarmerId(value)} value={selectedFarmerId} disabled={farmersLoading || !isPremium}>
                     <SelectTrigger id="contactName">
                       <SelectValue placeholder={farmersLoading ? "Loading farmers..." : "Select farmer"} />
                     </SelectTrigger>
@@ -232,7 +238,7 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
               {draftType === 'paymentReminder' && (
                 <div className="space-y-2">
                   <Label htmlFor="amount">Amount Due</Label>
-                  <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g., 5000" />
+                  <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g., 5000"  disabled={!isPremium}/>
                 </div>
               )}
 
@@ -240,13 +246,18 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="disease">Disease</Label>
-                    <Input id="disease" value={disease} onChange={(e) => setDisease(e.target.value)} placeholder="e.g., Newcastle Disease" />
+                    <Input id="disease" value={disease} onChange={(e) => setDisease(e.target.value)} placeholder="e.g., Newcastle Disease"  disabled={!isPremium}/>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="symptoms">Symptoms</Label>
-                    <Textarea id="symptoms" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} placeholder="e.g., coughing, sneezing, nasal discharge" />
+                    <Textarea id="symptoms" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} placeholder="e.g., coughing, sneezing, nasal discharge"  disabled={!isPremium}/>
                   </div>
                 </div>
+              )}
+               {!isPremium && (
+                <p className="text-sm text-center text-destructive">
+                  This is a premium feature. Please upgrade to use AI-powered drafts.
+                </p>
               )}
             </div>
           )}
@@ -281,7 +292,7 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" onClick={handleSubmit} disabled={loading}>
+              <Button type="submit" onClick={handleSubmit} disabled={loading || !isPremium}>
                 {loading ? 'Generating...' : 'Generate Draft'}
               </Button>
             </>

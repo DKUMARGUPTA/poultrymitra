@@ -2,10 +2,9 @@
 'use client';
 
 import React from 'react';
-import { FirebaseProvider as FirebaseProviderInternal } from './provider';
 
-// This provider is now simplified as it doesn't need to hold the instances.
-// We keep it for structural consistency and potential future use.
+// This provider is a placeholder and doesn't need to do anything
+// as Firebase instances are now directly imported where needed.
 export function FirebaseProvider({
   children,
 }: {

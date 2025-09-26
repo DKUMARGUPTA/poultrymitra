@@ -20,7 +20,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Crown, Copy, Bell, BellRing, CreditCard, Moon, Sun, User as UserIcon } from "lucide-react"
+import { Crown, Copy, Bell, BellRing, CreditCard, Moon, Sun, User as UserIcon, Settings } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { getUserProfile, UserProfile } from "@/services/users.service";
 import { useEffect, useState } from "react";
@@ -63,7 +63,9 @@ export function UserNav() {
   };
   
   const handleLinkClick = () => {
-    setOpenMobile(false);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setOpenMobile(false);
+    }
   }
 
   const handleCopyCode = (code: string | undefined, type: string) => {
@@ -147,21 +149,22 @@ export function UserNav() {
         <DropdownMenuSeparator />
          <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-             <Link href={`/${userProfile?.username || 'settings'}`}>
+             <Link href={`/${userProfile?.username || 'settings'}`} onClick={handleLinkClick}>
                 <UserIcon className="mr-2 h-4 w-4" />
                 <span>My Profile</span>
             </Link>
           </DropdownMenuItem>
            {userProfile?.role !== 'admin' && (
           <DropdownMenuItem asChild>
-            <Link href="/settings/billing">
+            <Link href="/settings/billing" onClick={handleLinkClick}>
                 <CreditCard className="mr-2 h-4 w-4" />
                 Billing
             </Link>
           </DropdownMenuItem>
           )}
            <DropdownMenuItem asChild>
-            <Link href="/settings">
+            <Link href="/settings" onClick={handleLinkClick}>
+                <Settings className="mr-2 h-4 w-4" />
                 Settings
             </Link>
           </DropdownMenuItem>

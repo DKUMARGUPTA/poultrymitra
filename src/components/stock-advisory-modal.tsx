@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -27,16 +26,21 @@ export function StockAdvisoryModal({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DealerAiAdvisoryOutput | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const [businessSummary, setBusinessSummary] = useState('');
   const [marketTrends, setMarketTrends] = useState('');
   const [language, setLanguage] = useState<'English' | 'Hindi'>('English');
+  const isPremium = !!userProfile?.isPremium;
 
   const handleSubmit = async () => {
     if (!user) {
         toast({ variant: 'destructive', title: 'Not Authenticated', description: 'You must be logged in to use this feature.' });
         return;
+    }
+    if (!isPremium) {
+      toast({ variant: 'destructive', title: 'Premium Feature', description: 'Please upgrade to use the AI Stock Advisory.' });
+      return;
     }
     if (!businessSummary.trim() || !marketTrends.trim()) {
       toast({
@@ -112,6 +116,7 @@ export function StockAdvisoryModal({ children }: { children: React.ReactNode }) 
                   value={businessSummary}
                   onChange={(e) => setBusinessSummary(e.target.value)}
                   rows={2}
+                  disabled={!isPremium}
                 />
               </div>
               <div className="space-y-2">
@@ -122,8 +127,14 @@ export function StockAdvisoryModal({ children }: { children: React.ReactNode }) 
                   value={marketTrends}
                   onChange={(e) => setMarketTrends(e.target.value)}
                   rows={2}
+                  disabled={!isPremium}
                 />
               </div>
+               {!isPremium && (
+                <p className="text-sm text-center text-destructive">
+                  This is a premium feature. Please upgrade to get AI-powered advice.
+                </p>
+              )}
             </div>
           )}
 
@@ -165,7 +176,7 @@ export function StockAdvisoryModal({ children }: { children: React.ReactNode }) 
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" onClick={handleSubmit} disabled={loading}>
+              <Button type="submit" onClick={handleSubmit} disabled={loading || !isPremium}>
                 {loading ? 'Analyzing...' : 'Get Advisory'}
               </Button>
             </>

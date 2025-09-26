@@ -86,7 +86,7 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
           phoneNumber: userProfile.phoneNumber,
           isPremium: false,
           ratePermissions: [],
-          referralCode: await generateUniqueCode('referralCode', 8),
+          referralCode: await generateUniqueCode('referralCode', 8), // Generate referral code here too
           farmerCode: userProfile.dealerCode, // Keep the same code
         };
         const userRef = doc(db, 'users', userProfile.uid);
@@ -413,15 +413,20 @@ const deleteAllUserData = async (uid: string, role: UserRole) => {
   }
 
   if (role === 'dealer') {
-    // Re-assign farmers under this dealer to a placeholder, or delete them.
-    // For this audit, we will delete the farmers to ensure data integrity.
     const farmersQuery = query(collection(db, 'farmers'), where('dealerId', '==', uid));
     const farmersSnap = await getDocs(farmersQuery);
     
     for (const farmerDoc of farmersSnap.docs) {
-      // Recursively delete all data for each farmer under this dealer
       const farmerData = farmerDoc.data() as Farmer;
-      await deleteAllUserData(farmerData.uid, 'farmer');
+       // For placeholder farmers, just delete their farmer document.
+      if (farmerData.isPlaceholder) {
+        batch.delete(doc(db, 'farmers', farmerDoc.id));
+      } else {
+        // For real users, just unlink them by setting dealerId to a special value.
+        batch.update(doc(db, 'farmers', farmerDoc.id), { dealerId: 'DELETED_DEALER' });
+        // And update their user profile as well
+        batch.update(doc(db, 'users', farmerData.uid), { dealerCode: 'DELETED_DEALER' });
+      }
     }
 
     const inventoryQuery = query(collection(db, 'inventory'), where('ownerId', '==', uid));
