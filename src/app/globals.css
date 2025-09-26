@@ -1,0 +1,173 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 142.1 76.2% 36.3%; /* vibrant green */
+    --primary-foreground: 355.7 100% 97.3%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 215.4 16.3% 46.9%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 45 93% 55%; /* golden yellow */
+    --accent-foreground: 45 90% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142.1 76.2% 36.3%;
+    
+    --radius: 0.5rem;
+
+    --chart-1: 142.1 76.2% 36.3%;
+    --chart-2: 221.2 83.2% 53.3%;
+    --chart-3: 45 93% 55%;
+    --chart-4: 210 40% 96.1%;
+    --chart-5: 215.4 16.3% 46.9%;
+    
+    --sidebar-background: 120 15% 96%;
+    --sidebar-foreground: 120 25% 10%;
+    --sidebar-primary: 122 25% 54%;
+    --sidebar-primary-foreground: 120 25% 98%;
+    --sidebar-accent: 120 20% 90%;
+    --sidebar-accent-foreground: 120 25% 10%;
+    --sidebar-border: 120 15% 88%;
+    --sidebar-ring: 122 25% 54%;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 45 93% 55%;
+    --accent-foreground: 45 90% 15%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142.1 76.2% 36.3%;
+    
+    --chart-1: 142.1 76.2% 36.3%;
+    --chart-2: 221.2 83.2% 53.3%;
+    --chart-3: 45 93% 55%;
+    --chart-4: 210 40% 96.1%;
+    --chart-5: 215.4 16.3% 46.9%;
+    
+    --sidebar-background: 120 10% 12%;
+    --sidebar-foreground: 120 5% 90%;
+    --sidebar-primary: 122 25% 54%;
+    --sidebar-primary-foreground: 120 25% 98%;
+    --sidebar-accent: 120 15% 20%;
+    --sidebar-accent-foreground: 120 5% 98%;
+    --sidebar-border: 120 10% 22%;
+    --sidebar-ring: 122 25% 54%;
+  }
+
+  .theme-gold {
+    --background: 48 33% 94%; /* Light parchment */
+    --foreground: 38 41% 15%; /* Dark brown */
+    --card: 45 50% 98%;
+    --card-foreground: 38 41% 15%;
+    --popover: 45 50% 98%;
+    --popover-foreground: 38 41% 15%;
+    --primary: 45 81% 41%; /* Goldenrod */
+    --primary-foreground: 38 41% 98%;
+    --secondary: 45 35% 88%;
+    --secondary-foreground: 38 41% 20%;
+    --muted: 45 35% 92%;
+    --muted-foreground: 38 25% 45%;
+    --accent: 122 25% 54%; /* Earthy Green as accent */
+    --accent-foreground: 120 25% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 45 35% 85%;
+    --input: 45 35% 90%;
+    --ring: 45 81% 41%;
+  }
+
+  .dark.theme-gold {
+    --background: 38 41% 10%; /* Very dark brown */
+    --foreground: 45 50% 90%;
+    --card: 38 41% 14%;
+    --card-foreground: 45 50% 90%;
+    --popover: 38 41% 14%;
+    --popover-foreground: 45 50% 90%;
+    --primary: 45 81% 55%; /* Brighter Gold */
+    --primary-foreground: 38 41% 5%;
+    --secondary: 38 41% 20%;
+    --secondary-foreground: 45 50% 98%;
+    --muted: 38 41% 16%;
+    --muted-foreground: 45 25% 65%;
+    --accent: 122 25% 60%; /* Lighter Earthy Green */
+    --accent-foreground: 120 25% 98%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 38 41% 22%;
+    --input: 38 41% 22%;
+    --ring: 45 81% 55%;
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
+}
+
+@layer utilities {
+  .animate-ticker {
+    animation: ticker 60s linear infinite;
+  }
+  .animate-ticker2 {
+    animation: ticker2 60s linear infinite;
+  }
+
+  @keyframes ticker {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes ticker2 {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(0%);
+    }
+  }
+}

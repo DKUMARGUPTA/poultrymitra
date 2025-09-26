@@ -1,0 +1,41 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "farmer-avatar",
+      "description": "Avatar for a farmer user",
+      "imageUrl": "https://picsum.photos/seed/farmer1/200/200",
+      "imageHint": "farmer portrait"
+    },
+    {
+      "id": "dealer-avatar",
+      "description": "Avatar for a dealer user",
+      "imageUrl": "https://picsum.photos/seed/dealer1/200/200",
+      "imageHint": "store owner"
+    },
+    {
+      "id": "chicks",
+      "description": "A group of young chicks",
+      "imageUrl": "https://source.unsplash.com/random/600x400/?chicks",
+      "imageHint": "chicks"
+    },
+    {
+      "id": "feed-bags",
+      "description": "Bags of poultry feed",
+      "imageUrl": "https://source.unsplash.com/random/600x400/?feed-sack",
+      "imageHint": "feed sack"
+    },
+    {
+      "id": "hero-poultry-farm",
+      "description": "A scenic view of a poultry farm",
+      "imageUrl": "https://source.unsplash.com/random/1200x800/?chicken-farm,poultry",
+      "imageHint": "chicken farm"
+    },
+    {
+      "id": "blog-cover",
+      "description": "Default cover image for a blog post",
+      "imageUrl": "https://source.unsplash.com/random/600x400/?article-cover,writing",
+      "imageHint": "article cover"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+/* src/components/animated-logo.css */
+
+.animated-logo-container .logo-head {
+  animation: headBob 3s ease-in-out infinite;
+  transform-origin: 50% 90%; /* Bottom of the head */
+}
+
+.animated-logo-container .logo-eyelid {
+  animation: blink 3.5s infinite;
+  transform-origin: 16.5px 21.5px; /* Center of the eye */
+}
+
+@keyframes headBob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1px) rotate(1deg); }
+}
+
+@keyframes blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0);
+  }
+}
