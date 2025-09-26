@@ -10,7 +10,6 @@ import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
 import {
   Sidebar,
-  SidebarProvider,
   SidebarTrigger,
   SidebarInset,
   SidebarHeader,
@@ -67,7 +66,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar>
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-2">
@@ -98,6 +97,6 @@ export default function DashboardPage() {
           </main>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   )
 }

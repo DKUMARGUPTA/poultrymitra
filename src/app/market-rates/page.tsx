@@ -10,7 +10,6 @@ import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
 import {
   Sidebar,
-  SidebarProvider,
   SidebarTrigger,
   SidebarInset,
   SidebarHeader,
