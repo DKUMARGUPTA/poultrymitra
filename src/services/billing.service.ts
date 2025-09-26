@@ -1,5 +1,5 @@
 // src/services/billing.service.ts
-import { collection, addDoc, query, where, onSnapshot, DocumentData, Unsubscribe, serverTimestamp, doc, updateDoc, writeBatch, orderBy, Firestore, QuerySnapshot } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, DocumentData, Unsubscribe, serverTimestamp, doc, updateDoc, writeBatch, orderBy, Firestore, QuerySnapshot, getDocs } from 'firebase/firestore';
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { updateUserPremiumStatus } from './users.service';
@@ -46,20 +46,15 @@ export const createPaymentVerificationRequest = async (
 
 
 /**
- * Gets all pending verification requests for the admin.
+ * Gets all pending verification requests for the admin for a one-time fetch.
  */
-export const getPendingPaymentVerifications = (
-  callback: (requests: PaymentVerificationRequest[]) => void
-): Unsubscribe => {
+export const getPendingPaymentVerifications = async (): Promise<PaymentVerificationRequest[]> => {
   const q = query(collection(db, 'paymentVerifications'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
-  
-  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-    const requests = snapshot.docs.map(doc => ({
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    } as PaymentVerificationRequest));
-    callback(requests);
-  });
+  } as PaymentVerificationRequest));
 };
 
 

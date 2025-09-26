@@ -11,6 +11,7 @@ import {
   limit,
   getDoc,
   doc,
+  onSnapshot,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
@@ -48,7 +49,20 @@ export const createOffer = async (offerData: Omit<OfferInput, 'createdAt' | 'isA
   return docRef.id;
 };
 
-export const getActiveOffers = async (): Promise<SubscriptionOffer[]> => {
+export const getActiveOffers = (callback: (offers: SubscriptionOffer[]) => void) => {
+    const q = query(
+        collection(db, 'offers'),
+        where('isActive', '==', true),
+        orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        const offers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionOffer));
+        callback(offers);
+    });
+};
+
+export const getActiveOffersAsync = async (): Promise<SubscriptionOffer[]> => {
     const q = query(
         collection(db, 'offers'),
         where('isActive', '==', true),
