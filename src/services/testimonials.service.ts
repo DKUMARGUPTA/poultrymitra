@@ -1,5 +1,5 @@
 // src/services/testimonials.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   collection,
   query,
@@ -7,11 +7,9 @@ import {
   getDocs,
   orderBy,
   limit,
+  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import { app } from '@/lib/firebase';
-
-const db = getFirestore(app);
 
 export const TestimonialSchema = z.object({
   name: z.string(),

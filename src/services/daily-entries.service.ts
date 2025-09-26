@@ -1,10 +1,7 @@
 // src/services/daily-entries.service.ts
-import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
-
-const db = getFirestore(app);
 
 export const DailyEntrySchema = z.object({
     batchId: z.string(),

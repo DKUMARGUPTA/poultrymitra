@@ -1,7 +1,5 @@
-
 // src/services/blog.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import {
   collection,
   addDoc,
@@ -18,6 +16,7 @@ import {
   deleteDoc,
   onSnapshot,
   Unsubscribe,
+  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
@@ -53,7 +52,7 @@ export type SerializablePost = Omit<Post, 'createdAt'> & {
 };
 
 export const createPost = async (db: Firestore, postData: Omit<PostInput, 'createdAt' | 'authorName'>): Promise<string> => {
-  const userProfile = await getUserProfile(db, postData.authorId);
+  const userProfile = await getUserProfile(postData.authorId);
   if (!userProfile) throw new Error("Author profile not found.");
 
   const slug = postData.slug ? createSlug(postData.slug) : createSlug(postData.title);

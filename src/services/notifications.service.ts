@@ -1,5 +1,5 @@
 // src/services/notifications.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   collection,
   addDoc,
@@ -19,9 +19,6 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getAllUsers } from './users.service';
-import { app } from '@/lib/firebase';
-
-const db = getFirestore(app);
 
 export const NotificationTypeSchema = z.enum([
   'announcement',

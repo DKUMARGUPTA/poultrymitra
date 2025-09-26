@@ -1,5 +1,5 @@
 // src/services/connection.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   collection,
   addDoc,
@@ -18,9 +18,6 @@ import {
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { getUserProfile, UserProfile } from './users.service';
-import { app } from '@/lib/firebase';
-
-const db = getFirestore(app);
 
 const ConnectionRequestSchema = z.object({
   requesterId: z.string(),

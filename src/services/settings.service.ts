@@ -1,10 +1,7 @@
 // src/services/settings.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
-import { app } from '@/lib/firebase';
-
-const db = getFirestore(app);
 
 export const SubscriptionSettingsSchema = z.object({
   farmerPlanPrice: z.number().min(0, "Price must be non-negative."),

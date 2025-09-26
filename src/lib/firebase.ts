@@ -1,5 +1,6 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   projectId: "studio-3437887095-bb50a",
@@ -19,3 +20,4 @@ function initializeFirebase(): FirebaseApp {
 }
 
 export const app = initializeFirebase();
+export const db = getFirestore(app);

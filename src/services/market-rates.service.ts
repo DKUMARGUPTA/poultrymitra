@@ -1,8 +1,6 @@
-
 // src/services/market-rates.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
-import { collection, addDoc, query, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, limit, getDocs, writeBatch, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, query, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, limit, getDocs, writeBatch, doc, updateDoc, deleteDoc, where, Firestore } from 'firebase/firestore';
 import { z } from 'zod';
 
 export const BirdSizes = ['Small', 'Medium', 'Big'] as const;
@@ -23,7 +21,7 @@ export const MarketRateSchema = z.object({
 export type MarketRate = z.infer<typeof MarketRateSchema> & { id: string };
 export type MarketRateInput = z.infer<typeof MarketRateSchema>;
 
-export const createMarketRate = async (db: Firestore, rateData: Omit<MarketRateInput, 'createdAt'>): Promise<string> => {
+export const createMarketRate = async (rateData: Omit<MarketRateInput, 'createdAt'>): Promise<string> => {
     const validatedData = MarketRateSchema.omit({ createdAt: true }).parse({
         ...rateData,
         source: rateData.source || (rateData.addedBy === 'admin' ? 'admin-manual' : 'dealer-manual'),
@@ -35,7 +33,7 @@ export const createMarketRate = async (db: Firestore, rateData: Omit<MarketRateI
     return docRef.id;
 };
 
-export const createMarketRatesInBatch = async (db: Firestore, ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
+export const createMarketRatesInBatch = async (ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
     const batch = writeBatch(db);
     
     ratesData.forEach(rateData => {
@@ -55,18 +53,18 @@ export const createMarketRatesInBatch = async (db: Firestore, ratesData: Omit<Ma
     await batch.commit();
 };
 
-export const updateMarketRate = async (db: Firestore, rateId: string, newRate: number): Promise<void> => {
+export const updateMarketRate = async (rateId: string, newRate: number): Promise<void> => {
     const rateRef = doc(db, 'market-rates', rateId);
     await updateDoc(rateRef, { rate: newRate });
 };
 
-export const deleteMarketRate = async (db: Firestore, rateId: string): Promise<void> => {
+export const deleteMarketRate = async (rateId: string): Promise<void> => {
     const rateRef = doc(db, 'market-rates', rateId);
     await deleteDoc(rateRef);
 };
 
 
-export const getMarketRates = (db: Firestore, callback: (rates: MarketRate[]) => void): Unsubscribe => {
+export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubscribe => {
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
@@ -82,7 +80,7 @@ export const getMarketRates = (db: Firestore, callback: (rates: MarketRate[]) =>
     });
 };
 
-export const getLatestMarketRates = async (db: Firestore, count: number): Promise<MarketRate[]> => {
+export const getLatestMarketRates = async (count: number): Promise<MarketRate[]> => {
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
@@ -96,7 +94,7 @@ export const getLatestMarketRates = async (db: Firestore, count: number): Promis
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MarketRate));
 };
 
-export const getRatesByUser = async (db: Firestore, userId: string, rateLimit?: number): Promise<MarketRate[]> => {
+export const getRatesByUser = async (userId: string, rateLimit?: number): Promise<MarketRate[]> => {
     let q = query(
         collection(db, 'market-rates'), 
         where('addedByUid', '==', userId), 

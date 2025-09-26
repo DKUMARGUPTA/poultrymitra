@@ -1,5 +1,5 @@
 // src/services/offers.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   collection,
   addDoc,
@@ -14,9 +14,6 @@ import {
   doc,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import { app } from '@/lib/firebase';
-
-const db = getFirestore(app);
 
 export const OfferSchema = z.object({
   code: z.string().min(3, 'Code must be at least 3 characters.').max(20, 'Code can be at most 20 characters.'),
