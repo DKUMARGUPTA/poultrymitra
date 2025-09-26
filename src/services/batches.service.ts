@@ -6,6 +6,8 @@ import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapsh
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
 
+const db = getFirestore(app);
+
 export const BatchSchema = z.object({
     name: z.string().min(1, { message: "Batch name is required." }),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format."),
@@ -21,7 +23,6 @@ export type Batch = z.infer<typeof BatchSchema> & {
 export type BatchInput = z.infer<typeof BatchSchema>;
 
 export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Promise<string> => {
-    const db = getFirestore(app);
     const userProfile = await getUserProfile(db, batchData.farmerId);
     if (!userProfile) {
         throw new Error("User profile not found.");
@@ -46,7 +47,6 @@ export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Pro
 
 
 export const getBatchesByFarmer = (farmerId: string, callback: (batches: Batch[]) => void): Unsubscribe => {
-    const db = getFirestore(app);
     const q = query(collection(db, 'batches'), where("farmerId", "==", farmerId), orderBy("startDate", "desc"));
     
     return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
@@ -59,7 +59,6 @@ export const getBatchesByFarmer = (farmerId: string, callback: (batches: Batch[]
 };
 
 export const updateBatch = async (batchId: string, data: { name?: string; startDate?: string }) => {
-    const db = getFirestore(app);
     const batchRef = doc(db, 'batches', batchId);
     await updateDoc(batchRef, data);
 };
@@ -81,4 +80,3 @@ export const deleteBatch = async (db: Firestore, batchId: string) => {
     // Finally, delete the batch itself
     await deleteDoc(batchRef);
 };
-
