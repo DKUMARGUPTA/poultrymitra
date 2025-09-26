@@ -11,7 +11,6 @@ const nextConfig = {
   experimental: {
     // Note: serverComponentsExternalPackages is now a top-level property
   },
-  allowedDevOrigins: ["https://*.cloudworkstations.dev"],
   serverExternalPackages: ['@genkit-ai/googleai', 'firebase-admin'],
   images: {
     remotePatterns: [
