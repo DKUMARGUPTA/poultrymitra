@@ -1,5 +1,6 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -21,3 +22,4 @@ function initializeFirebase(): FirebaseApp {
 
 export const app = initializeFirebase();
 export const db = getFirestore(app);
+export const auth = getAuth(app);
