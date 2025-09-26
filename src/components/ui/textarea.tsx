@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import {cn} from '@/lib/utils';
 
@@ -26,7 +26,7 @@ const useAutosizeTextArea = (
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'textarea'>>(
   ({className, ...props}, ref) => {
-    const internalRef = React.useRef<HTMLTextAreaElement>(null);
+    const internalRef = useRef<HTMLTextAreaElement>(null);
     
     // Allow parent to pass a ref if needed, otherwise use internal ref
     const effectiveRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;

@@ -1,9 +1,10 @@
+
 // src/firebase/client-provider.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { FirebaseProvider } from './provider';
 
@@ -11,6 +12,9 @@ interface FirebaseClientProviderProps {
   children: React.ReactNode;
   firebaseApp: FirebaseApp;
 }
+
+// State to track if persistence has been enabled
+let persistenceEnabled = false;
 
 export function FirebaseClientProvider({
   children,
@@ -23,9 +27,19 @@ export function FirebaseClientProvider({
     // This effect runs only on the client
     const dbInstance = getFirestore(firebaseApp);
     
-    // Note: The enablePersistence call has been removed as it was causing
-    // a persistent runtime error in the Next.js environment.
-    // The app will function correctly online without it.
+    if (!persistenceEnabled) {
+      try {
+        // Enable offline persistence. This must be done before any other
+        // Firestore operations. The try-catch handles the error that occurs
+        // on hot-reloads in development when it tries to re-enable it.
+        enableIndexedDbPersistence(dbInstance);
+        persistenceEnabled = true;
+      } catch (error: any) {
+        if (error.code !== 'failed-precondition') {
+          console.error("Firebase persistence error:", error);
+        }
+      }
+    }
     
     setDb(dbInstance);
     setAuth(getAuth(firebaseApp));

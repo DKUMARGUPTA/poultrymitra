@@ -1,3 +1,4 @@
+
 // src/services/transactions.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
@@ -94,7 +95,7 @@ export const createTransaction = async (db: Firestore, transactionData: Transact
 
         // 1. Create the transaction document
         const newTransactionRef = doc(collection(db, "transactions"));
-        const dataToSave = {
+        const dataToSave: any = {
             ...validatedData,
             costOfGoodsSold, // Ensure COGS is included here
             referenceNumber: validatedData.referenceNumber || null,
@@ -102,6 +103,9 @@ export const createTransaction = async (db: Firestore, transactionData: Transact
             date: Timestamp.fromDate(validatedData.date),
             createdAt: serverTimestamp()
         };
+        // Remove undefined keys to keep Firestore clean
+        Object.keys(dataToSave).forEach(key => dataToSave[key] === undefined && delete dataToSave[key]);
+
 
         t.set(newTransactionRef, dataToSave);
 
