@@ -16,13 +16,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getAllTransactionsAsync } from "@/services/transactions.service";
-import { TransactionTable } from "@/components/transaction-table";
+import { TransactionHistory } from "@/components/transaction-history";
 
 // This page is now a Server Component
 export default async function TransactionsPage() {
-  // Fetch initial data on the server
-  const initialTransactions = await getAllTransactionsAsync();
 
   return (
     <>
@@ -61,7 +58,7 @@ export default async function TransactionsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TransactionTable initialTransactions={initialTransactions} />
+                <TransactionHistory scope="all" />
               </CardContent>
             </Card>
           </main>
