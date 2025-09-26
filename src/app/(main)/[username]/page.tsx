@@ -42,7 +42,7 @@ async function getRecentInventory(dealerId: string, count: number): Promise<Inve
 
 export default async function UserVCardPage({ params }: Props) {
   const db = getFirestore(app);
-  const user = await getUserByUsername(db, params.username);
+  const user = await getUserByUsername(params.username);
 
   if (!user || user.status === 'suspended') {
     notFound();
@@ -53,7 +53,7 @@ export default async function UserVCardPage({ params }: Props) {
   let recentInventory: InventoryItem[] = [];
 
   if (user.role === 'admin' || user.role === 'dealer') {
-     const authorPosts = await getPostsByAuthor(db, user.uid, 3);
+     const authorPosts = await getPostsByAuthor(user.uid, 3);
      posts = authorPosts.map(post => ({
         ...post,
         createdAt: (post.createdAt as Timestamp).toDate().toISOString(),
@@ -65,7 +65,7 @@ export default async function UserVCardPage({ params }: Props) {
       recentInventory = await getRecentInventory(user.uid, 5);
   }
 
-  const contributedRates = user.role === 'dealer' ? await getRatesByUser(db, user.uid, 5) : [];
+  const contributedRates = user.role === 'dealer' ? await getRatesByUser(user.uid, 5) : [];
 
   const roleDescription = user.role === 'dealer' ? 'Poultry Dealer' : user.role === 'admin' ? 'Administrator' : 'Poultry Farmer';
 

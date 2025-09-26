@@ -6,6 +6,9 @@ import { InventoryItem } from './inventory.service';
 import { Transaction } from './transactions.service';
 import { UserProfile, getAllUsers } from './users.service';
 import { Farmer } from './farmers.service';
+import { app } from '@/lib/firebase';
+
+const db = getFirestore(app);
 
 
 export interface DealerStats {
@@ -32,8 +35,8 @@ export interface AdminStats {
   premiumUsers: number;
 }
 
-export const getAdminDashboardStats = async (db: Firestore): Promise<AdminStats> => {
-  const allUsers = await getAllUsers(db);
+export const getAdminDashboardStats = async (): Promise<AdminStats> => {
+  const allUsers = await getAllUsers();
   
   const totalUsers = allUsers.length;
   const totalFarmers = allUsers.filter(u => u.role === 'farmer').length;
@@ -49,7 +52,6 @@ export const getAdminDashboardStats = async (db: Firestore): Promise<AdminStats>
 };
 
 export const getDealerDashboardStats = (dealerId: string, callback: (stats: DealerStats) => void): Unsubscribe => {
-  const db = getFirestore();
   // This is a simplified implementation for demonstration.
   // A real-world scenario would likely use Cloud Functions for aggregation for performance.
 
@@ -152,7 +154,6 @@ export const getDealerDashboardStats = (dealerId: string, callback: (stats: Deal
 };
 
 export const getFarmerDashboardStats = (farmerId: string, callback: (stats: FarmerStats) => void): Unsubscribe => {
-  const db = getFirestore();
   const batchesQuery = query(collection(db, 'batches'), where("farmerId", "==", farmerId));
   
   // Also get farmer's own document for outstanding balance

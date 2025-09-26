@@ -1,18 +1,35 @@
-
 // src/app/page.tsx
 import HomePageClient from './home-page-client';
-import { getPostsAsync, SerializablePost } from '@/services/blog.service';
-import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { getPostsAsync } from '@/services/blog.service';
+import { Timestamp } from 'firebase/firestore';
+
+export interface SerializablePost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  coverImage?: string;
+  isPublished: boolean;
+  createdAt: string; // Changed from Timestamp to string
+  metaTitle?: string;
+  metaDescription?: string;
+}
 
 export default async function Page() {
-  const db = getFirestore(app);
   // We can fetch posts on the server now
-  const recentPosts = await getPostsAsync(db, false, 3);
+  const recentPosts = await getPostsAsync(false, 3);
   
   const serializablePosts: SerializablePost[] = recentPosts.map(post => ({
     ...post,
-    createdAt: post.createdAt.toDate().toISOString(),
+    id: post.id,
+    authorName: post.authorName || 'Anonymous',
+    slug: post.slug || '',
+    content: post.content || '',
+    authorId: post.authorId,
+    isPublished: post.isPublished,
+    createdAt: (post.createdAt as Timestamp).toDate().toISOString(),
   }));
 
   return (

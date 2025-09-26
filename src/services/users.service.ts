@@ -5,8 +5,7 @@ import { deleteBatch } from './batches.service';
 import { createFarmer, Farmer } from './farmers.service';
 import { createNotification } from './notifications.service';
 import { getAuth, updatePassword, sendPasswordResetEmail, deleteUser as deleteAuthUser, reauthenticateWithCredential, EmailAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
-import { useFirestore } from '@/firebase/provider'; // Import the hook
-import { app } from '@/lib/firebase';
+import { app, db } from '@/lib/firebase';
 
 export type UserRole = 'farmer' | 'dealer' | 'admin';
 export type UserStatus = 'active' | 'suspended';
@@ -36,7 +35,6 @@ export interface UserProfile {
 
 // Function to check if a code is unique for a given field
 const isCodeUnique = async (fieldName: 'username' | 'invitationCode' | 'farmerCode' | 'referralCode', code: string): Promise<boolean> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where(fieldName, "==", code));
     const snapshot = await getDocs(q);
@@ -54,7 +52,6 @@ const generateUniqueCode = async (fieldName: 'username' | 'invitationCode' | 'fa
 
 
 export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 'status' | 'invitationCode' | 'farmerCode' | 'referralCode' | 'username' | 'ratePermissions'> & { referredBy?: string }) => {
-  const db = useFirestore();
   const usersCollection = collection(db, 'users');
   const isAdminByEmail = userProfile.email === 'admin@poultrymitra.com';
   let role = isAdminByEmail ? 'admin' : userProfile.role;
@@ -194,7 +191,6 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
 export const createUserByAdmin = async (
   userData: { name: string; email: string; role: 'farmer' | 'dealer', password: string }
 ) => {
-  const db = useFirestore();
   const auth = getAuth(app);
   // This function is problematic on the client-side due to auth instance management.
   // In a real-world app, this should be a trusted backend operation (e.g., Cloud Function).
@@ -240,7 +236,6 @@ export const createUserByAdmin = async (
 
 
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
-    const db = useFirestore();
     if (!uid) return null;
     const docRef = doc(db, 'users', uid);
     const docSnap = await getDoc(docRef);
@@ -259,7 +254,6 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 };
 
 export const getUserByUsername = async (username: string): Promise<UserProfile | null> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where("username", "==", username));
     const snapshot = await getDocs(q);
@@ -275,7 +269,6 @@ export const getUserByUsername = async (username: string): Promise<UserProfile |
 
 
 export const getAllUsers = async (): Promise<UserProfile[]> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where("role", "!=", "admin"));
     const querySnapshot = await getDocs(q);
@@ -292,26 +285,22 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
 };
 
 export const updateUserPremiumStatus = async (uid: string, isPremium: boolean): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, { isPremium });
 };
 
 export const updateUserRatePermissions = async (uid: string, ratePermissions: RatePermission[]): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, { ratePermissions });
 };
 
 
 export const updateUserStatus = async (uid: string, status: UserStatus): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, { status });
 };
 
 export const connectFarmerToDealer = async (farmerCode: string, dealerId: string): Promise<Farmer> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where("farmerCode", "==", farmerCode));
     const snapshot = await getDocs(q);
@@ -392,7 +381,6 @@ export const connectFarmerToDealer = async (farmerCode: string, dealerId: string
 
 
 const deleteAllUserData = async (uid: string, role: UserRole) => {
-    const db = useFirestore();
     const batch = writeBatch(db);
 
     // Delete transactions where the user is either the primary user or the dealer
@@ -456,7 +444,6 @@ export const deleteUserAccount = async (uid: string): Promise<void> => {
 };
 
 export const updateUserProfile = async (uid: string, data: { name?: string; phoneNumber?: string; aboutMe?: string; }): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, data);
 };

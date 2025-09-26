@@ -7,12 +7,9 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
 
 async function BlogIndexPage() {
-  const db = getFirestore(app);
-  const posts = await getPostsAsync(db, false); // Only fetch published posts
+  const posts = await getPostsAsync(false); // Only fetch published posts
   const defaultCover = PlaceHolderImages.find(p => p.id === 'blog-cover');
 
   return (

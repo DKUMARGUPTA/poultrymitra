@@ -95,6 +95,10 @@ export const getLatestMarketRates = async (count: number): Promise<MarketRate[]>
 };
 
 export const getRatesByUser = async (userId: string, rateLimit?: number): Promise<MarketRate[]> => {
+    if (typeof userId !== 'string') {
+        console.error("getRatesByUser called with invalid userId:", userId);
+        return [];
+    }
     let q = query(
         collection(db, 'market-rates'), 
         where('addedByUid', '==', userId), 

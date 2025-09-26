@@ -10,8 +10,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata, ResolvingMetadata } from 'next'
 import { ShareButton } from '@/components/share-button';
-import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
 
 interface BlogPostPageProps {
   params: {
@@ -23,8 +21,7 @@ export async function generateMetadata(
   { params }: BlogPostPageProps,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const db = getFirestore(app);
-  const post = await getPostBySlug(db, params.slug);
+  const post = await getPostBySlug(params.slug);
 
   if (!post) {
     return {
@@ -48,8 +45,7 @@ export async function generateMetadata(
 
 // This function tells Next.js which slugs to pre-render at build time.
 export async function generateStaticParams() {
-  const db = getFirestore(app);
-  const posts = await getPostsAsync(db, false); // Get only published posts
+  const posts = await getPostsAsync(false); // Get only published posts
   return posts.map((post) => ({
     slug: post.slug,
   }));
@@ -57,8 +53,7 @@ export async function generateStaticParams() {
 
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const db = getFirestore(app);
-  const post = await getPostBySlug(db, params.slug);
+  const post = await getPostBySlug(params.slug);
 
   if (!post || !post.isPublished) {
     notFound();
