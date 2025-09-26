@@ -2,21 +2,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bird, Users, PlusCircle, FileDown } from "lucide-react";
-import { MainNav } from "@/components/main-nav";
-import { UserNav } from "@/components/user-nav";
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { getAllUsers, UserProfile } from "@/services/users.service";
+import { Users, PlusCircle } from "lucide-react";
+import { UserProfile, getAllUsers } from "@/services/users.service";
 import { UsersTable } from "@/components/users-table";
 import { AddUserModal } from "@/components/add-user-modal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function UsersPage() {
     const [users, setUsers] = useState<UserProfile[]>([]);
@@ -40,7 +31,6 @@ export default function UsersPage() {
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-48" />
             <div className="flex gap-2">
-              <Skeleton className="h-10 w-24" />
               <Skeleton className="h-10 w-24" />
             </div>
           </div>
