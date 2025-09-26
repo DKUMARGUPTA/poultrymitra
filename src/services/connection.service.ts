@@ -17,7 +17,7 @@ import {
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { getUserProfile, UserProfile } from './users.service';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 const ConnectionRequestSchema = z.object({
   requesterId: z.string(),
@@ -35,7 +35,6 @@ export type ConnectionRequest = z.infer<typeof ConnectionRequestSchema> & {
  * Creates a connection request from a farmer to a dealer.
  */
 export const createConnectionRequest = async (requesterId: string, recipientId: string): Promise<void> => {
-  const db = useFirestore();
   await addDoc(collection(db, 'connectionRequests'), {
     requesterId,
     recipientId,
@@ -56,7 +55,6 @@ export const createConnectionRequest = async (requesterId: string, recipientId: 
  * Subscribes to pending connection requests for a dealer.
  */
 export const getConnectionRequestsForDealer = (dealerId: string, callback: (requests: ConnectionRequest[]) => void) => {
-  const db = useFirestore();
   const q = query(
     collection(db, 'connectionRequests'),
     where('recipientId', '==', dealerId),
@@ -83,7 +81,6 @@ export const getConnectionRequestsForDealer = (dealerId: string, callback: (requ
  * Accepts a connection request.
  */
 export const acceptConnectionRequest = async (requestId: string, farmerId: string, dealerId: string): Promise<void> => {
-  const db = useFirestore();
   const dealerProfile = await getUserProfile(dealerId);
   const farmerProfile = await getUserProfile(farmerId);
   
@@ -126,7 +123,6 @@ export const acceptConnectionRequest = async (requestId: string, farmerId: strin
  * Rejects a connection request.
  */
 export const rejectConnectionRequest = async (requestId: string, farmerId: string): Promise<void> => {
-    const db = useFirestore();
     const requestRef = doc(db, 'connectionRequests', requestId);
     await updateDoc(requestRef, { status: 'rejected' });
 

@@ -3,7 +3,7 @@ import { collection, addDoc, query, where, onSnapshot, DocumentData, Unsubscribe
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { updateUserPremiumStatus } from './users.service';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 export const PaymentVerificationRequestSchema = z.object({
   userId: z.string(),
@@ -30,7 +30,6 @@ export type PaymentVerificationRequest = z.infer<typeof PaymentVerificationReque
 export const createPaymentVerificationRequest = async (
   requestData: Omit<PaymentVerificationRequest, 'id' | 'status' | 'createdAt' | 'reason'>
 ): Promise<string> => {
-  const db = useFirestore();
   const validatedData = PaymentVerificationRequestSchema.omit({ id: true, status: true, createdAt: true, reason: true }).parse(requestData);
   const docRef = await addDoc(collection(db, 'paymentVerifications'), {
     ...validatedData,
@@ -52,7 +51,6 @@ export const createPaymentVerificationRequest = async (
 export const getPendingPaymentVerifications = (
   callback: (requests: PaymentVerificationRequest[]) => void
 ): Unsubscribe => {
-  const db = useFirestore();
   const q = query(collection(db, 'paymentVerifications'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
   
   return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
@@ -69,7 +67,6 @@ export const getPendingPaymentVerifications = (
  * Approves a payment request, updating the request and the user's premium status.
  */
 export const approvePaymentVerification = async (requestId: string, userId: string, reason: string): Promise<void> => {
-  const db = useFirestore();
   const requestRef = doc(db, 'paymentVerifications', requestId);
   
   // 1. Update the request status and reason
@@ -93,7 +90,6 @@ export const approvePaymentVerification = async (requestId: string, userId: stri
  * Rejects a payment request.
  */
 export const rejectPaymentVerification = async (requestId: string, reason: string, userId: string): Promise<void> => {
-    const db = useFirestore();
     const requestRef = doc(db, 'paymentVerifications', requestId);
     await updateDoc(requestRef, { status: 'rejected', reason: reason });
     

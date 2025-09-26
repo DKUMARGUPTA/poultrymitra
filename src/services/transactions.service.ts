@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 export const TransactionSchema = z.object({
   date: z.date({
@@ -59,7 +59,6 @@ export type TransactionInput = z.infer<typeof TransactionSchema>;
 
 // Function to create a new transaction
 export const createTransaction = async (transactionData: TransactionInput) => {
-    const db = useFirestore();
     const validatedData = TransactionSchema.parse(transactionData);
     
     await runTransaction(db, async (t) => {
@@ -141,7 +140,6 @@ export const createTransaction = async (transactionData: TransactionInput) => {
 };
 
 export const updateTransaction = async (transactionId: string, updatedData: Partial<TransactionInput>) => {
-    const db = useFirestore();
     const transactionRef = doc(db, 'transactions', transactionId);
 
     await runTransaction(db, async (t) => {
@@ -171,7 +169,6 @@ export const updateTransaction = async (transactionId: string, updatedData: Part
 
 
 export const deleteTransaction = async (transactionId: string) => {
-    const db = useFirestore();
     const transactionRef = doc(db, 'transactions', transactionId);
 
     await runTransaction(db, async (t) => {
@@ -225,7 +222,6 @@ export const getTransactionsForUser = (
   callback: (transactions: Transaction[]) => void,
   isDealerView: boolean = false
 ): Unsubscribe => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     let q;
     if (isDealerView) {
@@ -261,7 +257,6 @@ export const getBusinessExpenses = (
   dealerId: string,
   callback: (transactions: Transaction[]) => void
 ): Unsubscribe => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -283,7 +278,6 @@ export const getBusinessExpenses = (
 
 // New async function for one-time fetch, used by AI tools and exports
 export const getTransactionsForUserAsync = async (userId: string): Promise<Transaction[]> => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -296,7 +290,6 @@ export const getTransactionsForUserAsync = async (userId: string): Promise<Trans
 
 
 export const getAllTransactions = (callback: (transactions: Transaction[]) => void): Unsubscribe => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -314,7 +307,6 @@ export const getAllTransactions = (callback: (transactions: Transaction[]) => vo
 };
 
 export const getAllTransactionsAsync = async (): Promise<Transaction[]> => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -325,7 +317,6 @@ export const getAllTransactionsAsync = async (): Promise<Transaction[]> => {
 }
 
 export const getTransactionsForFarmer = async (farmerId: string): Promise<Transaction[]> => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(transactionsCollection, where("userId", "==", farmerId), orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
@@ -336,7 +327,6 @@ export const getTransactionsForBatch = (
     batchId: string,
     callback: (transactions: Transaction[]) => void
 ): Unsubscribe => {
-    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -355,7 +345,6 @@ export const getTransactionsForBatch = (
 
 
 export const getSupplierPayments = async (dealerId: string, supplierName: string): Promise<Transaction[]> => {
-  const db = useFirestore();
   const transactionsCollection = collection(db, 'transactions');
   const q = query(
     transactionsCollection,

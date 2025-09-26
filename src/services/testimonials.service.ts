@@ -8,7 +8,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 export const TestimonialSchema = z.object({
   name: z.string(),
@@ -22,7 +22,6 @@ export const TestimonialSchema = z.object({
 export type Testimonial = z.infer<typeof TestimonialSchema> & { id: string };
 
 export const getTestimonials = async (count: number = 5): Promise<Testimonial[]> => {
-  const db = useFirestore();
   const q = query(
     collection(db, 'testimonials'),
     orderBy('createdAt', 'desc'),

@@ -2,7 +2,7 @@
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, doc, updateDoc, deleteDoc, writeBatch, getDocs, getCountFromServer, orderBy } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 export const BatchSchema = z.object({
     name: z.string().min(1, { message: "Batch name is required." }),
@@ -19,7 +19,6 @@ export type Batch = z.infer<typeof BatchSchema> & {
 export type BatchInput = z.infer<typeof BatchSchema>;
 
 export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Promise<string> => {
-    const db = useFirestore();
     const userProfile = await getUserProfile(batchData.farmerId);
     if (!userProfile) {
         throw new Error("User profile not found.");
@@ -44,7 +43,6 @@ export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Pro
 
 
 export const getBatchesByFarmer = (farmerId: string, callback: (batches: Batch[]) => void): Unsubscribe => {
-    const db = useFirestore();
     const q = query(collection(db, 'batches'), where("farmerId", "==", farmerId), orderBy("startDate", "desc"));
     
     return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
@@ -57,13 +55,11 @@ export const getBatchesByFarmer = (farmerId: string, callback: (batches: Batch[]
 };
 
 export const updateBatch = async (batchId: string, data: { name?: string; startDate?: string }) => {
-    const db = useFirestore();
     const batchRef = doc(db, 'batches', batchId);
     await updateDoc(batchRef, data);
 };
 
 export const deleteBatch = async (batchId: string) => {
-    const db = useFirestore();
     const batchRef = doc(db, 'batches', batchId);
     
     // Also delete associated daily entries

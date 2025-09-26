@@ -1,6 +1,6 @@
 // src/services/inventory.service.ts
 import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { app, db } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, getDocs, orderBy, runTransaction, doc, Timestamp, writeBatch, deleteDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { TransactionInput } from './transactions.service';
@@ -40,7 +40,6 @@ export const createPurchaseOrder = async (
     purchaseSource?: string,
     ownerId?: string,
 ) => {
-    const db = getFirestore(app);
     if (!ownerId) {
         throw new Error("Owner ID is required to create a purchase order.");
     }
@@ -139,7 +138,6 @@ export const createPurchaseOrder = async (
 
 
 export const getInventoryItems = (ownerId: string, callback: (items: InventoryItem[]) => void): Unsubscribe => {
-  const db = getFirestore(app);
   const q = query(collection(db, 'inventory'), where("ownerId", "==", ownerId));
 
   return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
@@ -152,7 +150,6 @@ export const getInventoryItems = (ownerId: string, callback: (items: InventoryIt
 };
 
 export const getUniquePurchaseSources = async (ownerId: string): Promise<string[]> => {
-    const db = getFirestore(app);
     const q = query(collection(db, 'inventory'), where("ownerId", "==", ownerId));
     const snapshot = await getDocs(q);
     const sources = new Set<string>();
@@ -166,7 +163,6 @@ export const getUniquePurchaseSources = async (ownerId: string): Promise<string[
 }
 
 export const getInventoryItemsByPurchaseSource = async (ownerId: string, purchaseSource: string): Promise<InventoryItem[]> => {
-    const db = getFirestore(app);
     const q = query(
         collection(db, 'inventory'), 
         where("ownerId", "==", ownerId),
@@ -182,7 +178,6 @@ export const getInventoryItemsByPurchaseSource = async (ownerId: string, purchas
 };
 
 export const deletePurchaseOrder = async (purchaseOrderId: string) => {
-    const db = getFirestore(app);
     const batch = writeBatch(db);
 
     // 1. Delete the Purchase Order document
