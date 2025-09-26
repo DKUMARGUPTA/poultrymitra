@@ -37,11 +37,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirestore } from '@/firebase/client-provider';
+import { useFirebase } from '@/firebase/provider';
 
 export default function AdminBlogPage() {
   const { user, loading: authLoading } = useAuth();
-  const db = useFirestore();
+  const { db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -167,7 +167,9 @@ export default function AdminBlogPage() {
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeletePost(post.id)} variant="destructive">Delete</AlertDialogAction>
+                                                <AlertDialogAction asChild>
+                                                    <Button onClick={() => handleDeletePost(post.id)} variant="destructive">Delete</Button>
+                                                </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>

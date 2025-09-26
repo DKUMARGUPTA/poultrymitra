@@ -34,7 +34,7 @@ import { GenerateBlogPostModal } from '@/components/generate-blog-post-modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { translateContent } from '@/ai/flows/translate-content';
 import { GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post';
-import { useFirestore } from '@/firebase/client-provider';
+import { useFirebase } from '@/firebase/provider';
 
 
 const EditorFormSchema = PostSchema.pick({
@@ -65,7 +65,7 @@ interface BlogEditorPageProps {
 
 export default function BlogEditorPage({ params }: BlogEditorPageProps) {
   const { user, loading: authLoading } = useAuth();
-  const db = useFirestore();
+  const { db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [post, setPost] = useState<Post | null>(null);

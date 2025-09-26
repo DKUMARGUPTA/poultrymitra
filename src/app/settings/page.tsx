@@ -35,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { moderateContent } from '@/ai/flows/moderate-content';
 import { VCard } from '@/components/v-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFirestore } from '@/firebase/client-provider';
+import { useFirebase } from '@/firebase/provider';
 
 // Schema for updating profile details
 const ProfileFormSchema = z.object({
@@ -103,7 +103,7 @@ export default function SettingsPage() {
 
 export function SettingsForm() {
   const { user, userProfile } = useAuth();
-  const db = useFirestore();
+  const { db } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
   const [profileLoading, setProfileLoading] = useState(false);

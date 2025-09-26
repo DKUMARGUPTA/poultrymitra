@@ -21,12 +21,6 @@ import Link from 'next/link';
 
 export const revalidate = 3600; // Revalidate every hour
 
-interface UserVCardPageProps {
-  params: {
-    username: string;
-  };
-}
-
 async function getRecentFarmers(dealerId: string, count: number): Promise<Farmer[]> {
     const db = getFirestore(app);
     const q = query(collection(db, 'farmers'), where('dealerId', '==', dealerId), orderBy('createdAt', 'desc'), limit(count));
@@ -42,7 +36,7 @@ async function getRecentInventory(dealerId: string, count: number): Promise<Inve
 }
 
 
-export default async function UserVCardPage({ params }: UserVCardPageProps) {
+export default async function UserVCardPage({ params }: { params: { username: string } }) {
   const db = getFirestore(app);
   const user = await getUserByUsername(db, params.username);
 

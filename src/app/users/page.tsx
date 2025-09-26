@@ -38,13 +38,13 @@ import Papa from 'papaparse';
 import { format } from 'date-fns';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { useFirestore } from '@/firebase/client-provider';
+import { useFirebase } from '@/firebase/provider';
 
 
 export default function UsersPage() {
   useAdminAuth();
   const { user, loading: authLoading } = useAuth();
-  const db = useFirestore();
+  const { db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
