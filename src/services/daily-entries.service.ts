@@ -4,8 +4,6 @@ import { getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { queueOperation } from './offline.service';
-
 
 export const DailyEntrySchema = z.object({
     batchId: z.string(),
@@ -24,17 +22,11 @@ export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'created
     const db = getFirestore(app);
     const validatedData = DailyEntrySchema.omit({ createdAt: true }).parse(entryData);
     
-    if (navigator.onLine) {
-        const docRef = await addDoc(collection(db, 'daily-entries'), {
-            ...validatedData,
-            createdAt: serverTimestamp()
-        });
-        return docRef.id;
-    } else {
-        const tempId = `offline_${Date.now()}`;
-        await queueOperation('create', 'daily-entries', { ...validatedData, createdAt: new Date() }, tempId);
-        return tempId;
-    }
+    const docRef = await addDoc(collection(db, 'daily-entries'), {
+        ...validatedData,
+        createdAt: serverTimestamp()
+    });
+    return docRef.id;
 };
 
 export const getDailyEntriesForBatch = (batchId: string, callback: (entries: DailyEntry[]) => void): Unsubscribe => {
