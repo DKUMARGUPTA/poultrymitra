@@ -3,11 +3,9 @@ import { FeedCalculator } from '@/components/feed-calculator';
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { AnimatedLogo } from '@/components/animated-logo';
 import Link from 'next/link';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 export default function ToolsPage() {
   return (
-    <SidebarProvider>
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <LandingPageHeader />
       <main className="flex-1 pt-24">
@@ -61,6 +59,5 @@ export default function ToolsPage() {
         </div>
       </footer>
     </div>
-    </SidebarProvider>
   );
 }

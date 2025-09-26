@@ -10,7 +10,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata, ResolvingMetadata } from 'next'
 import { ShareButton } from '@/components/share-button';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 
@@ -66,7 +65,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   return (
-    <SidebarProvider>
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <LandingPageHeader />
       <main className="flex-1 pt-24">
@@ -145,6 +143,5 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
       </footer>
     </div>
-    </SidebarProvider>
   );
 }

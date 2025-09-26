@@ -9,7 +9,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next'
 import { ShareButton } from '@/components/share-button';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
   title: 'पोल्ट्री फार्म में डेली फीड और मॉर्टालिटी की एंट्री कैसे करें? | Poultry Mitra',
@@ -110,7 +109,6 @@ export default function BlogPostPage() {
   };
 
   return (
-    <SidebarProvider>
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <LandingPageHeader />
       <main className="flex-1 pt-24">
@@ -188,6 +186,5 @@ export default function BlogPostPage() {
         </div>
       </footer>
     </div>
-    </SidebarProvider>
   );
 }

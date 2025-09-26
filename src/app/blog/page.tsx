@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 
@@ -17,7 +16,6 @@ async function BlogIndexPage() {
   const defaultCover = PlaceHolderImages.find(p => p.id === 'blog-cover');
 
   return (
-    <SidebarProvider>
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <LandingPageHeader />
       <main className="flex-1 pt-24">
@@ -106,7 +104,6 @@ async function BlogIndexPage() {
         </div>
       </footer>
     </div>
-    </SidebarProvider>
   );
 }
 

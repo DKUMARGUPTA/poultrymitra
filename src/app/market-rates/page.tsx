@@ -45,8 +45,7 @@ export default function MarketRatesPage() {
 
   if (authLoading) {
      return (
-      <SidebarProvider>
-       <div className="flex flex-col h-screen">
+       <div>
         <LandingPageHeader />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 pt-24">
             <Skeleton className="h-8 w-48" />
@@ -55,12 +54,11 @@ export default function MarketRatesPage() {
             </div>
         </main>
     </div>
-    </SidebarProvider>
     )
   }
   
   return (
-    <SidebarProvider>
+    <div>
         {user && canAddRates ? (
             <>
                 <Sidebar>
@@ -170,6 +168,6 @@ export default function MarketRatesPage() {
               </footer>
             </div>
         )}
-    </SidebarProvider>
+    </div>
   )
 }
