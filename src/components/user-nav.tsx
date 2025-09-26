@@ -31,12 +31,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useTheme } from "next-themes";
 import { ThemeToggle } from "./theme-toggle";
 import { useSidebar } from "./ui/sidebar";
-import { useFirestore, useFirebaseAuth } from "@/firebase/provider";
+import { auth, db } from "@/lib/firebase";
 
 export function UserNav() {
   const { user, userProfile } = useAuth();
-  const auth = useFirebaseAuth();
-  const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -45,14 +43,14 @@ export function UserNav() {
 
 
   useEffect(() => {
-    if (user && db) {
-      const unsubscribe = getNotificationsForUser(db, user.uid, (newNotifications) => {
+    if (user) {
+      const unsubscribe = getNotificationsForUser(user.uid, (newNotifications) => {
         setNotifications(newNotifications);
         setUnreadCount(newNotifications.filter(n => !n.isRead).length);
       });
       return () => unsubscribe();
     }
-  }, [user, db]);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -76,8 +74,8 @@ export function UserNav() {
   }
   
   const handleNotificationOpen = () => {
-    if (unreadCount > 0 && user && db) {
-        markNotificationsAsRead(db, user.uid);
+    if (unreadCount > 0 && user) {
+        markNotificationsAsRead(user.uid);
     }
   };
 

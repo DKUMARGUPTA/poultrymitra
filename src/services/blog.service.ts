@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 const createSlug = (title: string) => {
   if (!title) return '';
@@ -51,7 +51,6 @@ export type SerializablePost = Omit<Post, 'createdAt'> & {
 };
 
 export const createPost = async (postData: Omit<PostInput, 'createdAt' | 'authorName'>): Promise<string> => {
-  const db = useFirestore();
   const userProfile = await getUserProfile(postData.authorId);
   if (!userProfile) throw new Error("Author profile not found.");
 
@@ -67,7 +66,6 @@ export const createPost = async (postData: Omit<PostInput, 'createdAt' | 'author
 };
 
 export const updatePost = async (postId: string, postData: Partial<Omit<PostInput, 'createdAt' | 'authorId' | 'authorName'>>) => {
-  const db = useFirestore();
   const postRef = doc(db, 'posts', postId);
   const updateData: any = { ...postData };
   
@@ -82,7 +80,6 @@ export const updatePost = async (postId: string, postData: Partial<Omit<PostInpu
 };
 
 export const getPost = async (postId: string): Promise<Post | null> => {
-  const db = useFirestore();
   const docRef = doc(db, 'posts', postId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
@@ -92,7 +89,6 @@ export const getPost = async (postId: string): Promise<Post | null> => {
 };
 
 export const getPostBySlug = async (slug: string): Promise<Post | null> => {
-  const db = useFirestore();
   const q = query(collection(db, 'posts'), where('slug', '==', slug), limit(1));
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
@@ -106,7 +102,6 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
  * Subscribes to real-time updates for posts.
  */
 export const getPosts = (callback: (posts: Post[]) => void, includeDrafts = false): Unsubscribe => {
-    const db = useFirestore();
     let q;
     if (includeDrafts) {
         q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -124,7 +119,6 @@ export const getPosts = (callback: (posts: Post[]) => void, includeDrafts = fals
  * Fetches posts once for server-side rendering.
  */
 export const getPostsAsync = async (includeDrafts = false, postLimit?: number): Promise<Post[]> => {
-    const db = useFirestore();
     let q;
     if (includeDrafts) {
         q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -141,7 +135,6 @@ export const getPostsAsync = async (includeDrafts = false, postLimit?: number): 
 };
 
 export const getPostsByAuthor = async (authorId: string, postLimit?: number): Promise<Post[]> => {
-    const db = useFirestore();
     let q = query(
         collection(db, 'posts'), 
         where('authorId', '==', authorId), 
@@ -159,7 +152,6 @@ export const getPostsByAuthor = async (authorId: string, postLimit?: number): Pr
 
 
 export const deletePost = async (postId: string): Promise<void> => {
-    const db = useFirestore();
     const postRef = doc(db, 'posts', postId);
     await deleteDoc(postRef);
 };
