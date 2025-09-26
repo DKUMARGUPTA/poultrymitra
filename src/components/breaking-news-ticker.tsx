@@ -7,16 +7,15 @@ import { Megaphone, ArrowRight } from 'lucide-react';
 import { getLatestMarketRates, MarketRate } from '@/services/market-rates.service';
 import { useAuth } from '@/hooks/use-auth';
 import { format, parseISO } from 'date-fns';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 export function BreakingNewsTicker() {
   const { user } = useAuth();
-  const db = useFirestore();
   const [latestRates, setLatestRates] = useState<MarketRate[]>([]);
 
   useEffect(() => {
     if (db) {
-      getLatestMarketRates(db, 5).then(setLatestRates);
+      getLatestMarketRates(5).then(setLatestRates);
     }
   }, [db]);
 

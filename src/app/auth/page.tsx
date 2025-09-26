@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatedLogo } from "@/components/animated-logo";
 import Image from "next/image";
-import { useFirestore, useFirebaseAuth } from '@/firebase/provider';
+import { db, auth } from '@/lib/firebase';
 
 
 const LoginFormSchema = z.object({
@@ -149,8 +149,6 @@ export default function AuthenticationPage() {
 
 function LoginForm() {
     const router = useRouter();
-    const db = useFirestore();
-    const auth = useFirebaseAuth();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -163,7 +161,7 @@ function LoginForm() {
         setLoading(true);
         try {
             const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-            const profile = await getUserProfile(db, userCredential.user.uid);
+            const profile = await getUserProfile(userCredential.user.uid);
 
             if (!profile) {
                 await signOut(auth);
@@ -264,8 +262,6 @@ function LoginForm() {
 function SignUpForm({ initialDealerCode }: { initialDealerCode: string | null }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const db = useFirestore();
-    const auth = useFirebaseAuth();
 
     const form = useForm<SignUpFormValues>({
         resolver: zodResolver(SignUpFormSchema),
@@ -293,7 +289,7 @@ function SignUpForm({ initialDealerCode }: { initialDealerCode: string | null })
         setLoading(true);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-            await createUser(db, {
+            await createUser({
                 uid: userCredential.user.uid, 
                 name: data.name, 
                 email: data.email, 

@@ -21,7 +21,7 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 interface TransactionHistoryProps {
   scope?: 'user' | 'all' | 'dealer';
@@ -29,7 +29,6 @@ interface TransactionHistoryProps {
 
 export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) {
   const { user } = useAuth();
-  const db = useFirestore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 

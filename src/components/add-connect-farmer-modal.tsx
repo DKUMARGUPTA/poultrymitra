@@ -16,7 +16,7 @@ import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { doc, getDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 
 // Schema for creating a new farmer
 const AddFarmerFormSchema = FarmerSchema.pick({ name: true, location: true, batchSize: true });
@@ -61,7 +61,6 @@ export function AddConnectFarmerModal({ children, onFarmerAction, onNewFarmerCli
     setLoading(true);
 
     try {
-      const db = getFirestore(app);
       const farmerInput: Partial<FarmerInput> = {
         ...values,
         dealerId: user.uid,

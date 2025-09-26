@@ -32,7 +32,7 @@ import { Farmer, getFarmersByDealer, getFarmer } from '@/services/farmers.servic
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { InventoryItem, getInventoryItems } from '@/services/inventory.service';
 import { Textarea } from './ui/textarea';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 const AddTransactionFormSchema = TransactionSchema.omit({ userId: true, userName: true, dealerId: true, costOfGoodsSold: true, inventoryItemName: true });
 type AddTransactionFormValues = z.infer<typeof AddTransactionFormSchema> & { associatedUserId?: string };
@@ -48,7 +48,6 @@ export function AddTransactionModal({ children, onTransactionAdded, farmerId }: 
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user, userProfile } = useAuth();
-  const db = useFirestore();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -57,10 +56,10 @@ export function AddTransactionModal({ children, onTransactionAdded, farmerId }: 
     if (user && db) {
         if (userProfile && userProfile.role === 'dealer' && open) {
             setDataLoading(true);
-            const unsubFarmers = getFarmersByDealer(db, user.uid, setFarmers);
+            const unsubFarmers = getFarmersByDealer(user.uid, setFarmers);
             
             if (farmerId) {
-                getFarmer(db, farmerId).then(setSelectedFarmer);
+                getFarmer(farmerId).then(setSelectedFarmer);
             }
 
             setDataLoading(false);
@@ -127,7 +126,7 @@ export function AddTransactionModal({ children, onTransactionAdded, farmerId }: 
              if (!userProfile.dealerCode) {
               throw new Error("Your account is not linked to a dealer. Please contact support.");
             }
-            const dealerProfile = await getUserProfile(db, userProfile.dealerCode);
+            const dealerProfile = await getUserProfile(userProfile.dealerCode);
             if (!dealerProfile) {
                 throw new Error("Could not find your associated dealer. Please check your dealer code.");
             }
@@ -141,7 +140,7 @@ export function AddTransactionModal({ children, onTransactionAdded, farmerId }: 
             };
         }
 
-      await createTransaction(db, transactionInput);
+      await createTransaction(transactionInput);
 
       toast({
         title: 'Transaction Added',

@@ -9,12 +9,11 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTestimonials, Testimonial } from '@/services/testimonials.service';
 import { Skeleton } from './ui/skeleton';
-import { useFirestore } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 
 export function Testimonials() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
-  const db = useFirestore();
 
   useEffect(() => {
     if (db) {
