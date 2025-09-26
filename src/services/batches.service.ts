@@ -81,3 +81,4 @@ export const deleteBatch = async (db: Firestore, batchId: string) => {
     // Finally, delete the batch itself
     await deleteDoc(batchRef);
 };
+
