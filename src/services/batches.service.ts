@@ -4,7 +4,6 @@ import { app } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, doc, updateDoc, deleteDoc, writeBatch, getDocs, getCountFromServer, orderBy } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
-import { db, queueOperation } from './offline.service';
 
 export const BatchSchema = z.object({
     name: z.string().min(1, { message: "Batch name is required." }),
@@ -37,18 +36,7 @@ export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Pro
 
     const validatedData = BatchSchema.omit({ createdAt: true }).parse(batchData);
     
-    if (!navigator.onLine) {
-        // Offline: Queue the operation
-        const id = await queueOperation({
-            type: 'create',
-            collection: 'batches',
-            data: validatedData,
-            timestamp: new Date().toISOString(),
-        });
-        return id;
-    }
-
-    // Online: Perform the operation directly
+    // Reverted to online-only logic to fix build error
     const docRef = await addDoc(collection(firestore, 'batches'), {
         ...validatedData,
         createdAt: serverTimestamp()

@@ -3,7 +3,6 @@ import { getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { queueOperation } from './offline.service';
 
 export const DailyEntrySchema = z.object({
     batchId: z.string(),
@@ -22,16 +21,7 @@ export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'created
     const db = getFirestore(app);
     const validatedData = DailyEntrySchema.omit({ createdAt: true }).parse(entryData);
     
-    if (!navigator.onLine) {
-        const id = await queueOperation({
-            type: 'create',
-            collection: 'daily-entries',
-            data: validatedData,
-            timestamp: new Date().toISOString(),
-        });
-        return id;
-    }
-
+    // Reverted to online-only logic to fix build error
     const docRef = await addDoc(collection(db, 'daily-entries'), {
         ...validatedData,
         createdAt: serverTimestamp()
