@@ -53,8 +53,8 @@ export function MainNav() {
     admin: {
         platform: [
             { href: "/admin", icon: <Shield />, label: "Admin Panel" },
-            { href: "/users", icon: <Users />, label: "User Management" },
-            { href: "/transactions", icon: <Briefcase />, label: "All Transactions" },
+            { href: "/admin/users", icon: <Users />, label: "User Management" },
+            { href: "/admin/transactions", icon: <Briefcase />, label: "All Transactions" },
         ],
         subscription: [
             { href: "/admin/billing", icon: <CreditCard />, label: "Payment Verification" },
