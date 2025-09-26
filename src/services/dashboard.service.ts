@@ -1,15 +1,15 @@
 // src/services/dashboard.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { collection, query, where, onSnapshot, Unsubscribe, getDocs, orderBy, getDoc, doc } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, Unsubscribe, getDocs, orderBy, getDoc, doc, getCountFromServer } from 'firebase/firestore';
 import { DailyEntry } from './daily-entries.service';
 import { InventoryItem } from './inventory.service';
 import { Transaction } from './transactions.service';
 import { UserProfile, getAllUsers } from './users.service';
-import { Farmer } from './farmers.service';
-import { app } from '@/lib/firebase';
+import { Farmer, getAllFarmers } from './farmers.service';
+
 
 const db = getFirestore(app);
-
 
 export interface DealerStats {
   totalFarmers: number;
@@ -36,19 +36,31 @@ export interface AdminStats {
 }
 
 export const getAdminDashboardStats = async (): Promise<AdminStats> => {
-  const allUsers = await getAllUsers();
-  
-  const totalUsers = allUsers.length;
-  const totalFarmers = allUsers.filter(u => u.role === 'farmer').length;
-  const totalDealers = allUsers.filter(u => u.role === 'dealer').length;
-  const premiumUsers = allUsers.filter(u => u.isPremium).length;
+    const usersCollection = collection(db, 'users');
+    
+    const farmersQuery = query(usersCollection, where('role', '==', 'farmer'));
+    const dealersQuery = query(usersCollection, where('role', '==', 'dealer'));
+    const premiumQuery = query(usersCollection, where('isPremium', '==', true));
 
-  return {
-    totalUsers,
-    totalFarmers,
-    totalDealers,
-    premiumUsers,
-  };
+    const [
+      farmersSnapshot,
+      dealersSnapshot,
+      premiumSnapshot,
+    ] = await Promise.all([
+      getCountFromServer(farmersQuery),
+      getCountFromServer(dealersQuery),
+      getCountFromServer(premiumQuery),
+    ]);
+    
+    const totalFarmers = farmersSnapshot.data().count;
+    const totalDealers = dealersSnapshot.data().count;
+
+    return {
+      totalUsers: totalFarmers + totalDealers,
+      totalFarmers: totalFarmers,
+      totalDealers: totalDealers,
+      premiumUsers: premiumSnapshot.data().count,
+    };
 };
 
 export const getDealerDashboardStats = (dealerId: string, callback: (stats: DealerStats) => void): Unsubscribe => {
