@@ -1,3 +1,4 @@
+
 // src/components/user-nav.tsx
 "use client"
 
@@ -43,14 +44,14 @@ export function UserNav() {
 
 
   useEffect(() => {
-    if (user) {
+    if (user && db) {
       const unsubscribe = getNotificationsForUser(user.uid, (newNotifications) => {
         setNotifications(newNotifications);
         setUnreadCount(newNotifications.filter(n => !n.isRead).length);
       });
       return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, db]);
 
   const handleLogout = async () => {
     try {
@@ -77,7 +78,7 @@ export function UserNav() {
   
   const handleNotificationOpen = () => {
     if (unreadCount > 0 && user) {
-        markNotificationsAsRead(user.uid);
+        markNotificationsAsRead(db, user.uid);
     }
   };
 
@@ -123,7 +124,6 @@ export function UserNav() {
             </div>
         </PopoverContent>
     </Popover>
-    <ThemeToggle />
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
