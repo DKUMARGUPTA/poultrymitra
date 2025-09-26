@@ -24,11 +24,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { PaymentVerificationDialog } from '@/components/payment-verification-dialog';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminBillingPage() {
-  useAdminAuth();
-  const { userProfile } = useAuth();
+  const { userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [requests, setRequests] = useState<PaymentVerificationRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +67,7 @@ export default function AdminBillingPage() {
   };
 
 
-  if (!userProfile) {
+  if (authLoading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>

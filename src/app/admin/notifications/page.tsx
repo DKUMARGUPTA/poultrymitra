@@ -28,7 +28,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { createAnnouncement } from '@/services/notifications.service';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 const AnnouncementSchema = z.object({
@@ -41,7 +40,6 @@ type AnnouncementFormValues = z.infer<typeof AnnouncementSchema>;
 
 
 export default function AdminNotificationsPage() {
-  useAdminAuth();
   const { userProfile, loading } = useAuth();
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);

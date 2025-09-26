@@ -21,11 +21,9 @@ import { SubscriptionOffer, getActiveOffers } from '@/services/offers.service';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { CreateOfferModal } from '@/components/create-offer-modal';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminOffersPage() {
-  useAdminAuth();
-  const { userProfile } = useAuth();
+  const { userProfile, loading: authLoading } = useAuth();
   const [offers, setOffers] = useState<SubscriptionOffer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +44,7 @@ export default function AdminOffersPage() {
     setOffers(prev => [newOffer, ...prev]);
   }
 
-  if (!userProfile) {
+  if (authLoading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>

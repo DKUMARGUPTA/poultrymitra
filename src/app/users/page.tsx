@@ -37,30 +37,23 @@ import { ManageRatePermissionsModal } from '@/components/manage-rate-permissions
 import Papa from 'papaparse';
 import { format } from 'date-fns';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { useFirebase } from '@/firebase/provider';
 
 
 export default function UsersPage() {
-  useAdminAuth();
   const { user, loading: authLoading } = useAuth();
-  const { db } = useFirebase();
-  const router = useRouter();
   const { toast } = useToast();
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/');
-    } else if (db) {
-      getAllUsers(db).then(users => {
+    if (!authLoading && user) {
+      getAllUsers().then(users => {
         setAllUsers(users.filter(u => u.role !== 'admin'));
         setUsersLoading(false);
       });
     }
-  }, [user, authLoading, router, db]);
+  }, [user, authLoading]);
 
   const handleUserAdded = (newUser: UserProfile) => {
     setAllUsers(prev => [newUser, ...prev]);
@@ -72,7 +65,7 @@ export default function UsersPage() {
 
     try {
         if (permission === 'isPremium') {
-            await updateUserPremiumStatus(db, targetUser.uid, isChecked);
+            await updateUserPremiumStatus(targetUser.uid, isChecked);
         }
         
         toast({
@@ -144,7 +137,7 @@ export default function UsersPage() {
     }
   }
 
-  const isLoading = authLoading || usersLoading || !db;
+  const isLoading = authLoading || usersLoading;
 
   if (isLoading) {
     return (

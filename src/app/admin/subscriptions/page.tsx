@@ -24,11 +24,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getSubscriptionSettings, updateSubscriptionSettings, SubscriptionSettingsSchema, SubscriptionSettings } from '@/services/settings.service';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminSubscriptionsPage() {
-  useAdminAuth();
-  const { userProfile } = useAuth();
+  const { userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,7 +62,7 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
-  if (!userProfile || loading) {
+  if (!userProfile || loading || authLoading) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>

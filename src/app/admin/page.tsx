@@ -21,11 +21,9 @@ import { getAdminDashboardStats, AdminStats } from '@/services/dashboard.service
 import { StatCard } from '@/components/stat-card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 export default function AdminPage() {
-  useAdminAuth(); // Centralized auth check
   const { userProfile, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
