@@ -6,7 +6,6 @@ import { AuthProvider } from "@/components/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "next-themes";
-import { app } from '@/lib/firebase';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { SidebarProvider } from './ui/sidebar';
 
@@ -14,16 +13,16 @@ import { SidebarProvider } from './ui/sidebar';
 export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <FirebaseClientProvider firebaseApp={app}>
+    <FirebaseClientProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <AuthProvider>
           <SidebarProvider>
-            <AuthProvider>
-                {children}
-            </AuthProvider>
+            {children}
           </SidebarProvider>
-        </FirebaseClientProvider>
+        </AuthProvider>
         <Toaster />
         <Analytics />
-    </ThemeProvider>
+      </ThemeProvider>
+    </FirebaseClientProvider>
   );
 }

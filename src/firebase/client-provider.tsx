@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FirebaseProvider } from './provider';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 
@@ -38,5 +37,5 @@ export function FirebaseClientProvider({
     return null; // Or a loading spinner
   }
 
-  return <FirebaseProvider>{children}</FirebaseProvider>;
+  return <>{children}</>;
 }

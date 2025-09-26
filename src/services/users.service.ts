@@ -1,11 +1,11 @@
 // src/services/users.service.ts
 import { collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, writeBatch, Timestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import { generateAlphanumericCode } from '@/lib/utils';
 import { deleteBatch } from './batches.service';
 import { createFarmer, Farmer } from './farmers.service';
 import { createNotification } from './notifications.service';
 import { getAuth, updatePassword, sendPasswordResetEmail, deleteUser as deleteAuthUser, reauthenticateWithCredential, EmailAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
-import { useFirestore } from '@/firebase/provider';
 
 export type UserRole = 'farmer' | 'dealer' | 'admin';
 export type UserStatus = 'active' | 'suspended';
@@ -34,7 +34,7 @@ export interface UserProfile {
 
 
 // Function to check if a code is unique for a given field
-const isCodeUnique = async (db: any, fieldName: 'username' | 'invitationCode' | 'farmerCode' | 'referralCode', code: string): Promise<boolean> => {
+const isCodeUnique = async (fieldName: 'username' | 'invitationCode' | 'farmerCode' | 'referralCode', code: string): Promise<boolean> => {
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where(fieldName, "==", code));
     const snapshot = await getDocs(q);
@@ -42,9 +42,9 @@ const isCodeUnique = async (db: any, fieldName: 'username' | 'invitationCode' | 
 };
 
 // Function to generate a unique code
-const generateUniqueCode = async (db: any, fieldName: 'username' | 'invitationCode' | 'farmerCode' | 'referralCode', length: number, base: string = ''): Promise<string> => {
+const generateUniqueCode = async (fieldName: 'username' | 'invitationCode' | 'farmerCode' | 'referralCode', length: number, base: string = ''): Promise<string> => {
     let code = base ? `${base.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}-${generateAlphanumericCode(4)}` : generateAlphanumericCode(length);
-    while (!(await isCodeUnique(db, fieldName, code))) {
+    while (!(await isCodeUnique(fieldName, code))) {
         code = base ? `${base.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}-${generateAlphanumericCode(4)}` : generateAlphanumericCode(length);
     }
     return code;
@@ -52,7 +52,6 @@ const generateUniqueCode = async (db: any, fieldName: 'username' | 'invitationCo
 
 
 export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 'status' | 'invitationCode' | 'farmerCode' | 'referralCode' | 'username' | 'ratePermissions'> & { referredBy?: string }) => {
-  const db = useFirestore();
   const usersCollection = collection(db, 'users');
   const isAdminByEmail = userProfile.email === 'admin@poultrymitra.com';
   let role = isAdminByEmail ? 'admin' : userProfile.role;
@@ -69,7 +68,7 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
       // This is a placeholder farmer, let's link it
       if (farmerData.isPlaceholder) { 
         const batch = writeBatch(db);
-        const uniqueUsername = await generateUniqueCode(db, 'username', 12, farmerData.name);
+        const uniqueUsername = await generateUniqueCode('username', 12, farmerData.name);
 
         // Update the farmer document with the new user's UID and mark as not a placeholder
         const farmerRef = doc(db, 'farmers', farmerDoc.id);
@@ -87,7 +86,7 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
           phoneNumber: userProfile.phoneNumber,
           isPremium: false,
           ratePermissions: [],
-          referralCode: await generateUniqueCode(db, 'referralCode', 8),
+          referralCode: await generateUniqueCode('referralCode', 8),
           farmerCode: userProfile.dealerCode, // Keep the same code
         };
         const userRef = doc(db, 'users', userProfile.uid);
@@ -121,13 +120,13 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
     uid: userProfile.uid,
     name: userProfile.name,
     email: userProfile.email,
-    username: await generateUniqueCode(db, 'username', 12, userProfile.name),
+    username: await generateUniqueCode('username', 12, userProfile.name),
     phoneNumber: userProfile.phoneNumber,
     role: role,
     status: 'active',
     isPremium: role === 'admin',
     ratePermissions: role === 'admin' ? [{state: 'ALL', districts: ['ALL']}] : [],
-    referralCode: await generateUniqueCode(db, 'referralCode', 8),
+    referralCode: await generateUniqueCode('referralCode', 8),
   };
   
   let dealerIdForFarmer: string | undefined = undefined;
@@ -147,7 +146,7 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
 
 
   if (role === 'farmer') {
-    profileToCreate.farmerCode = await generateUniqueCode(db, 'farmerCode', 10);
+    profileToCreate.farmerCode = await generateUniqueCode('farmerCode', 10);
     // Create the associated farmer document only if it doesn't already exist for this UID
     const farmerDoc = await getDoc(doc(db, 'farmers', userProfile.uid));
     if (!farmerDoc.exists()) {
@@ -176,7 +175,7 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
   }
 
   if (role === 'dealer') {
-    profileToCreate.invitationCode = await generateUniqueCode(db, 'invitationCode', 8);
+    profileToCreate.invitationCode = await generateUniqueCode('invitationCode', 8);
   }
 
   await setDoc(doc(usersCollection, userProfile.uid), profileToCreate);
@@ -192,8 +191,6 @@ export const createUser = async (userProfile: Omit<UserProfile, 'isPremium' | 's
 export const createUserByAdmin = async (
   userData: { name: string; email: string; role: 'farmer' | 'dealer', password: string }
 ): Promise<UserProfile> => {
-  const db = useFirestore();
-  const auth = getAuth();
   
   const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
   const newUid = userCredential.user.uid;
@@ -202,14 +199,14 @@ export const createUserByAdmin = async (
     uid: newUid,
     name: userData.name,
     email: userData.email,
-    username: await generateUniqueCode(db, 'username', 12, userData.name),
+    username: await generateUniqueCode('username', 12, userData.name),
     role: userData.role,
     status: 'active',
     isPremium: false,
     ratePermissions: [],
-    referralCode: await generateUniqueCode(db, 'referralCode', 8),
-    invitationCode: userData.role === 'dealer' ? await generateUniqueCode(db, 'invitationCode', 8) : undefined,
-    farmerCode: userData.role === 'farmer' ? await generateUniqueCode(db, 'farmerCode', 10) : undefined,
+    referralCode: await generateUniqueCode('referralCode', 8),
+    invitationCode: userData.role === 'dealer' ? await generateUniqueCode('invitationCode', 8) : undefined,
+    farmerCode: userData.role === 'farmer' ? await generateUniqueCode('farmerCode', 10) : undefined,
   };
 
   await setDoc(doc(db, 'users', newUid), newUserProfile);
@@ -232,7 +229,6 @@ export const createUserByAdmin = async (
 
 
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
-    const db = useFirestore();
     if (!uid) return null;
     const docRef = doc(db, 'users', uid);
     const docSnap = await getDoc(docRef);
@@ -251,7 +247,6 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 };
 
 export const getUserByUsername = async (username: string): Promise<UserProfile | null> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where("username", "==", username));
     const snapshot = await getDocs(q);
@@ -267,7 +262,6 @@ export const getUserByUsername = async (username: string): Promise<UserProfile |
 
 
 export const getAllUsers = async (): Promise<UserProfile[]> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where("role", "!=", "admin"));
     const querySnapshot = await getDocs(q);
@@ -284,26 +278,22 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
 };
 
 export const updateUserPremiumStatus = async (uid: string, isPremium: boolean): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, { isPremium });
 };
 
 export const updateUserRatePermissions = async (uid: string, ratePermissions: RatePermission[]): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, { ratePermissions });
 };
 
 
 export const updateUserStatus = async (uid: string, status: UserStatus): Promise<void> => {
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, { status });
 };
 
 export const connectFarmerToDealer = async (farmerCode: string, dealerId: string): Promise<Farmer> => {
-    const db = useFirestore();
     const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where("farmerCode", "==", farmerCode));
     const snapshot = await getDocs(q);
@@ -384,7 +374,6 @@ export const connectFarmerToDealer = async (farmerCode: string, dealerId: string
 
 
 const deleteAllUserData = async (uid: string, role: UserRole) => {
-    const db = useFirestore();
     const batch = writeBatch(db);
 
     // Delete notifications for the user
@@ -413,6 +402,7 @@ const deleteAllUserData = async (uid: string, role: UserRole) => {
 
         const batchesQuery = query(collection(db, 'batches'), where('farmerId', '==', uid));
         const batchesSnap = await getDocs(batchesQuery);
+        // This needs to be outside the batch
         for (const batchDoc of batchesSnap.docs) {
             await deleteBatch(batchDoc.id); 
         }
@@ -421,6 +411,7 @@ const deleteAllUserData = async (uid: string, role: UserRole) => {
     if (role === 'dealer') {
         const farmersQuery = query(collection(db, 'farmers'), where('dealerId', '==', uid));
         const farmersSnap = await getDocs(farmersQuery);
+        // This needs to be outside the batch
         for (const farmerDoc of farmersSnap.docs) {
             await deleteAllUserData(farmerDoc.id, 'farmer');
         }
@@ -438,7 +429,6 @@ const deleteAllUserData = async (uid: string, role: UserRole) => {
 
 
 export const deleteUserAccount = async (uid: string): Promise<void> => {
-    const auth = getAuth();
     const userProfile = await getUserProfile(uid);
     if (!userProfile) {
         throw new Error("User profile not found, cannot delete data.");
@@ -452,28 +442,23 @@ export const deleteUserAccount = async (uid: string): Promise<void> => {
 };
 
 export const updateUserProfile = async (data: { name?: string; phoneNumber?: string; aboutMe?: string; }): Promise<void> => {
-    const auth = getAuth();
     const user = auth.currentUser;
     if(!user) throw new Error("User not authenticated");
-    const db = useFirestore();
     const userDocRef = doc(db, 'users', user.uid);
     await updateDoc(userDocRef, data);
 };
 
 export const updateUserPassword = async (newPassword: string): Promise<void> => {
-    const auth = getAuth();
     const user = auth.currentUser;
     if (!user) throw new Error("No user is currently signed in.");
     await updatePassword(user, newPassword);
 };
 
 export const sendPasswordReset = async (email: string): Promise<void> => {
-    const auth = getAuth();
     await sendPasswordResetEmail(auth, email);
 }
 
 export const deleteCurrentUserAccount = async (password: string): Promise<void> => {
-    const auth = getAuth();
     const user = auth.currentUser;
     if (!user || !user.email) throw new Error("No user is currently signed in.");
 
