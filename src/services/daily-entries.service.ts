@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
+import { queueOperation } from './offline.service';
 
 export const DailyEntrySchema = z.object({
     batchId: z.string(),
@@ -20,6 +21,17 @@ export type DailyEntryInput = z.infer<typeof DailyEntrySchema>;
 export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'createdAt'>): Promise<string> => {
     const db = getFirestore(app);
     const validatedData = DailyEntrySchema.omit({ createdAt: true }).parse(entryData);
+    
+    if (!navigator.onLine) {
+        const id = await queueOperation({
+            type: 'create',
+            collection: 'daily-entries',
+            data: validatedData,
+            timestamp: new Date().toISOString(),
+        });
+        return id;
+    }
+
     const docRef = await addDoc(collection(db, 'daily-entries'), {
         ...validatedData,
         createdAt: serverTimestamp()

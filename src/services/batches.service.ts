@@ -1,9 +1,10 @@
 // src/services/batches.service.ts
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, doc, updateDoc, deleteDoc, writeBatch, getDocs, getCountFromServer, orderBy } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
+import { db, queueOperation } from './offline.service';
 
 export const BatchSchema = z.object({
     name: z.string().min(1, { message: "Batch name is required." }),
@@ -13,22 +14,21 @@ export const BatchSchema = z.object({
     createdAt: z.any(),
 });
 
-export type Batch = z.infer<typeof BatchSchema> & { 
+export type Batch = z.infer<typeof BatchSchema> & {
     id: string;
     createdAt: { seconds: number, nanoseconds: number };
 };
 export type BatchInput = z.infer<typeof BatchSchema>;
 
-export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>) => {
-    const db = getFirestore(app);
-    const userProfile = await getUserProfile(batchData.farmerId);
+export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Promise<string> => {
+    const firestore = getFirestore(app);
+    const userProfile = await getUserProfile(firestore, batchData.farmerId);
     if (!userProfile) {
         throw new Error("User profile not found.");
     }
 
-    // Dealers are premium users and can create unlimited batches for themselves.
     if (!userProfile.isPremium && userProfile.role !== 'dealer') {
-        const q = query(collection(db, 'batches'), where("farmerId", "==", batchData.farmerId));
+        const q = query(collection(firestore, 'batches'), where("farmerId", "==", batchData.farmerId));
         const snapshot = await getCountFromServer(q);
         if (snapshot.data().count >= 1) {
             throw new Error("Free plan is limited to 1 batch. Please upgrade to a premium account to create more batches.");
@@ -36,12 +36,26 @@ export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>) => {
     }
 
     const validatedData = BatchSchema.omit({ createdAt: true }).parse(batchData);
-    const docRef = await addDoc(collection(db, 'batches'), {
+    
+    if (!navigator.onLine) {
+        // Offline: Queue the operation
+        const id = await queueOperation({
+            type: 'create',
+            collection: 'batches',
+            data: validatedData,
+            timestamp: new Date().toISOString(),
+        });
+        return id;
+    }
+
+    // Online: Perform the operation directly
+    const docRef = await addDoc(collection(firestore, 'batches'), {
         ...validatedData,
         createdAt: serverTimestamp()
     });
     return docRef.id;
 };
+
 
 export const getBatchesByFarmer = (farmerId: string, callback: (batches: Batch[]) => void): Unsubscribe => {
     const db = getFirestore(app);
