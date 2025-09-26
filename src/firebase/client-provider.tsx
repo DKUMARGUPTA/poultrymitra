@@ -1,38 +1,29 @@
-
 // src/firebase/client-provider.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
 import { FirebaseProvider } from './provider';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
 
-interface FirebaseClientProviderProps {
-  children: React.ReactNode;
-  firebaseApp: FirebaseApp;
-}
-
-// State to track if persistence has been enabled
 let persistenceEnabled = false;
 
 export function FirebaseClientProvider({
   children,
-  firebaseApp,
-}: FirebaseClientProviderProps) {
-  const [db, setDb] = useState<Firestore | null>(null);
-  const [auth, setAuth] = useState<Auth | null>(null);
+}: {
+  children: React.ReactNode;
+}) {
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // This effect runs only on the client
-    const dbInstance = getFirestore(firebaseApp);
-    
+    // This effect runs only once on the client
     if (!persistenceEnabled) {
       try {
+        const db = getFirestore(app);
         // Enable offline persistence. This must be done before any other
         // Firestore operations. The try-catch handles the error that occurs
         // on hot-reloads in development when it tries to re-enable it.
-        enableIndexedDbPersistence(dbInstance);
+        enableIndexedDbPersistence(db);
         persistenceEnabled = true;
       } catch (error: any) {
         if (error.code !== 'failed-precondition') {
@@ -40,19 +31,12 @@ export function FirebaseClientProvider({
         }
       }
     }
-    
-    setDb(dbInstance);
-    setAuth(getAuth(firebaseApp));
-  }, [firebaseApp]);
+    setInitialized(true);
+  }, []);
 
-  if (!db || !auth) {
-    // You can return a loading spinner here if you want
-    return null; 
+  if (!initialized) {
+    return null; // Or a loading spinner
   }
 
-  return (
-    <FirebaseProvider app={firebaseApp} auth={auth} db={db}>
-      {children}
-    </FirebaseProvider>
-  );
+  return <FirebaseProvider>{children}</FirebaseProvider>;
 }

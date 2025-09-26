@@ -1,5 +1,4 @@
 // src/services/offers.service.ts
-import { db } from '@/lib/firebase';
 import {
   collection,
   addDoc,
@@ -14,6 +13,7 @@ import {
   doc,
 } from 'firebase/firestore';
 import { z } from 'zod';
+import { useFirestore } from '@/firebase/provider';
 
 export const OfferSchema = z.object({
   code: z.string().min(3, 'Code must be at least 3 characters.').max(20, 'Code can be at most 20 characters.'),
@@ -27,6 +27,7 @@ export type SubscriptionOffer = z.infer<typeof OfferSchema> & { id: string, crea
 export type OfferInput = z.infer<typeof OfferSchema>;
 
 export const createOffer = async (offerData: Omit<OfferInput, 'createdAt' | 'isActive'>): Promise<string> => {
+  const db = useFirestore();
   const codeUpper = offerData.code.toUpperCase();
   const existingQuery = query(collection(db, 'offers'), where('code', '==', codeUpper));
   const existingSnap = await getDocs(existingQuery);
@@ -49,6 +50,7 @@ export const createOffer = async (offerData: Omit<OfferInput, 'createdAt' | 'isA
 };
 
 export const getActiveOffers = async (): Promise<SubscriptionOffer[]> => {
+    const db = useFirestore();
     const q = query(
         collection(db, 'offers'),
         where('isActive', '==', true),
@@ -59,6 +61,7 @@ export const getActiveOffers = async (): Promise<SubscriptionOffer[]> => {
 };
 
 export const getOfferByCode = async (code: string): Promise<SubscriptionOffer | null> => {
+    const db = useFirestore();
     if (!code) return null;
     const q = query(collection(db, 'offers'), where('code', '==', code.toUpperCase()), limit(1));
     const snapshot = await getDocs(q);

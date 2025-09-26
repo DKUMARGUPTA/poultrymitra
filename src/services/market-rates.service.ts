@@ -1,7 +1,7 @@
 // src/services/market-rates.service.ts
-import { db } from '@/lib/firebase';
-import { collection, addDoc, query, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, limit, getDocs, writeBatch, doc, updateDoc, deleteDoc, where, Firestore } from 'firebase/firestore';
+import { collection, addDoc, query, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, limit, getDocs, writeBatch, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { z } from 'zod';
+import { useFirestore } from '@/firebase/provider';
 
 export const BirdSizes = ['Small', 'Medium', 'Big'] as const;
 export type BirdSize = typeof BirdSizes[number];
@@ -22,6 +22,7 @@ export type MarketRate = z.infer<typeof MarketRateSchema> & { id: string };
 export type MarketRateInput = z.infer<typeof MarketRateSchema>;
 
 export const createMarketRate = async (rateData: Omit<MarketRateInput, 'createdAt'>): Promise<string> => {
+    const db = useFirestore();
     const validatedData = MarketRateSchema.omit({ createdAt: true }).parse({
         ...rateData,
         source: rateData.source || (rateData.addedBy === 'admin' ? 'admin-manual' : 'dealer-manual'),
@@ -34,6 +35,7 @@ export const createMarketRate = async (rateData: Omit<MarketRateInput, 'createdA
 };
 
 export const createMarketRatesInBatch = async (ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
+    const db = useFirestore();
     const batch = writeBatch(db);
     
     ratesData.forEach(rateData => {
@@ -54,17 +56,20 @@ export const createMarketRatesInBatch = async (ratesData: Omit<MarketRateInput, 
 };
 
 export const updateMarketRate = async (rateId: string, newRate: number): Promise<void> => {
+    const db = useFirestore();
     const rateRef = doc(db, 'market-rates', rateId);
     await updateDoc(rateRef, { rate: newRate });
 };
 
 export const deleteMarketRate = async (rateId: string): Promise<void> => {
+    const db = useFirestore();
     const rateRef = doc(db, 'market-rates', rateId);
     await deleteDoc(rateRef);
 };
 
 
 export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubscribe => {
+    const db = useFirestore();
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
@@ -81,6 +86,7 @@ export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubsc
 };
 
 export const getLatestMarketRates = async (count: number): Promise<MarketRate[]> => {
+    const db = useFirestore();
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
@@ -95,6 +101,7 @@ export const getLatestMarketRates = async (count: number): Promise<MarketRate[]>
 };
 
 export const getRatesByUser = async (userId: string, rateLimit?: number): Promise<MarketRate[]> => {
+    const db = useFirestore();
     if (typeof userId !== 'string') {
         console.error("getRatesByUser called with invalid userId:", userId);
         return [];

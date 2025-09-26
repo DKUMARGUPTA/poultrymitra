@@ -4,7 +4,7 @@
 import { createContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { getUserProfile, UserProfile } from '@/services/users.service';
-import { useFirebaseAuth, useFirestore } from '@/firebase/provider';
+import { useFirebaseAuth } from '@/firebase/provider';
 
 export interface AuthContextType {
   user: User | null;
@@ -20,19 +20,16 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const auth = useFirebaseAuth();
-  const db = useFirestore(); // Get db instance via hook
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Hooks guarantee auth and db are initialized
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
       setUser(currentUser);
       if (currentUser) {
         try {
-            // No need to pass db anymore, getUserProfile will get it
             const profile = await getUserProfile(currentUser.uid); 
             setUserProfile(profile);
         } catch (error) {
@@ -46,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth]); // Dependency array is now just auth
+  }, [auth]);
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>

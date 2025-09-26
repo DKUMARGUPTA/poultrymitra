@@ -1,7 +1,6 @@
 
+
 // src/services/transactions.service.ts
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
 import {
   collection,
   query,
@@ -22,9 +21,11 @@ import {
   deleteDoc,
   getDoc,
   updateDoc,
+  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
+import { useFirestore } from '@/firebase/provider';
 
 export const TransactionSchema = z.object({
   date: z.date({
@@ -57,7 +58,8 @@ export type Transaction = z.infer<typeof TransactionSchema> & {
 export type TransactionInput = z.infer<typeof TransactionSchema>;
 
 // Function to create a new transaction
-export const createTransaction = async (db: Firestore, transactionData: TransactionInput) => {
+export const createTransaction = async (transactionData: TransactionInput) => {
+    const db = useFirestore();
     const validatedData = TransactionSchema.parse(transactionData);
     
     await runTransaction(db, async (t) => {
@@ -128,7 +130,7 @@ export const createTransaction = async (db: Firestore, transactionData: Transact
             ? `A new sale of ₹${validatedData.amount.toLocaleString()} has been added to your ledger.`
             : `Your payment of ₹${Math.abs(validatedData.amount).toLocaleString()} has been logged by your dealer.`;
         
-        await createNotification(db, {
+        await createNotification({
             userId: validatedData.userId,
             title: notificationTitle,
             message: notificationMessage,
@@ -138,7 +140,8 @@ export const createTransaction = async (db: Firestore, transactionData: Transact
     }
 };
 
-export const updateTransaction = async (db: Firestore, transactionId: string, updatedData: Partial<TransactionInput>) => {
+export const updateTransaction = async (transactionId: string, updatedData: Partial<TransactionInput>) => {
+    const db = useFirestore();
     const transactionRef = doc(db, 'transactions', transactionId);
 
     await runTransaction(db, async (t) => {
@@ -167,7 +170,8 @@ export const updateTransaction = async (db: Firestore, transactionId: string, up
 };
 
 
-export const deleteTransaction = async (db: Firestore, transactionId: string) => {
+export const deleteTransaction = async (transactionId: string) => {
+    const db = useFirestore();
     const transactionRef = doc(db, 'transactions', transactionId);
 
     await runTransaction(db, async (t) => {
@@ -217,11 +221,11 @@ const processTransactionDoc = (doc: DocumentData): Transaction => {
 
 // Function to get transactions for a user (either a farmer or a dealer)
 export const getTransactionsForUser = (
-  db: Firestore,
   uid: string,
   callback: (transactions: Transaction[]) => void,
   isDealerView: boolean = false
 ): Unsubscribe => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     let q;
     if (isDealerView) {
@@ -254,10 +258,10 @@ export const getTransactionsForUser = (
 };
 
 export const getBusinessExpenses = (
-  db: Firestore,
   dealerId: string,
   callback: (transactions: Transaction[]) => void
 ): Unsubscribe => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -278,7 +282,8 @@ export const getBusinessExpenses = (
 
 
 // New async function for one-time fetch, used by AI tools and exports
-export const getTransactionsForUserAsync = async (db: Firestore, userId: string): Promise<Transaction[]> => {
+export const getTransactionsForUserAsync = async (userId: string): Promise<Transaction[]> => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -290,7 +295,8 @@ export const getTransactionsForUserAsync = async (db: Firestore, userId: string)
 }
 
 
-export const getAllTransactions = (db: Firestore, callback: (transactions: Transaction[]) => void): Unsubscribe => {
+export const getAllTransactions = (callback: (transactions: Transaction[]) => void): Unsubscribe => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -307,7 +313,8 @@ export const getAllTransactions = (db: Firestore, callback: (transactions: Trans
     });
 };
 
-export const getAllTransactionsAsync = async (db: Firestore): Promise<Transaction[]> => {
+export const getAllTransactionsAsync = async (): Promise<Transaction[]> => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -317,7 +324,8 @@ export const getAllTransactionsAsync = async (db: Firestore): Promise<Transactio
     return querySnapshot.docs.map(processTransactionDoc);
 }
 
-export const getTransactionsForFarmer = async (db: Firestore, farmerId: string): Promise<Transaction[]> => {
+export const getTransactionsForFarmer = async (farmerId: string): Promise<Transaction[]> => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(transactionsCollection, where("userId", "==", farmerId), orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
@@ -325,10 +333,10 @@ export const getTransactionsForFarmer = async (db: Firestore, farmerId: string):
 }
 
 export const getTransactionsForBatch = (
-    db: Firestore,
     batchId: string,
     callback: (transactions: Transaction[]) => void
 ): Unsubscribe => {
+    const db = useFirestore();
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -346,7 +354,8 @@ export const getTransactionsForBatch = (
 };
 
 
-export const getSupplierPayments = async (db: Firestore, dealerId: string, supplierName: string): Promise<Transaction[]> => {
+export const getSupplierPayments = async (dealerId: string, supplierName: string): Promise<Transaction[]> => {
+  const db = useFirestore();
   const transactionsCollection = collection(db, 'transactions');
   const q = query(
     transactionsCollection,

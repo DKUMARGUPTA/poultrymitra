@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -38,6 +39,7 @@ const OrderItemSchema = z.object({
 const AdditionalCostSchema = z.object({
     description: z.string().min(1, "Description is required."),
     amount: z.number().min(0.01, "Amount must be positive."),
+    paidTo: z.string().min(1, "Recipient is required."),
 });
 
 const AddStockFormSchema = z.object({
@@ -365,19 +367,24 @@ export function AddStockModal({ children, onStockAdded }: AddStockModalProps) {
                   {costFields.map((field, index) => (
                     <div key={field.id} className="p-2 border rounded-md relative space-y-2">
                         <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeCost(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <FormField
                             control={form.control}
                             name={`additionalCosts.${index}.description`}
                             render={({ field }) => (
                                 <FormItem><FormLabel>Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select expense type" /></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                                     <SelectContent>{expenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
                                 </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name={`additionalCosts.${index}.paidTo`}
+                                render={({ field }) => ( <FormItem><FormLabel>Paid To</FormLabel><FormControl><Input placeholder="e.g., Transport Co." {...field} /></FormControl><FormMessage /></FormItem>)}
                             />
                             <FormField
                             control={form.control}
@@ -387,7 +394,7 @@ export function AddStockModal({ children, onStockAdded }: AddStockModalProps) {
                         </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => appendCost({ description: 'Transportation Cost', amount: 0 })}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => appendCost({ description: 'Transportation Cost', paidTo: '', amount: 0 })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Cost
                   </Button>
                 </div>

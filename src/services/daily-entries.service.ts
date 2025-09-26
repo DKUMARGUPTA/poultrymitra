@@ -1,7 +1,7 @@
 // src/services/daily-entries.service.ts
-import { db } from '@/lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
+import { useFirestore } from '@/firebase/provider';
 
 export const DailyEntrySchema = z.object({
     batchId: z.string(),
@@ -17,6 +17,7 @@ export type DailyEntry = z.infer<typeof DailyEntrySchema> & { id: string };
 export type DailyEntryInput = z.infer<typeof DailyEntrySchema>;
 
 export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'createdAt'>): Promise<string> => {
+    const db = useFirestore();
     const validatedData = DailyEntrySchema.omit({ createdAt: true }).parse(entryData);
     
     const docRef = await addDoc(collection(db, 'daily-entries'), {
@@ -27,6 +28,7 @@ export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'created
 };
 
 export const getDailyEntriesForBatch = (batchId: string, callback: (entries: DailyEntry[]) => void): Unsubscribe => {
+    const db = useFirestore();
     const q = query(
         collection(db, 'daily-entries'), 
         where("batchId", "==", batchId),

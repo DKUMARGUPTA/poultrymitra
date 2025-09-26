@@ -21,7 +21,6 @@ import { createUserByAdmin, UserProfile } from '@/services/users.service';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useFirebase } from '@/firebase/provider';
 
 const AddUserFormSchema = z.object({
     name: z.string().min(1, { message: "Name is required." }),
@@ -41,7 +40,6 @@ export function AddUserModal({ children, onUserAdded }: AddUserModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { db } = useFirebase();
 
   const addUserForm = useForm<AddUserFormValues>({
     resolver: zodResolver(AddUserFormSchema),
@@ -56,7 +54,7 @@ export function AddUserModal({ children, onUserAdded }: AddUserModalProps) {
   const handleCreateUser = async (values: AddUserFormValues) => {
     setLoading(true);
     try {
-      const newUserProfile = await createUserByAdmin(db, values);
+      const newUserProfile = await createUserByAdmin(values);
       
       toast({
         title: 'User Created Successfully',

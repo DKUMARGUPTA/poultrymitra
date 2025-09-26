@@ -1,6 +1,4 @@
 // src/services/chat.service.ts
-import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
 import {
   collection,
   query,
@@ -12,6 +10,7 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { Message } from 'genkit';
+import { useFirestore } from '@/firebase/provider';
 
 /**
  * Subscribes to the chat history for a specific user.
@@ -23,7 +22,7 @@ export const getChatHistory = (
   userId: string,
   callback: (messages: Message[]) => void
 ): Unsubscribe => {
-  const db = getFirestore(app);
+  const db = useFirestore();
   const messagesCol = collection(db, 'chats', userId, 'messages');
   const q = query(messagesCol, orderBy('createdAt', 'asc'));
 
@@ -48,7 +47,7 @@ export const addChatMessage = async (
   userId: string,
   message: Message
 ): Promise<void> => {
-  const db = getFirestore(app);
+  const db = useFirestore();
   const messagesCol = collection(db, 'chats', userId, 'messages');
   await addDoc(messagesCol, {
     ...message,
