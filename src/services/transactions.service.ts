@@ -258,6 +258,7 @@ export const getBusinessExpenses = (
     const q = query(
         transactionsCollection,
         where('dealerId', '==', dealerId),
+        where('isBusinessExpense', '==', true),
         orderBy('date', 'desc')
     );
 
@@ -265,9 +266,7 @@ export const getBusinessExpenses = (
         const transactions: Transaction[] = [];
         querySnapshot.forEach((doc) => {
             const data = processTransactionDoc(doc);
-            if(data.isBusinessExpense === true) {
-                transactions.push(data);
-            }
+            transactions.push(data);
         });
         callback(transactions);
     });

@@ -448,11 +448,10 @@ export default function SupplierLedgerPage() {
                                                 </TableBody>
                                                 <UiTableFooter>
                                                     <TableRow>
-                                                        <TableCell className="font-bold">Total</TableCell>
+                                                        <TableCell colSpan={3} className="font-bold">Total</TableCell>
                                                         <TableCell className="font-bold">
-                                                            {entry.purchase!.items.reduce((acc, item) => acc + (item.originalQuantity || item.quantity || 0), 0)}
+                                                            
                                                         </TableCell>
-                                                        <TableCell colSpan={2}></TableCell>
                                                         <TableCell className="text-right font-bold">
                                                             ₹{entry.purchase!.totalAmount.toLocaleString()}
                                                         </TableCell>

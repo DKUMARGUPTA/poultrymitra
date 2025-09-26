@@ -36,7 +36,7 @@ export const createPurchaseOrder = async (
         reference?: string;
         remarks?: string;
     },
-    additionalCosts?: { description: string, amount: number, paidTo: string, paymentMethod: 'Cash' | 'Bank Transfer' | 'UPI' | 'RTGS' | 'NEFT' }[],
+    additionalCosts?: { description: string, amount: number, paidTo?: string, paymentMethod?: 'Cash' | 'Bank Transfer' | 'UPI' | 'RTGS' | 'NEFT' }[],
     purchaseSource?: string,
     ownerId?: string,
 ) => {
@@ -84,7 +84,7 @@ export const createPurchaseOrder = async (
         // 3. Create transactions for additional costs
         if (additionalCosts) {
             additionalCosts.forEach(cost => {
-                if(cost.amount > 0) {
+                if(cost.amount > 0 && cost.paidTo) {
                     const costTransaction: Omit<TransactionInput, 'createdAt'> = {
                         date: orderDate,
                         description: cost.description,
