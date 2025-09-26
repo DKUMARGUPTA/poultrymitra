@@ -1,3 +1,4 @@
+
 // src/services/users.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, updatePassword, sendPasswordResetEmail, deleteUser as deleteAuthUser, reauthenticateWithCredential, EmailAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -130,6 +131,21 @@ export const createUser = async (db: Firestore, userProfile: Omit<UserProfile, '
     ratePermissions: role === 'admin' ? [{state: 'ALL', districts: ['ALL']}] : [],
     referralCode: await generateUniqueCode(db, 'referralCode', 8),
   };
+  
+  let dealerIdForFarmer: string | undefined = undefined;
+
+  // Handle dealer invitation code for farmers
+  if (role === 'farmer' && userProfile.dealerCode) {
+    const dealerQuery = query(usersCollection, where("invitationCode", "==", userProfile.dealerCode));
+    const dealerSnapshot = await getDocs(dealerQuery);
+    if (dealerSnapshot.empty) {
+        throw new Error("Invalid Dealer Invitation Code provided.");
+    }
+    const dealerDoc = dealerSnapshot.docs[0];
+    dealerIdForFarmer = dealerDoc.id;
+    profileToCreate.dealerCode = dealerIdForFarmer;
+  }
+
 
   if (role === 'farmer') {
     profileToCreate.farmerCode = await generateUniqueCode(db, 'farmerCode', 10);
@@ -137,24 +153,23 @@ export const createUser = async (db: Firestore, userProfile: Omit<UserProfile, '
     await createFarmer(db, {
         uid: userProfile.uid,
         name: userProfile.name,
-        location: 'Not Specified',
-        batchSize: 1, // Default to 1 to pass validation
-        dealerId: '', // This will be filled in upon connection approval
+        location: 'Not Specified', // Can be updated later by user
+        batchSize: 1, // Default value, can be updated
+        dealerId: dealerIdForFarmer || '', // Set if found, otherwise empty
         outstanding: 0,
         isPlaceholder: false,
         farmerCode: profileToCreate.farmerCode,
     });
 
-    if (userProfile.dealerCode) {
-      const q = query(usersCollection, where("invitationCode", "==", userProfile.dealerCode));
-      const dealerSnapshot = await getDocs(q);
-      if (dealerSnapshot.empty) {
-        throw new Error("Invalid Dealer Invitation Code provided.");
-      }
-      const dealerDoc = dealerSnapshot.docs[0];
-      const dealerId = dealerDoc.id;
-      
-      await createConnectionRequest(db, userProfile.uid, dealerId);
+    // If a dealer was found, notify them
+    if (dealerIdForFarmer) {
+        await createNotification(db, {
+            userId: dealerIdForFarmer,
+            title: "New Farmer Joined!",
+            message: `${userProfile.name} has joined your network using your invitation code.`,
+            type: 'connection_accepted',
+            link: `/farmers/${userProfile.uid}`,
+        });
     }
   }
 
