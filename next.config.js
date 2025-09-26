@@ -12,7 +12,6 @@ const nextConfig = {
   experimental: {
     allowedDevOrigins: ["https://*.cloudworkstations.dev"],
   },
-  serverExternalPackages: ['@genkit-ai/googleai', 'firebase-admin'],
   images: {
     remotePatterns: [
       {
