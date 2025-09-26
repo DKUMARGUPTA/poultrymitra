@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -78,22 +79,13 @@ const dealerAiAdvisoryFlow = ai.defineFlow(
   },
   async input => {
     // This is a simplified, one-shot fetch.
-    // In a real app, you might use Promise.all and handle streams differently.
-    const inventory = await new Promise<string>((resolve) => {
-        const unsubscribe = getInventoryItems(input.dealerId, (items) => {
-            unsubscribe();
-            resolve(items.map(i => `${i.name}: ${i.quantity} ${i.unit}`).join(', '));
-        });
-    });
+    const inventoryItems = await getInventoryItems(input.dealerId);
+    const inventory = inventoryItems.map(i => `${i.name}: ${i.quantity} ${i.unit}`).join(', ');
 
-    const transactions = await new Promise<string>((resolve) => {
-        const unsubscribe = getTransactionsForUser(input.dealerId, (trans) => {
-            unsubscribe();
-            const pending = trans.filter(t => t.status === 'Pending');
-            const totalPending = pending.reduce((sum, t) => sum + t.amount, 0);
-            resolve(`Total pending payments: ₹${totalPending.toLocaleString()} from ${pending.length} transactions.`);
-        });
-    });
+    const trans = await getTransactionsForUser(input.dealerId, true);
+    const pending = trans.filter(t => t.status === 'Pending');
+    const totalPending = pending.reduce((sum, t) => sum + t.amount, 0);
+    const transactions = `Total pending payments: ₹${totalPending.toLocaleString()} from ${pending.length} transactions.`;
 
     const internalContext: z.infer<typeof InternalPromptContextSchema> = {
         businessSummary: input.businessSummary,

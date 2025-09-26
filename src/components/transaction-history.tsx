@@ -21,7 +21,6 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { db } from '@/lib/firebase';
 
 interface TransactionHistoryProps {
   scope?: 'user' | 'all' | 'dealer';
@@ -33,36 +32,25 @@ export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!db) return;
-    let unsubscribe: () => void | undefined;
-
-    if (scope === 'all') {
-        setLoading(true);
-        unsubscribe = getAllTransactions(db, (newTransactions) => {
-            setTransactions(newTransactions);
-            setLoading(false);
-        });
-    } else if (user) {
+    async function fetchData() {
       setLoading(true);
-      unsubscribe = getTransactionsForUser(
-        db,
-        user.uid,
-        (newTransactions) => {
-          setTransactions(newTransactions);
-          setLoading(false);
-        },
-        scope === 'dealer'
-      );
-    } else if (!user) {
-      setLoading(false);
-    }
-    
-    return () => {
-        if (unsubscribe) {
-            unsubscribe();
+      try {
+        let fetchedTransactions: Transaction[] = [];
+        if (scope === 'all') {
+          fetchedTransactions = await getAllTransactions();
+        } else if (user) {
+          fetchedTransactions = await getTransactionsForUser(user.uid, scope === 'dealer');
         }
-    };
-  }, [user, scope, db]);
+        setTransactions(fetchedTransactions);
+      } catch (error) {
+        console.error("Failed to fetch transactions:", error);
+        // Handle error appropriately, maybe with a toast
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [user, scope]);
   
   if (loading) {
     return (

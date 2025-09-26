@@ -216,16 +216,11 @@ const processTransactionDoc = (doc: DocumentData): Transaction => {
     } as Transaction;
 };
 
-// Function to get transactions for a user (either a farmer or a dealer)
-export const getTransactionsForUser = (
-  uid: string,
-  callback: (transactions: Transaction[]) => void,
-  isDealerView: boolean = false
-): Unsubscribe => {
+// Function to get transactions for a user (either a farmer or a dealer) - one-time fetch
+export const getTransactionsForUser = async (uid: string, isDealerView: boolean = false): Promise<Transaction[]> => {
     const transactionsCollection = collection(db, 'transactions');
     let q;
     if (isDealerView) {
-        // Dealer view should show all transactions they are involved in
         q = query(
             transactionsCollection,
             where('dealerId', '==', uid),
@@ -233,7 +228,6 @@ export const getTransactionsForUser = (
             limit(50)
         );
     } else {
-        // Farmer's personal view shows transactions where they are the userId
         q = query(
             transactionsCollection,
             where('userId', '==', uid),
@@ -242,15 +236,8 @@ export const getTransactionsForUser = (
         );
     }
   
-    const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
-        const transactions: Transaction[] = [];
-        querySnapshot.forEach((doc) => {
-            transactions.push(processTransactionDoc(doc));
-        });
-        callback(transactions);
-    });
-
-    return unsubscribe;
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(processTransactionDoc);
 };
 
 export const getBusinessExpenses = async (dealerId: string): Promise<Transaction[]> => {
@@ -263,14 +250,8 @@ export const getBusinessExpenses = async (dealerId: string): Promise<Transaction
     );
     
     const querySnapshot = await getDocs(q);
-    const transactions: Transaction[] = [];
-    querySnapshot.forEach((doc) => {
-        const data = processTransactionDoc(doc);
-        transactions.push(data);
-    });
-    return transactions;
+    return querySnapshot.docs.map(processTransactionDoc);
 };
-
 
 // New async function for one-time fetch, used by AI tools and exports
 export const getTransactionsForUserAsync = async (userId: string): Promise<Transaction[]> => {
@@ -285,7 +266,7 @@ export const getTransactionsForUserAsync = async (userId: string): Promise<Trans
 }
 
 
-export const getAllTransactions = (callback: (transactions: Transaction[]) => void): Unsubscribe => {
+export const getAllTransactions = async (): Promise<Transaction[]> => {
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -293,13 +274,8 @@ export const getAllTransactions = (callback: (transactions: Transaction[]) => vo
         limit(100) // Limit to the last 100 global transactions
     );
 
-    return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
-        const transactions: Transaction[] = [];
-        querySnapshot.forEach((doc) => {
-            transactions.push(processTransactionDoc(doc));
-        });
-        callback(transactions);
-    });
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(processTransactionDoc);
 };
 
 export const getAllTransactionsAsync = async (): Promise<Transaction[]> => {
@@ -319,10 +295,7 @@ export const getTransactionsForFarmer = async (farmerId: string): Promise<Transa
     return querySnapshot.docs.map(processTransactionDoc);
 }
 
-export const getTransactionsForBatch = (
-    batchId: string,
-    callback: (transactions: Transaction[]) => void
-): Unsubscribe => {
+export const getTransactionsForBatch = async (batchId: string): Promise<Transaction[]> => {
     const transactionsCollection = collection(db, 'transactions');
     const q = query(
         transactionsCollection,
@@ -330,13 +303,8 @@ export const getTransactionsForBatch = (
         orderBy('date', 'desc'),
     );
     
-    return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
-        const transactions: Transaction[] = [];
-        querySnapshot.forEach((doc) => {
-            transactions.push(processTransactionDoc(doc));
-        });
-        callback(transactions);
-    });
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(processTransactionDoc);
 };
 
 

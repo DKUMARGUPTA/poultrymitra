@@ -20,7 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionHistory } from '@/components/transaction-history';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddTransactionModal } from '@/components/add-transaction-modal';
-import { Transaction, getTransactionsForUserAsync } from '@/services/transactions.service';
+import { Transaction, getTransactionsForUser } from '@/services/transactions.service';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +44,7 @@ export default function LedgerPage() {
   }, [user, loading, router]);
 
   const handleTransactionAdded = (newTransaction: Transaction) => {
-    setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    // TransactionHistory will refetch its own data
   };
 
   const handleExportCSV = async () => {
@@ -55,7 +55,7 @@ export default function LedgerPage() {
         return;
     }
     try {
-      const allTransactions = await getTransactionsForUserAsync(user.uid);
+      const allTransactions = await getTransactionsForUser(user.uid);
       const csvData = allTransactions.map(t => ({
         ID: t.id,
         Date: format(new Date(t.date), "yyyy-MM-dd HH:mm:ss"),
@@ -94,7 +94,7 @@ export default function LedgerPage() {
         return;
     }
     try {
-        const allTransactions = await getTransactionsForUserAsync(user.uid);
+        const allTransactions = await getTransactionsForUser(user.uid);
         const doc = new jsPDF();
         
         const head = [['Date', 'Description', 'Method', 'Status', 'Amount']];
@@ -138,24 +138,10 @@ export default function LedgerPage() {
   if (loading || !user) {
     return (
        <div className="flex flex-col h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-            <Skeleton className="h-8 w-32" />
-            <div className="w-full flex-1" />
-            <Skeleton className="h-9 w-9 rounded-full" />
-        </header>
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
         <div className="flex flex-1">
-            <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4">
-                <Skeleton className="h-8 w-40 mb-4" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-            </aside>
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                <Skeleton className="h-8 w-48" />
-                <div className="flex-1 rounded-lg border border-dashed shadow-sm p-6">
-                    <Skeleton className="h-64 w-full" />
-                </div>
-            </main>
+            <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4"><Skeleton className="h-8 w-40 mb-4" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></aside>
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6"><Skeleton className="h-8 w-48" /><div className="flex-1 rounded-lg border border-dashed shadow-sm p-6"><Skeleton className="h-64 w-full" /></div></main>
         </div>
     </div>
     )
