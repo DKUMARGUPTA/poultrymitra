@@ -10,6 +10,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 const nextConfig = {
   experimental: {
     // Note: serverComponentsExternalPackages is now a top-level property
+    allowedDevOrigins: ["https://9000-firebase-studio-1757941805991.cluster-zumahodzirciuujpqvsniawo3o.cloudworkstations.dev"],
   },
   serverExternalPackages: ['@genkit-ai/googleai', 'firebase-admin'],
   images: {
