@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/components/auth-provider';
 import {
   Table,
   TableBody,
@@ -21,7 +20,7 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 interface TransactionHistoryProps {
   scope?: 'user' | 'all' | 'dealer';
