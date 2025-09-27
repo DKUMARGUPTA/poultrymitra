@@ -7,13 +7,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "next-themes";
 import { SidebarProvider } from './ui/sidebar';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 
 export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
-    <FirebaseClientProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AuthProvider>
           <SidebarProvider>
@@ -23,6 +21,5 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Toaster />
         <Analytics />
       </ThemeProvider>
-    </FirebaseClientProvider>
   );
 }

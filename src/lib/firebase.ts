@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   projectId: "studio-3437887095-bb50a",
@@ -12,14 +12,34 @@ const firebaseConfig = {
   messagingSenderId: "956762008755",
 };
 
-function initializeFirebase(): FirebaseApp {
-    if (getApps().length === 0) {
-        return initializeApp(firebaseConfig);
+// Initialize Firebase
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+// Initialize Firestore with offline persistence handling
+let db;
+if (typeof window !== 'undefined') {
+  try {
+    db = getFirestore(app);
+    enableIndexedDbPersistence(db);
+  } catch (error: any) {
+    if (error.code === 'failed-precondition') {
+      // This error happens on hot-reloads in dev. It's safe to ignore.
+      console.warn('Firestore persistence failed to enable. This is expected on hot reloads.');
+      db = getFirestore(app);
+    } else if (error.code === 'unimplemented') {
+      // Some browsers may not support IndexedDB at all.
+      console.warn('Firestore persistence not supported in this browser.');
+      db = getFirestore(app);
     } else {
-        return getApp();
+      console.error("Firebase persistence error:", error);
+      db = getFirestore(app); // Fallback to memory persistence
     }
+  }
+} else {
+  // For server-side rendering, just initialize Firestore without persistence
+  db = getFirestore(app);
 }
 
-export const app = initializeFirebase();
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+const auth = getAuth(app);
+
+export { app, db, auth };
