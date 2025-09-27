@@ -1,24 +1,11 @@
-
-"use client";
+// src/components/users-table.tsx
+'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { Bird, Users, Shield, MoreVertical, PlusCircle, BookText, TrendingUp, FileDown } from "lucide-react"
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarInset,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-} from "@/components/ui/sidebar"
-import { Skeleton } from '@/components/ui/skeleton';
+import { MoreVertical, BookText } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserProfile, getAllUsers, updateUserPremiumStatus, updateUserStatus, RatePermission } from '@/services/users.service';
+import { UserProfile, updateUserPremiumStatus, RatePermission } from '@/services/users.service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -29,14 +16,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SuspendUserAlert } from '@/components/suspend-user-alert';
 import { DeleteUserAlert } from '@/components/delete-user-alert';
 import Link from 'next/link';
-import { AddUserModal } from '@/components/add-user-modal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DealerList } from '@/components/dealer-list';
 import { ManageRatePermissionsModal } from '@/components/manage-rate-permissions-modal';
-import Papa from 'papaparse';
-import { format } from 'date-fns';
-import { ThemeToggle } from '@/components/theme-toggle';
-
 
 export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
   const { toast } = useToast();
@@ -46,10 +28,6 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
     // This allows the table to be updated when a new user is added via the modal
     setUsers(initialUsers);
   }, [initialUsers]);
-
-  const handleUserAdded = (newUser: UserProfile) => {
-    setUsers(prev => [newUser, ...prev].sort((a,b) => a.name.localeCompare(b.name)));
-  };
 
   const handlePermissionToggle = async (targetUser: UserProfile, permission: 'isPremium', isChecked: boolean) => {
      // Optimistic update

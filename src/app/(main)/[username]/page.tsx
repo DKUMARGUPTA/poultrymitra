@@ -8,7 +8,7 @@ import { VCard } from '@/components/v-card';
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { getPostsByAuthor } from '@/services/blog.service';
 import { getRatesByUser } from '@/services/market-rates.service';
-import { SerializablePost } from '../page';
+import { SerializablePost } from '../../page';
 import { RecentPosts } from '@/components/recent-posts';
 import { MarketRateDisplay } from '@/components/market-rate-display';
 import { Timestamp, collection, query, where, orderBy, limit, getDocs, getFirestore } from 'firebase/firestore';
@@ -41,7 +41,6 @@ async function getRecentInventory(dealerId: string, count: number): Promise<Inve
 
 
 export default async function UserVCardPage({ params }: Props) {
-  const db = getFirestore(app);
   const user = await getUserByUsername(params.username);
 
   if (!user || user.status === 'suspended') {

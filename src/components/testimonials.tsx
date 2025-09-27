@@ -10,18 +10,60 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTestimonials, Testimonial } from '@/services/testimonials.service';
 import { Skeleton } from './ui/skeleton';
 import { db } from '@/lib/firebase';
+import { onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
 
 export function Testimonials() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (db) {
-        getTestimonials(db).then(data => {
-          setTestimonials(data);
-          setLoading(false);
-        });
-    }
+    if (!db) return;
+    const q = query(
+      collection(db, 'testimonials'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
+        setTestimonials([
+          {
+            id: '1',
+            name: 'Ramesh Patel',
+            role: 'Farmer, Maharashtra',
+            content:
+              "The disease detection tool helped me identify an issue early and saved my flock. It's an incredible feature.",
+            rating: 5,
+            createdAt: new Date(),
+            avatarUrl: 'https://picsum.photos/seed/ramesh/100'
+          },
+          {
+            id: '2',
+            name: 'Sunita Sharma',
+            role: 'Farmer, Punjab',
+            content:
+              "Managing my farm finances has never been easier. The ledger is simple and the AI advisory is surprisingly accurate.",
+            rating: 5,
+            createdAt: new Date(),
+            avatarUrl: 'https://picsum.photos/seed/sunita/100'
+          },
+          {
+            id: '3',
+            name: 'Anil Kumar',
+            role: 'Dealer, Haryana',
+            content:
+              'The AI stock advisory helps me manage my inventory perfectly. I always know what to order and when.',
+            rating: 5,
+            createdAt: new Date(),
+            avatarUrl: 'https://picsum.photos/seed/anil/100'
+          },
+        ]);
+      } else {
+         setTestimonials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial)));
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [db]);
 
   const TestimonialSkeleton = () => (

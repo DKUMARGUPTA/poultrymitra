@@ -79,7 +79,7 @@ export const updatePost = async (postId: string, postData: Partial<Omit<PostInpu
   await updateDoc(postRef, updateData);
 };
 
-export const getPost = async (postId: string): Promise<Post | null> => {
+export const getPost = async (db: any, postId: string): Promise<Post | null> => {
   const docRef = doc(db, 'posts', postId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
@@ -101,7 +101,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 /**
  * Subscribes to real-time updates for posts.
  */
-export const getPosts = (callback: (posts: Post[]) => void, includeDrafts = false): Unsubscribe => {
+export const getPosts = (db: any, callback: (posts: Post[]) => void, includeDrafts = false): Unsubscribe => {
     let q;
     if (includeDrafts) {
         q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -151,7 +151,7 @@ export const getPostsByAuthor = async (authorId: string, postLimit?: number): Pr
 };
 
 
-export const deletePost = async (postId: string): Promise<void> => {
+export const deletePost = async (db: any, postId: string): Promise<void> => {
     const postRef = doc(db, 'posts', postId);
     await deleteDoc(postRef);
 };

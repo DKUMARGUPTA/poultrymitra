@@ -1,5 +1,3 @@
-
-
 // src/services/transactions.service.ts
 import {
   collection,
@@ -237,7 +235,7 @@ export const getTransactionsForUser = async (uid: string, isDealerView: boolean 
     }
   
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(processTransactionDoc);
+    return querySnapshot.docs.map(doc => processTransactionDoc(doc.data()));
 };
 
 export const getBusinessExpenses = async (dealerId: string): Promise<Transaction[]> => {
@@ -250,20 +248,8 @@ export const getBusinessExpenses = async (dealerId: string): Promise<Transaction
     );
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(processTransactionDoc);
+    return querySnapshot.docs.map(doc => processTransactionDoc(doc.data()));
 };
-
-// New async function for one-time fetch, used by AI tools and exports
-export const getTransactionsForUserAsync = async (userId: string): Promise<Transaction[]> => {
-    const transactionsCollection = collection(db, 'transactions');
-    const q = query(
-        transactionsCollection,
-        where('userId', '==', userId),
-        orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(processTransactionDoc);
-}
 
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
@@ -275,18 +261,9 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(processTransactionDoc);
+    return querySnapshot.docs.map(doc => processTransactionDoc(doc.data()));
 };
 
-export const getAllTransactionsAsync = async (): Promise<Transaction[]> => {
-    const transactionsCollection = collection(db, 'transactions');
-    const q = query(
-        transactionsCollection,
-        orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(processTransactionDoc);
-}
 
 export const getTransactionsForFarmer = async (farmerId: string): Promise<Transaction[]> => {
     const transactionsCollection = collection(db, 'transactions');

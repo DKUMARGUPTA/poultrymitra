@@ -110,7 +110,7 @@ export const getNotificationsForUser = (
 /**
  * Marks all unread notifications for a user as read.
  */
-export const markNotificationsAsRead = async (userId: string): Promise<void> => {
+export const markNotificationsAsRead = async (db: any, userId: string): Promise<void> => {
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),

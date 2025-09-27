@@ -1,4 +1,4 @@
-
+// src/app/ledger/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -36,6 +36,9 @@ export default function LedgerPage() {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [exporting, setExporting] = useState(false);
+  
+  // This state is needed to trigger a re-render of TransactionHistory
+  const [refreshKey, setRefreshKey] = useState(0); 
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,7 +47,8 @@ export default function LedgerPage() {
   }, [user, loading, router]);
 
   const handleTransactionAdded = (newTransaction: Transaction) => {
-    // TransactionHistory will refetch its own data
+    // Trigger a refresh of the transaction history component
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleExportCSV = async () => {
@@ -197,7 +201,7 @@ export default function LedgerPage() {
                     <CardDescription>View your recent transactions with your dealer.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TransactionHistory key={transactions.length} />
+                    <TransactionHistory key={refreshKey} />
                 </CardContent>
             </Card>
           </main>

@@ -1,8 +1,8 @@
-
+// src/components/transaction-history.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/components/auth-provider';
 import {
   Table,
   TableBody,
@@ -21,6 +21,7 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { db } from '@/lib/firebase';
 
 interface TransactionHistoryProps {
   scope?: 'user' | 'all' | 'dealer';
@@ -32,23 +33,31 @@ export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        let fetchedTransactions: Transaction[] = [];
-        if (scope === 'all') {
-          fetchedTransactions = await getAllTransactions();
-        } else if (user) {
-          fetchedTransactions = await getTransactionsForUser(user.uid, scope === 'dealer');
+    const fetchData = async () => {
+        if (scope === 'user' && !user) {
+            setLoading(false);
+            return;
         }
-        setTransactions(fetchedTransactions);
-      } catch (error) {
-        console.error("Failed to fetch transactions:", error);
-        // Handle error appropriately, maybe with a toast
-      } finally {
-        setLoading(false);
-      }
-    }
+
+        setLoading(true);
+        try {
+            let fetchedTransactions: Transaction[];
+            if (scope === 'all') {
+                fetchedTransactions = await getAllTransactions();
+            } else if (user) {
+                const isDealerView = scope === 'dealer';
+                fetchedTransactions = await getTransactionsForUser(user.uid, isDealerView);
+            } else {
+                fetchedTransactions = [];
+            }
+            setTransactions(fetchedTransactions);
+        } catch (error) {
+            console.error("Failed to fetch transactions:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     fetchData();
   }, [user, scope]);
   
