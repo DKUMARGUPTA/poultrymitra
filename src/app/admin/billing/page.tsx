@@ -10,14 +10,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getPendingPaymentVerifications, PaymentVerificationRequest } from '@/services/billing.service';
 import { BillingTable } from "@/components/billing-table";
 
 export const revalidate = 0; // Don't cache this page
 
-export default async function AdminBillingPage() {
-  const requests = await getPendingPaymentVerifications();
-
+export default function AdminBillingPage() {
   return (
     <>
       <Sidebar>
@@ -38,7 +35,7 @@ export default async function AdminBillingPage() {
                     <CardDescription>Review and approve premium subscription payments from users.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <BillingTable initialRequests={requests} />
+                    <BillingTable />
                 </CardContent>
              </Card>
           </main>
