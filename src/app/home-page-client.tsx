@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { AnimatedLogo } from '@/components/animated-logo';
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker';
 import { RecentPosts } from '@/components/recent-posts';
-import { SerializablePost } from './page';
+import { SerializablePost } from '../app/page';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -112,14 +112,15 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
       <LandingPageHeader />
 
       <main className="flex-1 pt-16">
+        {!user && <BreakingNewsTicker />}
         {/* Hero Section */}
-        <section className="w-full py-16 md:py-20 lg:py-24">
+        <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
           <div className="container grid md:grid-cols-2 gap-8 items-center px-4 md:px-6">
             <div className="flex flex-col items-start space-y-6 text-left">
                <div className="inline-block rounded-full bg-green-100 dark:bg-green-900/50 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300">
                 Trusted by 10,000+ Farmers & Dealers
               </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter font-headline">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-headline">
                 The Future of Poultry Farming is Digital
               </h1>
               <p className="max-w-xl text-muted-foreground md:text-xl">
@@ -137,7 +138,7 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
             <div className="space-y-4">
                 <Card>
                   <CardContent className="p-6">
-                    <ul className="space-y-4 text-base md:text-lg">
+                    <ul className="space-y-4 text-lg">
                       <li className="flex items-center gap-3">
                         <Check className="h-6 w-6 text-green-500" />
                         <span>Track FCR, Mortality, and Growth</span>
@@ -162,11 +163,11 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
         </section>
         
         {/* How it works */}
-        <section className="w-full py-16 md:py-20 bg-muted">
+        <section className="w-full py-12 md:py-20">
           <div className="container px-4 md:px-6">
              <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">Get Started in 3 Easy Steps</h2>
+                    <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Get Started in 3 Easy Steps</h2>
                     <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
                         Join the digital revolution in poultry management in just a few minutes.
                     </p>
@@ -205,11 +206,11 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
         </section>
 
         {/* AI Features Section */}
-        <section className="w-full py-16 md:py-20 bg-gradient-to-r from-green-600 to-green-800 text-white">
+        <section className="w-full py-12 md:py-20 bg-gradient-to-r from-green-600 to-green-800 text-white">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">Unlock the Power of AI</h2>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Unlock the Power of AI</h2>
                 <p className="max-w-[900px] text-green-100 md:text-xl/relaxed">
                   Our premium plans give you access to a suite of artificial intelligence tools designed to give you a competitive edge.
                 </p>
@@ -245,13 +246,13 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
         </section>
         
         {/* Benefits Section */}
-         <section className="w-full py-16 md:py-20 bg-gradient-to-r from-primary to-green-600 text-white">
+         <section className="w-full py-12 md:py-20 bg-gradient-to-r from-primary to-green-600 text-white">
             <div className="container px-4 md:px-6 text-center">
-                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline mb-12">Benefits of Poultry Mitra</h2>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline mb-12">Benefits of Poultry Mitra</h2>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {benefits.map((benefit, index) => (
                         <Card key={index} className="bg-white/10 border-white/20 text-white flex flex-col items-center text-center p-6">
-                            <CardTitle className="text-4xl md:text-5xl font-bold text-accent">{benefit.value}</CardTitle>
+                            <CardTitle className="text-5xl font-bold text-accent">{benefit.value}</CardTitle>
                             <CardDescription className="text-lg font-semibold mt-2 text-white">{benefit.title}</CardDescription>
                             <p className="text-sm text-green-100 mt-1">{benefit.description}</p>
                         </Card>
@@ -262,17 +263,17 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
 
         {/* Why Choose Section */}
         {hasMounted && (
-            <section id="features" className="w-full py-16 md:py-20">
+            <section id="features" className="w-full py-12 md:py-16">
             <div className="container px-4 md:px-6">
-                <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">One Platform for Your Entire Business</h2>
+                    <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">One Platform for Your Entire Business</h2>
                     <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                     From farm management to financial tracking, Poultry Mitra brings all your operations under one roof.
                     </p>
                 </div>
                 </div>
-                <div className="mx-auto grid max-w-5xl items-start gap-6 sm:grid-cols-2 md:gap-8 lg:max-w-none lg:grid-cols-3">
+                <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3 pt-12">
                     {features.map((feature, index) => (
                         <Dialog key={index}>
                             <DialogTrigger asChild>
@@ -312,11 +313,11 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
         
 
         {/* Pricing Section */}
-        <section id="pricing" className="w-full py-16 md:py-20 bg-muted">
+        <section id="pricing" className="w-full py-12 md:py-20 bg-muted">
           <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">Find the Perfect Plan</h2>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Find the Perfect Plan</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Start for free and scale up as you grow. All our plans are designed to help you succeed.
                 </p>
@@ -407,7 +408,7 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
          <RecentPosts posts={initialPosts} />
 
          {/* Final CTA */}
-         <section className="w-full py-16 md:py-20 text-white bg-gradient-to-r from-primary to-green-600">
+         <section className="w-full py-12 md:py-16 text-white bg-gradient-to-r from-primary to-green-600">
           <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
             <div className="space-y-3">
               <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">Start Your Digital Poultry Journey Today</h2>
