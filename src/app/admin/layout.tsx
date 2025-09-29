@@ -1,49 +1,35 @@
 // src/app/admin/layout.tsx
-"use client";
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import React from 'react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Bird } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import React from 'react';
+import { auth } from '@/lib/firebase-admin'; // Using admin auth
+import { getUserProfile } from '@/services/users.service';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { userProfile, loading } = useAuth();
-    const router = useRouter();
+// This is now a Server Component
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+    const cookieStore = cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
 
-    useEffect(() => {
-        if (!loading) {
-            if (!userProfile || userProfile.role !== 'admin') {
-                router.push('/dashboard');
-            }
+    let userProfile = null;
+    if (sessionCookie) {
+        try {
+            const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
+            userProfile = await getUserProfile(decodedToken.uid);
+        } catch (error) {
+            // Session cookie is invalid.
+            console.error("Session cookie verification failed:", error);
+            redirect('/auth');
         }
-    }, [userProfile, loading, router]);
+    } else {
+        redirect('/auth');
+    }
 
-    if (loading || !userProfile || userProfile.role !== 'admin') {
-        return (
-            <div className="flex flex-col h-screen">
-                <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-                    <Skeleton className="h-8 w-32" />
-                    <div className="w-full flex-1" />
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                </header>
-                <div className="flex flex-1">
-                    <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4">
-                        <Skeleton className="h-8 w-40 mb-4" />
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
-                    </aside>
-                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                        <Skeleton className="h-64 w-full" />
-                    </main>
-                </div>
-            </div>
-        );
+    if (!userProfile || userProfile.role !== 'admin') {
+        redirect('/dashboard');
     }
 
     return (

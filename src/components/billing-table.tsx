@@ -12,18 +12,20 @@ import { PaymentVerificationDialog } from '@/components/payment-verification-dia
 import { ShieldCheck, TicketPercent, Check, X } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
-export function BillingTable({ initialRequests }: { initialRequests: PaymentVerificationRequest[] }) {
+export function BillingTable() {
     const { toast } = useToast();
-    const [requests, setRequests] = useState<PaymentVerificationRequest[]>(initialRequests);
+    const [requests, setRequests] = useState<PaymentVerificationRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
 
     useEffect(() => {
-        const unsubscribe = getPendingPaymentVerifications((newRequests) => {
-            setRequests(newRequests);
+        async function fetchRequests() {
+            setLoading(true);
+            const initialRequests = await getPendingPaymentVerifications();
+            setRequests(initialRequests);
             setLoading(false);
-        });
-        return () => unsubscribe();
+        }
+        fetchRequests();
     }, []);
 
     const handleApprove = async (request: PaymentVerificationRequest, reason: string) => {
@@ -31,6 +33,7 @@ export function BillingTable({ initialRequests }: { initialRequests: PaymentVeri
         try {
             await approvePaymentVerification(request.id, request.userId, reason);
             toast({ title: "Payment Approved", description: `${request.userName}'s premium plan has been activated.` });
+            setRequests(prev => prev.filter(r => r.id !== request.id));
         } catch (error: any) {
             toast({ variant: "destructive", title: "Approval Failed", description: error.message });
         } finally {
@@ -43,6 +46,7 @@ export function BillingTable({ initialRequests }: { initialRequests: PaymentVeri
         try {
             await rejectPaymentVerification(request.id, reason, request.userId);
             toast({ title: "Payment Rejected", description: `The request from ${request.userName} has been rejected.` });
+            setRequests(prev => prev.filter(r => r.id !== request.id));
         } catch (error: any) {
             toast({ variant: "destructive", title: "Rejection Failed", description: error.message });
         } finally {

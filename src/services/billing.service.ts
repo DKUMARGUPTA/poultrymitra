@@ -48,16 +48,14 @@ export const createPaymentVerificationRequest = async (
 /**
  * Gets all pending verification requests for the admin with real-time updates.
  */
-export const getPendingPaymentVerifications = (callback: (requests: PaymentVerificationRequest[]) => void): Unsubscribe => {
+export const getPendingPaymentVerifications = async (): Promise<PaymentVerificationRequest[]> => {
   const q = query(collection(db, 'paymentVerifications'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
   
-  return onSnapshot(q, (snapshot) => {
-    const requests = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as PaymentVerificationRequest));
-    callback(requests);
-  });
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as PaymentVerificationRequest));
 };
 
 

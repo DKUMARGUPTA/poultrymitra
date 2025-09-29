@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { MoreVertical, BookText } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserProfile, updateUserPremiumStatus, RatePermission } from '@/services/users.service';
+import { UserProfile, updateUserPremiumStatus, RatePermission, getAllUsers } from '@/services/users.service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -25,7 +25,6 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
   const [users, setUsers] = useState<UserProfile[]>(initialUsers);
 
   useEffect(() => {
-    // This allows the table to be updated when a new user is added via the modal
     setUsers(initialUsers);
   }, [initialUsers]);
 
