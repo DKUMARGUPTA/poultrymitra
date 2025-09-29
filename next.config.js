@@ -9,9 +9,8 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    allowedDevOrigins: ["https://9000-firebase-studio-1757941805991.cluster-zumahodzirciuujpqvsniawo3o.cloudworkstations.dev"],
+    serverComponentsExternalPackages: ['@genkit-ai/googleai', 'firebase-admin'],
   },
-  serverExternalPackages: ['@genkit-ai/googleai', 'firebase-admin'],
   images: {
     remotePatterns: [
       {
