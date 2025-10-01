@@ -30,12 +30,12 @@ function getAdminApp() {
             }, appName);
             return adminApp;
         } catch (e: any) {
-            console.error('Firebase Admin SDK initialization error:', e.stack);
-            // Don't throw, let the app run without admin features.
+            console.error('Firebase Admin SDK initialization error. Check your environment variables.', e.stack);
+            return null;
         }
     }
     
-    console.warn('Firebase Admin environment variables are not set or are incorrect. Admin SDK features will be disabled.');
+    console.warn('Firebase Admin environment variables are not set. Admin SDK features will be disabled.');
     return null;
 }
 
