@@ -17,22 +17,17 @@ function getAdminApp() {
         return adminApp;
     }
 
-    const serviceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    };
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
 
-    if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
-        try {
+        if (serviceAccount.project_id) {
             adminApp = initializeApp({
                 credential: cert(serviceAccount),
             }, appName);
             return adminApp;
-        } catch (e: any) {
-            console.error('Firebase Admin SDK initialization error. Check your environment variables.', e.stack);
-            return null;
         }
+    } catch (e: any) {
+        console.warn('Firebase Admin SDK initialization error: Could not parse FIREBASE_SERVICE_ACCOUNT_KEY.', e.message);
     }
     
     console.warn('Firebase Admin environment variables are not set. Admin SDK features will be disabled.');

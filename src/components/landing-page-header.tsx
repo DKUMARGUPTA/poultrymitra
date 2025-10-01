@@ -3,48 +3,37 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from './ui/skeleton';
 import { UserNav } from './user-nav';
 import { SidebarTrigger } from './ui/sidebar';
 import { AnimatedLogo } from './animated-logo';
 import { ThemeToggle } from './theme-toggle';
+import { useEffect, useState } from 'react';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { UserProfile, getUserProfile } from '@/services/users.service';
+import { MainNav } from './main-nav';
+
 
 export function LandingPageHeader() {
-  const { user, loading, userProfile } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const navItems = {
-    farmer: [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/batches", label: "Batches" },
-        { href: "/orders", label: "Orders" },
-        { href: "/ledger", label: "My Ledger" },
-    ],
-    dealer: [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/farmers", label: "Farmers" },
-        { href: "/inventory", label: "Inventory" },
-        { href: "/suppliers", label: "Suppliers" },
-        { href: "/orders", label: "Orders" },
-    ],
-    admin: [
-        { href: "/admin", label: "Admin Panel" },
-        { href: "/users", label: "Manage Users" },
-        { href: "/transactions", label: "All Transactions" },
-        { href: "/market-rates", label: "Market Rates" },
-        { href: "/admin/blog", label: "Blog" },
-    ],
-  };
+   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+      setLoading(false);
+    });
 
-  const getNavItems = () => {
-    if (!userProfile) return [];
-    switch (userProfile.role) {
-      case 'farmer': return navItems.farmer;
-      case 'dealer': return navItems.dealer;
-      case 'admin': return navItems.admin;
-      default: return [];
-    }
-  }
+    return () => unsubscribe();
+  }, []);
 
   return (
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
@@ -56,12 +45,8 @@ export function LandingPageHeader() {
             </Link>
         </div>
         <nav className="ml-auto hidden md:flex gap-4 sm:gap-6 items-center">
-          {user ? (
-              getNavItems().map(item => (
-                  <Link key={item.href} href={item.href} className="text-sm font-medium hover:text-primary" prefetch={false}>
-                      {item.label}
-                  </Link>
-              ))
+          {user && userProfile ? (
+              <MainNav userProfile={userProfile} />
           ) : (
               <>
                   <Link href="/#features" className="text-sm font-medium hover:text-primary" prefetch={false}>
@@ -85,8 +70,8 @@ export function LandingPageHeader() {
         <div className="ml-auto flex gap-2 items-center">
           {loading ? (
             <Skeleton className="h-9 w-9 rounded-full" />
-          ) : user ? (
-            <UserNav />
+          ) : user && userProfile ? (
+            <UserNav user={user} userProfile={userProfile} />
           ) : (
             <>
               <ThemeToggle />

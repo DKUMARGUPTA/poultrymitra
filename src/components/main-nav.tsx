@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Bird, Users, Warehouse, BookText, LineChart, Bot, MessageCircle, Briefcase, Shield, Settings, TrendingUp, Building, ShoppingCart, PencilRuler, Megaphone, BrainCircuit, CreditCard, TicketPercent, BarChart, Wallet } from "lucide-react";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarSeparator, useSidebar } from "./ui/sidebar";
-import { useAuth } from '@/hooks/use-auth';
+import { UserProfile } from '@/services/users.service';
 
-export function MainNav() {
+interface MainNavProps {
+  userProfile: UserProfile | null;
+}
+
+export function MainNav({ userProfile }: MainNavProps) {
   const pathname = usePathname();
-  const { userProfile } = useAuth();
   const { setOpenMobile } = useSidebar();
   const userRole = userProfile?.role;
 

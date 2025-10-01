@@ -36,6 +36,11 @@ export default function UsersPage() {
           <Users className="w-6 h-6" />
           <h1 className="text-lg font-semibold md:text-2xl font-headline">User Management</h1>
         </div>
+         <AddUserModal onUserAdded={handleUserAdded}>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> New User
+            </Button>
+        </AddUserModal>
       </div>
       {loading ? <Skeleton className="h-96 w-full" /> : <UsersTable initialUsers={users} />}
     </main>

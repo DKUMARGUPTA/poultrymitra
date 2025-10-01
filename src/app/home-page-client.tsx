@@ -1,4 +1,3 @@
-
 // src/app/home-page-client.tsx
 "use client";
 
@@ -9,17 +8,18 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { Badge } from '@/components/ui/badge';
 import { AiFeatureCard } from '@/components/ai/ai-feature-card';
-import { useAuth } from '@/hooks/use-auth';
 import { AnimatedLogo } from '@/components/animated-logo';
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker';
 import { RecentPosts } from '@/components/recent-posts';
 import { SerializablePost } from '../app/page';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
-import { Timestamp } from 'firebase/firestore';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { UserProfile, getUserProfile } from '@/services/users.service';
 
 
 const features = [
@@ -92,7 +92,25 @@ const benefits = [
 
 
 export default function HomePageClient({ initialPosts }: { initialPosts: SerializablePost[]}) {
-  const { user, userProfile } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
   const [hasMounted, setHasMounted] = React.useState(false);
 
@@ -112,9 +130,9 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
       <LandingPageHeader />
 
       <main className="flex-1 pt-16">
-        {!user && <BreakingNewsTicker />}
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
+            {!user && <BreakingNewsTicker />}
           <div className="container grid md:grid-cols-2 gap-8 items-center px-4 md:px-6">
             <div className="flex flex-col items-start space-y-6 text-left">
                <div className="inline-block rounded-full bg-green-100 dark:bg-green-900/50 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300">

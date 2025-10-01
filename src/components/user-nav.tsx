@@ -1,10 +1,8 @@
-
 // src/components/user-nav.tsx
 "use client"
 
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { useAuth } from "@/hooks/use-auth";
 import {
   Avatar,
   AvatarFallback,
@@ -33,9 +31,14 @@ import { useTheme } from "next-themes";
 import { ThemeToggle } from "./theme-toggle";
 import { useSidebar } from "./ui/sidebar";
 import { auth, db } from "@/lib/firebase";
+import { User } from "firebase/auth";
 
-export function UserNav() {
-  const { user, userProfile } = useAuth();
+interface UserNavProps {
+  user: User;
+  userProfile: UserProfile;
+}
+
+export function UserNav({ user, userProfile }: UserNavProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
