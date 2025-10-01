@@ -1,14 +1,20 @@
 // src/lib/firebase-admin.ts
 import admin from 'firebase-admin';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
+
+let adminApp: App | null = null;
 
 function getAdminApp() {
-    const appName = 'firebase-admin-app-' + process.env.NODE_ENV; // Unique name per environment
-    const apps = getApps();
-    const existingApp = apps.find(app => app.name === appName);
+    if (adminApp) {
+        return adminApp;
+    }
+
+    const appName = 'firebase-admin-app-' + process.env.NODE_ENV;
+    const existingApp = getApps().find(app => app.name === appName);
 
     if (existingApp) {
-        return existingApp;
+        adminApp = existingApp;
+        return adminApp;
     }
 
     const serviceAccount = {
@@ -19,20 +25,21 @@ function getAdminApp() {
 
     if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
         try {
-            return initializeApp({
+            adminApp = initializeApp({
                 credential: cert(serviceAccount),
             }, appName);
+            return adminApp;
         } catch (e: any) {
             console.error('Firebase Admin SDK initialization error:', e.stack);
-            throw new Error("Could not initialize Firebase Admin SDK. Please check your configuration and environment variables.");
+            // Don't throw, let the app run without admin features.
         }
-    } else {
-        console.warn('Firebase Admin environment variables are not set. Admin SDK not initialized.');
-        throw new Error("Firebase Admin environment variables are not set.");
     }
+    
+    console.warn('Firebase Admin environment variables are not set or are incorrect. Admin SDK features will be disabled.');
+    return null;
 }
 
-const adminApp = getAdminApp();
+const app = getAdminApp();
 
-export const auth = admin.auth(adminApp);
-export const firestore = admin.firestore(adminApp);
+export const auth = app ? admin.auth(app) : null;
+export const firestore = app ? admin.firestore(app) : null;

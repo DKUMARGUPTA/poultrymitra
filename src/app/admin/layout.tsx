@@ -11,6 +11,11 @@ import { getUserProfile } from '@/services/users.service';
 
 // This is now a Server Component
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+    if (!auth) {
+        console.error("Firebase Admin SDK is not initialized. Admin features are disabled.");
+        redirect('/auth');
+    }
+
     const cookieStore = cookies();
     const sessionCookie = cookieStore.get('session')?.value;
 
