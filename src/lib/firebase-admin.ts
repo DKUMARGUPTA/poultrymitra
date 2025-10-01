@@ -1,9 +1,9 @@
 // src/lib/firebase-admin.ts
 import admin from 'firebase-admin';
-import { getApps, getApp, initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 
 function getAdminApp() {
-    const appName = 'firebase-admin-app';
+    const appName = 'firebase-admin-app-' + process.env.NODE_ENV; // Unique name per environment
     const apps = getApps();
     const existingApp = apps.find(app => app.name === appName);
 
@@ -11,7 +11,6 @@ function getAdminApp() {
         return existingApp;
     }
 
-    // Ensure you have these in your .env.local file or environment variables
     const serviceAccount = {
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -25,8 +24,6 @@ function getAdminApp() {
             }, appName);
         } catch (e: any) {
             console.error('Firebase Admin SDK initialization error:', e.stack);
-            // Return a dummy object or throw an error to prevent further execution
-            // For safety, we'll prevent the app from continuing without proper admin auth
             throw new Error("Could not initialize Firebase Admin SDK. Please check your configuration and environment variables.");
         }
     } else {
@@ -34,7 +31,6 @@ function getAdminApp() {
         throw new Error("Firebase Admin environment variables are not set.");
     }
 }
-
 
 const adminApp = getAdminApp();
 

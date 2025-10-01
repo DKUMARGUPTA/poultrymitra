@@ -16,14 +16,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
 import { createUser, getUserProfile } from "@/services/users.service";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ForgotPasswordModal } from "@/components/forgot-password-modal";
 import React from 'react';
 import Link from "next/link";
 import { LogIn, UserPlus } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -61,20 +60,28 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
 function AuthenticationPageContent({ searchParams }: { searchParams: ReadonlyURLSearchParams }) {
   const router = useRouter();
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   
   const initialTab = searchParams.get('view') === 'signup' ? 'signup' : 'login';
   const initialDealerCode = searchParams.get('dealerCode');
 
   useEffect(() => {
-    if (!authLoading && user) {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const userProfile = await getUserProfile(currentUser.uid);
         if (userProfile?.role === 'admin') {
             router.push('/admin');
         } else {
             router.push('/dashboard');
         }
-    }
-  }, [user, userProfile, authLoading, router]);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   if (authLoading || user) {
     return (
