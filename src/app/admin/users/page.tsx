@@ -8,10 +8,21 @@ import { AddUserModal } from "@/components/add-user-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+
 
 export default function UsersPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+        router.push('/auth');
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -28,6 +39,15 @@ export default function UsersPage() {
     setUsers(prev => [newUser, ...prev]);
   }
 
+
+  if (authLoading || !user) {
+    return (
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-96 w-full" />
+        </main>
+    );
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">

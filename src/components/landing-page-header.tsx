@@ -8,33 +8,13 @@ import { UserNav } from './user-nav';
 import { SidebarTrigger } from './ui/sidebar';
 import { AnimatedLogo } from './animated-logo';
 import { ThemeToggle } from './theme-toggle';
-import { useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { UserProfile, getUserProfile } from '@/services/users.service';
+import { useAuth } from '@/hooks/use-auth';
 import { MainNav } from './main-nav';
 
 
 export function LandingPageHeader() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const profile = await getUserProfile(currentUser.uid);
-        setUserProfile(profile);
-      } else {
-        setUserProfile(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
+  const { user, userProfile, loading } = useAuth();
+  
   return (
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center">

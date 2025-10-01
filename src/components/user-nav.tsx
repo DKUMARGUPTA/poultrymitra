@@ -25,7 +25,7 @@ import { getUserProfile, UserProfile } from "@/services/users.service";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { getNotificationsForUser, markNotificationsAsRead, AppNotification } from "@/services/notifications.service";
+import { getNotifications, markNotificationsAsRead, AppNotification } from "@/services/notifications.service";
 import { formatDistanceToNow } from "date-fns";
 import { useTheme } from "next-themes";
 import { ThemeToggle } from "./theme-toggle";
@@ -47,14 +47,15 @@ export function UserNav({ user, userProfile }: UserNavProps) {
 
 
   useEffect(() => {
-    if (user && db) {
-      const unsubscribe = getNotificationsForUser(user.uid, (newNotifications) => {
-        setNotifications(newNotifications);
-        setUnreadCount(newNotifications.filter(n => !n.isRead).length);
-      });
-      return () => unsubscribe();
+    async function fetchNotifications() {
+        if(user) {
+            const initialNotifications = await getNotifications(user.uid);
+            setNotifications(initialNotifications);
+            setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
+        }
     }
-  }, [user, db]);
+    fetchNotifications();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -79,9 +80,11 @@ export function UserNav({ user, userProfile }: UserNavProps) {
     }
   }
   
-  const handleNotificationOpen = () => {
+  const handleNotificationOpen = async () => {
     if (unreadCount > 0 && user) {
-        markNotificationsAsRead(db, user.uid);
+        await markNotificationsAsRead(db, user.uid);
+        setUnreadCount(0);
+        setNotifications(prev => prev.map(n => ({...n, isRead: true})));
     }
   };
 

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { createUser, getUserProfile } from "@/services/users.service";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ForgotPasswordModal } from "@/components/forgot-password-modal";
@@ -28,7 +28,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatedLogo } from "@/components/animated-logo";
 import Image from "next/image";
-import { db, auth } from '@/lib/firebase';
+import { useAuth } from "@/hooks/use-auth";
+import { auth } from "@/lib/firebase";
 
 
 const LoginFormSchema = z.object({
@@ -60,28 +61,20 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
 function AuthenticationPageContent({ searchParams }: { searchParams: ReadonlyURLSearchParams }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user, userProfile, loading: authLoading } = useAuth();
   
   const initialTab = searchParams.get('view') === 'signup' ? 'signup' : 'login';
   const initialDealerCode = searchParams.get('dealerCode');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const userProfile = await getUserProfile(currentUser.uid);
+    if (!authLoading && user) {
         if (userProfile?.role === 'admin') {
             router.push('/admin');
         } else {
             router.push('/dashboard');
         }
-      }
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+    }
+  }, [user, userProfile, authLoading, router]);
 
   if (authLoading || user) {
     return (
@@ -194,11 +187,8 @@ function LoginForm() {
 
             toast({ title: "Success", description: "Logged in successfully." });
             
-            if (profile.role === 'admin') {
-                router.push("/admin");
-            } else {
-                router.push("/dashboard");
-            }
+            // The redirection logic is now handled by the main page component
+            // based on the updated auth state.
 
         } catch (error: any) {
             console.error(error);

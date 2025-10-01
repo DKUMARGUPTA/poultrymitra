@@ -35,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { moderateContent } from '@/ai/flows/moderate-content';
 import { VCard } from '@/components/v-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFirebase } from '@/firebase/provider';
+import { db } from '@/lib/firebase';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 // Schema for updating profile details
@@ -67,10 +67,17 @@ type DeleteAccountValues = z.infer<typeof DeleteAccountSchema>;
 
 
 export default function SettingsPage() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
   const router = useRouter();
 
-  if(loading) return (
+   useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [loading, user, router]);
+
+
+  if(loading || !user) return (
      <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
         <div className="flex flex-1">
@@ -104,7 +111,6 @@ export default function SettingsPage() {
 
 export function SettingsForm() {
   const { user, userProfile } = useAuth();
-  const { db } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
   const [profileLoading, setProfileLoading] = useState(false);

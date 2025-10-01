@@ -1,4 +1,3 @@
-
 // src/app/home-page-client.tsx
 "use client";
 
@@ -9,17 +8,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { Badge } from '@/components/ui/badge';
 import { AiFeatureCard } from '@/components/ai/ai-feature-card';
-import { useAuth } from '@/hooks/use-auth';
 import { AnimatedLogo } from '@/components/animated-logo';
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker';
 import { RecentPosts } from '@/components/recent-posts';
 import { SerializablePost } from '../app/page';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
-import { Timestamp } from 'firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const features = [
