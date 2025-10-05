@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader, UserPlus, Link2, Copy } from 'lucide-react';
 import { createFarmer, FarmerSchema, FarmerInput, Farmer } from '@/services/farmers.service';
 import { connectFarmerToDealer } from '@/services/users.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -38,7 +38,7 @@ export function AddConnectFarmerModal({ children, onFarmerAction, onNewFarmerCli
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState('create');
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
 

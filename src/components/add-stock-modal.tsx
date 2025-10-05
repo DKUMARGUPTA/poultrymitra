@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, PlusCircle, Calendar as CalendarIcon, Trash2, IndianRupee, ChevronsUpDown } from 'lucide-react';
 import { createPurchaseOrder, InventoryCategory, InventoryItemInput, InventoryCategories } from '@/services/inventory.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -91,7 +91,7 @@ export function AddStockModal({ children, onStockAdded }: AddStockModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const form = useForm<AddStockFormValues>({
     resolver: zodResolver(AddStockFormSchema),

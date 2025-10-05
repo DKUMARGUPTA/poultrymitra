@@ -1,8 +1,7 @@
 // src/services/batches.service.ts
-import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, doc, updateDoc, deleteDoc, writeBatch, getDocs, getCountFromServer, orderBy } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, doc, updateDoc, deleteDoc, writeBatch, getDocs, getCountFromServer, orderBy, Firestore } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
-import { db } from '@/lib/firebase';
 
 export const BatchSchema = z.object({
     name: z.string().min(1, { message: "Batch name is required." }),
@@ -18,7 +17,7 @@ export type Batch = z.infer<typeof BatchSchema> & {
 };
 export type BatchInput = z.infer<typeof BatchSchema>;
 
-export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Promise<string> => {
+export const createBatch = async (db: Firestore, batchData: Omit<BatchInput, 'createdAt'>): Promise<string> => {
     const userProfile = await getUserProfile(batchData.farmerId);
     if (!userProfile) {
         throw new Error("User profile not found.");
@@ -42,23 +41,24 @@ export const createBatch = async (batchData: Omit<BatchInput, 'createdAt'>): Pro
 };
 
 
-export const getBatchesByFarmer = async (farmerId: string): Promise<Batch[]> => {
+export const getBatchesByFarmer = (db: Firestore, farmerId: string, callback: (batches: Batch[]) => void): Unsubscribe => {
     const q = query(collection(db, 'batches'), where("farmerId", "==", farmerId), orderBy("startDate", "desc"));
     
-    const querySnapshot = await getDocs(q);
-    const batches: Batch[] = [];
-    querySnapshot.forEach((doc) => {
-        batches.push({ id: doc.id, ...doc.data() } as Batch);
+    return onSnapshot(q, (querySnapshot) => {
+        const batches: Batch[] = [];
+        querySnapshot.forEach((doc) => {
+            batches.push({ id: doc.id, ...doc.data() } as Batch);
+        });
+        callback(batches);
     });
-    return batches;
 };
 
-export const updateBatch = async (batchId: string, data: { name?: string; startDate?: string }) => {
+export const updateBatch = async (db: Firestore, batchId: string, data: { name?: string; startDate?: string }) => {
     const batchRef = doc(db, 'batches', batchId);
     await updateDoc(batchRef, data);
 };
 
-export const deleteBatch = async (batchId: string) => {
+export const deleteBatch = async (db: Firestore, batchId: string) => {
     const batchRef = doc(db, 'batches', batchId);
     
     // Also delete associated daily entries

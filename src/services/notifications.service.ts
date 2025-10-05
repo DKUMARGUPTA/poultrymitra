@@ -15,10 +15,10 @@ import {
   Timestamp,
   getDocs,
   doc,
+  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getAllUsers } from './users.service';
-import { db } from '@/lib/firebase';
 
 export const NotificationTypeSchema = z.enum([
   'announcement',
@@ -46,6 +46,7 @@ export type NotificationInput = z.infer<typeof NotificationSchema>;
  * Creates a single notification for a specific user.
  */
 export const createNotification = async (
+  db: Firestore,
   notificationData: Omit<NotificationInput, 'createdAt' | 'isRead'>
 ): Promise<string> => {
   const validatedData = NotificationSchema.omit({ createdAt: true, isRead: true }).parse(notificationData);
@@ -60,7 +61,7 @@ export const createNotification = async (
 /**
  * Creates an announcement notification for all users.
  */
-export const createAnnouncement = async (title: string, message: string, link?: string): Promise<void> => {
+export const createAnnouncement = async (db: Firestore, title: string, message: string, link?: string): Promise<void> => {
     const allUsers = await getAllUsers();
     const batch = writeBatch(db);
 
@@ -87,9 +88,11 @@ export const createAnnouncement = async (title: string, message: string, link?: 
 /**
  * Fetches notifications for a specific user.
  */
-export const getNotifications = async (
+export const getNotifications = (
+  db: Firestore,
   userId: string,
-): Promise<AppNotification[]> => {
+  callback: (notifications: AppNotification[]) => void,
+): Unsubscribe => {
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),
@@ -97,18 +100,19 @@ export const getNotifications = async (
     limit(20)
   );
   
-  const snapshot = await getDocs(q);
-  const notifications: AppNotification[] = [];
-  snapshot.forEach((doc) => {
-    notifications.push({ id: doc.id, ...doc.data() } as AppNotification);
+  return onSnapshot(q, (snapshot) => {
+    const notifications: AppNotification[] = [];
+    snapshot.forEach((doc) => {
+        notifications.push({ id: doc.id, ...doc.data() } as AppNotification);
+    });
+    callback(notifications);
   });
-  return notifications;
 };
 
 /**
  * Marks all unread notifications for a user as read.
  */
-export const markNotificationsAsRead = async (userId: string): Promise<void> => {
+export const markNotificationsAsRead = async (db: Firestore, userId: string): Promise<void> => {
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),

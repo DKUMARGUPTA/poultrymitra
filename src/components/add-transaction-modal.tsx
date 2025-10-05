@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, IndianRupee, Calendar as CalendarIcon } from 'lucide-react';
 import { createTransaction, TransactionSchema, Transaction, TransactionInput } from '@/services/transactions.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useFirebase, useUser } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -47,28 +47,25 @@ export function AddTransactionModal({ children, onTransactionAdded, farmerId }: 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile } = useUser();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    if (user && db) {
-        if (userProfile && userProfile.role === 'dealer' && open) {
-            setDataLoading(true);
-            const unsubFarmers = getFarmersByDealer(user.uid, setFarmers);
-            
-            if (farmerId) {
-                getFarmer(farmerId).then(setSelectedFarmer);
-            }
-
-            setDataLoading(false);
-            return () => {
-                unsubFarmers();
-            };
-        } else {
-            setDataLoading(false);
+    if (user && db && open && userProfile?.role === 'dealer') {
+        setDataLoading(true);
+        const unsubFarmers = getFarmersByDealer(user.uid, setFarmers);
+        
+        if (farmerId) {
+            getFarmer(farmerId).then(setSelectedFarmer);
         }
+        setDataLoading(false);
+        return () => {
+            unsubFarmers();
+        };
+    } else {
+        setDataLoading(false);
     }
   }, [open, user, userProfile, farmerId, db]);
 

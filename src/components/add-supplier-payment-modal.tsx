@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, IndianRupee, Calendar as CalendarIcon } from 'lucide-react';
 import { createTransaction, Transaction, TransactionInput } from '@/services/transactions.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -48,7 +48,7 @@ export function AddSupplierPaymentModal({ children, supplierName, onPaymentAdded
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const form = useForm<AddPaymentFormValues>({
     resolver: zodResolver(AddPaymentFormSchema),

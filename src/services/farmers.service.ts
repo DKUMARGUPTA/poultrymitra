@@ -57,15 +57,16 @@ export const createFarmer = async (farmerData: Partial<FarmerInput>, isPlacehold
 };
 
 
-export const getFarmersByDealer = async (dealerId: string): Promise<Farmer[]> => {
+export const getFarmersByDealer = (dealerId: string, callback: (farmers: Farmer[]) => void): Unsubscribe => {
     const q = query(collection(db, 'farmers'), where("dealerId", "==", dealerId));
     
-    const querySnapshot = await getDocs(q);
-    const farmers: Farmer[] = [];
-    querySnapshot.forEach((doc) => {
-        farmers.push({ id: doc.id, ...doc.data() } as Farmer);
+    return onSnapshot(q, (querySnapshot) => {
+        const farmers: Farmer[] = [];
+        querySnapshot.forEach((doc) => {
+            farmers.push({ id: doc.id, ...doc.data() } as Farmer);
+        });
+        callback(farmers);
     });
-    return farmers;
 };
 
 export const getAllFarmers = async (): Promise<Farmer[]> => {

@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { createBatch, BatchSchema, Batch } from '@/services/batches.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -40,7 +40,7 @@ export function AddBatchModal({ children, onBatchAdded, onNewBatchClick }: AddBa
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const form = useForm<AddBatchFormValues>({
     resolver: zodResolver(AddBatchFormSchema),

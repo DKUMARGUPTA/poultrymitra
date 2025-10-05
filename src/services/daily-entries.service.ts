@@ -1,7 +1,6 @@
 // src/services/daily-entries.service.ts
-import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp, getDocs, Firestore } from 'firebase/firestore';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
 
 export const DailyEntrySchema = z.object({
     batchId: z.string(),
@@ -16,7 +15,7 @@ export const DailyEntrySchema = z.object({
 export type DailyEntry = z.infer<typeof DailyEntrySchema> & { id: string };
 export type DailyEntryInput = z.infer<typeof DailyEntrySchema>;
 
-export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'createdAt'>): Promise<string> => {
+export const createDailyEntry = async (db: Firestore, entryData: Omit<DailyEntryInput, 'createdAt'>): Promise<string> => {
     const validatedData = DailyEntrySchema.omit({ createdAt: true }).parse(entryData);
     
     const docRef = await addDoc(collection(db, 'daily-entries'), {
@@ -26,17 +25,18 @@ export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'created
     return docRef.id;
 };
 
-export const getDailyEntriesForBatch = async (batchId: string): Promise<DailyEntry[]> => {
+export const getDailyEntriesForBatch = (db: Firestore, batchId: string, callback: (entries: DailyEntry[]) => void): Unsubscribe => {
     const q = query(
         collection(db, 'daily-entries'), 
         where("batchId", "==", batchId),
         orderBy("date", "desc")
     );
     
-    const querySnapshot = await getDocs(q);
-    const entries: DailyEntry[] = [];
-    querySnapshot.forEach((doc) => {
-        entries.push({ id: doc.id, ...doc.data() } as DailyEntry);
+    return onSnapshot(q, (querySnapshot) => {
+        const entries: DailyEntry[] = [];
+        querySnapshot.forEach((doc) => {
+            entries.push({ id: doc.id, ...doc.data() } as DailyEntry);
+        });
+        callback(entries);
     });
-    return entries;
 };
