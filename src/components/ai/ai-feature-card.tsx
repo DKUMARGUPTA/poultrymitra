@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useUser } from '@/firebase';
 
 interface AiFeatureCardProps extends React.HTMLAttributes<HTMLDivElement> {
   icon: React.ReactNode;
@@ -15,14 +17,15 @@ interface AiFeatureCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function AiFeatureCard({ icon, title, description, buttonText, isLocked = false, ...props }: AiFeatureCardProps) {
+  const { user, loading } = useUser();
   const isInteractive = !!props.onClick;
   const descriptionClasses = props.className?.includes('text-white') ? 'text-green-100' : 'text-muted-foreground';
 
-  return (
+  const content = (
     <Card 
       className={cn(
         "relative overflow-hidden h-full flex flex-col hover:shadow-lg transition-shadow duration-300",
-        isInteractive && "cursor-pointer"
+        isInteractive && !isLocked && "cursor-pointer"
       )}
       {...props}
     >
@@ -46,7 +49,6 @@ export function AiFeatureCard({ icon, title, description, buttonText, isLocked =
           variant={isLocked ? 'secondary' : 'default'} 
           className="w-full mt-4" 
           disabled={isLocked && !isInteractive}
-          // The button should not have its own click handler if the card is interactive
           onClick={isInteractive ? (e) => e.stopPropagation() : undefined} 
         >
           <Sparkles className="w-4 h-4 mr-2" />
@@ -55,4 +57,11 @@ export function AiFeatureCard({ icon, title, description, buttonText, isLocked =
       </CardContent>
     </Card>
   );
+
+  if (isLocked) {
+    const upgradeUrl = user ? '/settings/billing' : '/auth?view=signup';
+    return <Link href={upgradeUrl} className="h-full block">{content}</Link>;
+  }
+
+  return content;
 }

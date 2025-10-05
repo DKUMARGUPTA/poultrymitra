@@ -39,6 +39,7 @@ import { Separator } from './ui/separator';
 import { EditTransactionModal } from './edit-transaction-modal';
 import { SendNotificationModal } from './send-notification-modal';
 import { UserProfile } from '@/services/users.service';
+import { useFirebase } from '@/firebase';
 
 
 interface FarmerLedgerProps {
@@ -46,6 +47,7 @@ interface FarmerLedgerProps {
 }
 
 export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
+  const { db } = useFirebase();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [farmerUserProfile, setFarmerUserProfile] = useState<UserProfile | null>(null);
@@ -59,24 +61,30 @@ export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
   useEffect(() => {
     async function fetchInitialData() {
         setLoading(true);
-        const farmerData = await getFarmer(farmerId);
+        if(!db) return;
+        const farmerData = await getFarmer(db, farmerId);
         setFarmer(farmerData);
         if (farmerData) {
-            const userProfile = await getUserProfile(farmerData.uid);
-            setFarmerUserProfile(userProfile);
-            const transactionData = await getTransactionsForFarmer(farmerId);
-            setTransactions(transactionData);
+            if (farmerData.uid) {
+                const userProfile = await getUserProfile(farmerData.uid);
+                setFarmerUserProfile(userProfile);
+            }
+            getTransactionsForFarmer(db, farmerId, (transactionData) => {
+              setTransactions(transactionData);
+            });
         }
         setLoading(false);
     }
     fetchInitialData();
-  }, [farmerId]);
+  }, [farmerId, db]);
   
   const refreshData = async () => {
-     const farmerData = await getFarmer(farmerId);
+    if(!db) return;
+     const farmerData = await getFarmer(db, farmerId);
      setFarmer(farmerData);
-     const transactionData = await getTransactionsForFarmer(farmerId);
-     setTransactions(transactionData);
+     getTransactionsForFarmer(db, farmerId, (transactionData) => {
+        setTransactions(transactionData);
+     });
   }
   
   const toggleRow = async (transaction: Transaction) => {
@@ -88,9 +96,9 @@ export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
         newSet.delete(transactionId);
     } else {
         newSet.add(transactionId);
-        // Fetch order details only if they haven't been fetched before for this order
         if (purchaseOrderId && !expandedOrderDetails[purchaseOrderId]) {
-            const orderDetails = await getOrderById(purchaseOrderId);
+            if (!db) return;
+            const orderDetails = await getOrderById(db, purchaseOrderId);
             setExpandedOrderDetails(prev => ({ ...prev, [purchaseOrderId]: orderDetails }));
         }
     }
@@ -255,7 +263,7 @@ export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-lg font-semibold md:text-2xl font-headline">Farmer Ledger: {farmer.name}</h1>
              <div className="flex gap-2">
                 {farmerUserProfile && (
@@ -364,7 +372,7 @@ export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
                                       {isSale ? (isExpanded ? <ChevronDown className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>) : null}
                                     </TableCell>
                                     <TableCell>
-                                    <div className="font-medium">{format(new Date(transaction.date), "dd/MM/yy, p")}</div>
+                                    <div className="font-medium whitespace-nowrap">{format(new Date(transaction.date), "dd/MM/yy, p")}</div>
                                     </TableCell>
                                     <TableCell>
                                         <div>{transaction.description}</div>

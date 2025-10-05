@@ -127,7 +127,7 @@ export function FarmerDashboard() {
                         <h3 className="text-xl font-bold tracking-tight mt-4">Your dashboard is ready</h3>
                         <p className="text-sm text-muted-foreground">Track mortality, feed consumption, and sales all in one place.</p>
                         <AddBatchModal onBatchAdded={handleBatchAdded} onNewBatchClick={handleNewBatchClick}>
-                            <Button className="mt-4" onClick={(e) => { if (!handleNewBatchClick()) e.preventDefault() }}>
+                            <Button className="mt-4" onClick={(e) => { if (!handleNewBatchClick()) e.preventDefault(); }}>
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Create Your First Batch
                             </Button>
@@ -147,7 +147,7 @@ export function FarmerDashboard() {
               title="Active Batches"
               value={stats.activeBatches.toString()}
               icon={<Bird className="h-4 w-4 text-muted-foreground" />}
-              description="You are on the free plan (1 batch limit)"
+              description={!userProfile.isPremium ? 'Free plan limit: 1' : 'Currently active batches'}
             />
             <StatCard 
               title="Avg. Mortality Rate"
