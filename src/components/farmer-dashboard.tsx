@@ -21,7 +21,7 @@ import { getUserProfile, UserProfile } from '@/services/users.service';
 import { MarketRateDisplay } from './market-rate-display';
 import { AiFeatureCard } from './ai/ai-feature-card';
 import { FarmerOverviewChart } from './farmer-overview-chart';
-import { RequestOrderModal } from './request-order-modal';
+import { CreateOrderModal } from './create-order-modal';
 import { Order } from '@/services/orders.service';
 import { AddBatchModal } from './add-batch-modal';
 import { Batch, getBatchesByFarmer } from '@/services/batches.service';
@@ -185,12 +185,12 @@ export function FarmerDashboard() {
                         <p className="text-xl font-bold">{dealerProfile.name}</p>
                         <p className="text-sm text-muted-foreground">{dealerProfile.email}</p>
                     </div>
-                     <RequestOrderModal onOrderCreated={handleOrderCreated}>
+                     <CreateOrderModal onOrderCreated={handleOrderCreated}>
                         <Button>
                             <ShoppingCart className="mr-2 h-4 w-4" />
                             Request New Order
                         </Button>
-                    </RequestOrderModal>
+                    </CreateOrderModal>
                 </div>
             ) : (
                 <div className="text-center bg-yellow-50 border-yellow-200 border text-yellow-900 p-6 rounded-lg">
