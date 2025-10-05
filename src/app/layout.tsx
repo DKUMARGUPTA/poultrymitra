@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
 import { belleza, alegreya } from '@/lib/fonts';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'Poultry Mitra',
@@ -21,10 +23,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-body antialiased", belleza.variable, alegreya.variable)} suppressHydrationWarning>
         <FirebaseClientProvider>
-          <Providers>
-              {children}
-          </Providers>
+          <SidebarProvider>
+            <Providers>
+                {children}
+            </Providers>
+          </SidebarProvider>
         </FirebaseClientProvider>
+        <Toaster />
       </body>
     </html>
   );
