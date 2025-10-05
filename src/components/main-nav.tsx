@@ -29,46 +29,17 @@ export function MainNav() {
   };
   
   const navItems = {
-    farmer: [
-        { href: "/dashboard", icon: <LineChart />, label: "Dashboard" },
-        { href: "/batches", icon: <Bird />, label: "Batches" },
-        { href: "/orders", icon: <ShoppingCart />, label: "Orders" },
-        { href: "/ledger", icon: <BookText />, label: "My Ledger" },
-        { href: "/reports", icon: <BarChart />, label: "Reports" },
-    ],
+    farmer: [],
     dealer: {
-      main: [
-        { href: "/dashboard", icon: <LineChart />, label: "Dashboard" },
-        { href: "/batches", icon: <Bird />, label: "My Batches" },
-      ],
-      management: [
-        { href: "/farmers", icon: <Users />, label: "Farmers" },
-        { href: "/suppliers", icon: <Building />, label: "Suppliers" },
-        { href: "/inventory", icon: <Warehouse />, label: "Inventory" },
-        { href: "/orders", icon: <ShoppingCart />, label: "Orders" },
-      ],
-      financials: [
-        { href: "/expenses", icon: <Wallet />, label: "Business Expenses" },
-        { href: "/reports", icon: <BarChart />, label: "Reports" },
-      ],
+      main: [],
+      management: [],
+      financials: [],
     },
     admin: {
-        platform: [
-            { href: "/admin", icon: <Shield />, label: "Admin Panel" },
-            { href: "/admin/users", icon: <Users />, label: "User Management" },
-            { href: "/admin/transactions", icon: <Briefcase />, label: "All Transactions" },
-        ],
-        subscription: [
-            { href: "/admin/billing", icon: <CreditCard />, label: "Payment Verification" },
-            { href: "/admin/offers", icon: <TicketPercent />, label: "Subscription Offers" },
-            { href: "/admin/subscriptions", icon: <Settings />, label: "Subscription Settings" },
-        ],
-        management: [
-            { href: "/market-rates", icon: <TrendingUp />, label: "Market Rates" },
-        ],
-        content: [
-            { href: "/admin/blog", icon: <PencilRuler />, label: "Blog" },
-        ]
+        platform: [],
+        subscription: [],
+        management: [],
+        content: []
     }
   };
 
