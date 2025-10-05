@@ -1,10 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getUserProfile, UserProfile } from '@/services/users.service';
 import { Bird, Bot, Sparkles, Image as ImageIcon, Loader } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -24,32 +21,16 @@ import { Button } from '@/components/ui/button';
 import { generateImage } from '@/ai/flows/generate-image';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 export default function ImageGenerationPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
-
+  const { userProfile, loading: authLoading } = useUser();
   const { toast } = useToast();
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const profile = await getUserProfile(currentUser.uid);
-        setUserProfile(profile);
-      } else {
-        router.push('/auth');
-      }
-      setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
-  
   const isPremium = !!userProfile?.isPremium;
 
   const handleGenerate = async () => {
@@ -74,7 +55,7 @@ export default function ImageGenerationPage() {
     }
   }
 
-  if (authLoading || !user || !userProfile) {
+  if (authLoading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>

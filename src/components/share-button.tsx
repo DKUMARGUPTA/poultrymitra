@@ -1,9 +1,9 @@
-
 'use client';
 
 import { Share2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 interface ShareButtonProps {
   title: string;
@@ -12,9 +12,13 @@ interface ShareButtonProps {
 
 export function ShareButton({ title, slug }: ShareButtonProps) {
   const { toast } = useToast();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   
-  // This check is necessary because window is not available during server-side rendering
-  if (typeof window === 'undefined') {
+  if (!hasMounted) {
     return null;
   }
   

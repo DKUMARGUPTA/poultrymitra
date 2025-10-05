@@ -20,48 +20,30 @@ import { TransactionHistory } from '@/components/transaction-history';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddTransactionModal } from '@/components/add-transaction-modal';
 import { Transaction, getTransactionsForUser } from '@/services/transactions.service';
-import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { UserProfile, getUserProfile } from '@/services/users.service';
+import { useUser, useFirebase } from '@/firebase';
 
 
 export default function LedgerPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user, userProfile, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
 
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [exporting, setExporting] = useState(false);
   
   const [refreshKey, setRefreshKey] = useState(0); 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        if (currentUser) {
-            setUser(currentUser);
-            const profile = await getUserProfile(currentUser.uid);
-            setUserProfile(profile);
-            if (profile?.role === 'admin') {
-                router.push('/admin');
-            }
-        } else {
-            setUser(null);
-            setUserProfile(null);
-            router.push('/auth');
-        }
-        setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (!authLoading && !user) {
+        router.push('/auth');
+    }
+  }, [user, authLoading, router]);
 
   const handleTransactionAdded = (newTransaction: Transaction) => {
     setRefreshKey(prev => prev + 1);
@@ -69,13 +51,18 @@ export default function LedgerPage() {
 
   const handleExportCSV = async () => {
     setExporting(true);
-    if (!user) {
+    if (!user || !db) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to export.'});
         setExporting(false);
         return;
     }
     try {
-      const allTransactions = await getTransactionsForUser(user.uid);
+      const allTransactions = await new Promise<Transaction[]>(resolve => {
+        const unsub = getTransactionsForUser(db, user.uid, data => {
+          unsub();
+          resolve(data);
+        }, false);
+      });
       const csvData = allTransactions.map(t => ({
         ID: t.id,
         Date: format(new Date(t.date), "yyyy-MM-dd HH:mm:ss"),
@@ -108,13 +95,18 @@ export default function LedgerPage() {
 
   const handleExportPDF = async () => {
     setExporting(true);
-    if (!user) {
+    if (!user || !db) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to export.'});
         setExporting(false);
         return;
     }
     try {
-        const allTransactions = await getTransactionsForUser(user.uid);
+      const allTransactions = await new Promise<Transaction[]>(resolve => {
+        const unsub = getTransactionsForUser(db, user.uid, data => {
+          unsub();
+          resolve(data);
+        }, false);
+      });
         const doc = new jsPDF();
         
         const head = [['Date', 'Description', 'Method', 'Status', 'Amount']];
@@ -178,7 +170,7 @@ export default function LedgerPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
@@ -186,7 +178,7 @@ export default function LedgerPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav user={user} userProfile={userProfile} />
+            <UserNav />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">

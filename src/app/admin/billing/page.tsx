@@ -3,35 +3,11 @@
 import { CreditCard } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BillingTable } from "@/components/billing-table";
-import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { getUserProfile, UserProfile } from "@/services/users.service";
-import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUser } from "@/firebase";
 
 export default function AdminBillingPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const profile = await getUserProfile(currentUser.uid);
-        setUserProfile(profile);
-        if (profile?.role !== 'admin') {
-          router.push('/dashboard');
-        }
-      } else {
-        router.push('/auth');
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
+  const { loading } = useUser();
 
   if (loading) {
     return (

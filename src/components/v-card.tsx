@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useEffect, useState } from "react";
 
 
 function generateVCardString(user: UserProfile): string {
@@ -28,7 +29,12 @@ function generateVCardString(user: UserProfile): string {
 }
 
 export function VCard({ user }: { user: UserProfile }) {
-    if (!user) return null;
+    const [hasMounted, setHasMounted] = useState(false);
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
+
+    if (!user || !hasMounted) return null;
     
     const vCardString = generateVCardString(user);
 

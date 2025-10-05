@@ -33,16 +33,12 @@ import {
 } from "@/components/ui/table";
 import { getInventoryItems, InventoryItem } from '@/services/inventory.service';
 import { AddStockModal } from '@/components/add-stock-modal';
-import Link from 'next/link';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { UserProfile, getUserProfile } from '@/services/users.service';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirebase } from '@/firebase';
 
 export default function InventoryPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user, userProfile, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -50,44 +46,25 @@ export default function InventoryPage() {
   const [inventoryLoading, setInventoryLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const profile = await getUserProfile(currentUser.uid);
-        setUserProfile(profile);
-        if (profile?.role !== 'dealer') {
-            router.push('/dashboard');
+    if (!authLoading) {
+      if (user && db) {
+        if (userProfile?.role !== 'dealer') {
+          router.push('/dashboard');
         } else {
-            fetchInventory(currentUser.uid);
+          const unsubscribe = getInventoryItems(db, user.uid, (items) => {
+            setInventoryItems(items.sort((a,b) => a.name.localeCompare(b.name)));
+            setInventoryLoading(false);
+          });
+          return () => unsubscribe();
         }
       } else {
-        setUser(null);
-        setUserProfile(null);
         router.push('/auth');
       }
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  const fetchInventory = async (uid: string) => {
-      setInventoryLoading(true);
-      try {
-        const items = await getInventoryItems(uid);
-        setInventoryItems(items.sort((a,b) => a.name.localeCompare(b.name)));
-      } catch (error) {
-        console.error("Failed to fetch inventory:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory items.' });
-      } finally {
-        setInventoryLoading(false);
-      }
-  }
+    }
+  }, [user, userProfile, authLoading, router, db]);
 
   const handleStockAdded = (purchaseOrderId: string) => {
-    if (user) {
-        fetchInventory(user.uid);
-    }
+    // The listener will automatically update the state.
   };
 
   const isLoading = authLoading || !userProfile;
@@ -113,7 +90,7 @@ export default function InventoryPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
@@ -121,7 +98,7 @@ export default function InventoryPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav user={user} userProfile={userProfile} />
+            <UserNav />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">
