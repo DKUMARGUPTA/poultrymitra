@@ -71,7 +71,7 @@ export function LandingPageHeader() {
           {loading ? (
             <Skeleton className="h-9 w-9 rounded-full" />
           ) : user && userProfile ? (
-            <UserNav user={user} userProfile={userProfile} />
+            <UserNav />
           ) : (
             <>
               <ThemeToggle />
