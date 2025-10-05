@@ -13,6 +13,7 @@ export function MainNav() {
   const { setOpenMobile } = useSidebar();
   const { userProfile } = useUser();
   const userRole = userProfile?.role;
+  const isHomepage = pathname === '/';
 
   const handleLinkClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -27,31 +28,9 @@ export function MainNav() {
     return pathname.startsWith(href);
   };
   
-  const isHomepage = pathname === '/';
-  
   // If we are on the homepage and logged in, we don't want to show any main navigation.
   if (isHomepage && userProfile) {
-     return (
-        <SidebarGroup>
-            <SidebarGroupLabel>AI Suite</SidebarGroupLabel>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <Link href="/ai-chat" passHref onClick={handleLinkClick}>
-                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-chat')}>
-                            <span><Bot /><span>AI Assistant</span></span>
-                        </SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <Link href="/ai-tools" passHref onClick={handleLinkClick}>
-                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools')}>
-                            <span><BrainCircuit /><span>AI Tools</span></span>
-                        </SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-            </SidebarMenu>
-        </SidebarGroup>
-     );
+     return null;
   }
   
   const navItems = {
