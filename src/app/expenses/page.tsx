@@ -286,69 +286,71 @@ export default function ExpensesPage() {
                             </div>
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                <TableHead className="w-12"></TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Method</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredExpenses.map((expense) => (
-                                <React.Fragment key={expense.id}>
-                                    <TableRow onClick={() => toggleRow(expense.id)} className="cursor-pointer">
-                                        <TableCell>
-                                            {expandedRows.has(expense.id) ? <ChevronDown className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
-                                        </TableCell>
-                                        <TableCell>{format(new Date(expense.date), 'dd/MM/yy')}</TableCell>
-                                        <TableCell className="font-medium">{expense.description}</TableCell>
-                                        <TableCell>{expense.paymentMethod}</TableCell>
-                                        <TableCell className="text-right font-medium text-destructive">-₹{Math.abs(expense.amount).toLocaleString()}</TableCell>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                    <TableHead className="w-12"></TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Method</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
                                     </TableRow>
-                                    {expandedRows.has(expense.id) && (
-                                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                            <TableCell colSpan={5} className="p-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <p className="font-semibold flex items-center gap-1"><User className="w-4 h-4 text-muted-foreground"/>Paid To</p>
-                                                        <p className="text-muted-foreground pl-5">{expense.userName || 'N/A'}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold">Reference Number</p>
-                                                        <p className="text-muted-foreground">{expense.referenceNumber || 'N/A'}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold">Remarks</p>
-                                                        <p className="text-muted-foreground">{expense.remarks || 'N/A'}</p>
-                                                    </div>
-                                                     <div>
-                                                        <p className="font-semibold">Transaction ID</p>
-                                                        <p className="text-muted-foreground text-xs font-mono">{expense.id}</p>
-                                                    </div>
-                                                    {expense.purchaseOrderId && (
-                                                         <div>
-                                                            <p className="font-semibold">Linked Purchase Order</p>
-                                                            <p className="text-muted-foreground">
-                                                                This expense is part of PO
-                                                                <Button variant="link" asChild className="p-1 h-auto">
-                                                                    <Link href={`/suppliers/${expense.userName}`}>
-                                                                        #{expense.purchaseOrderId.substring(0, 6)}...
-                                                                    </Link>
-                                                                </Button>
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredExpenses.map((expense) => (
+                                    <React.Fragment key={expense.id}>
+                                        <TableRow onClick={() => toggleRow(expense.id)} className="cursor-pointer">
+                                            <TableCell>
+                                                {expandedRows.has(expense.id) ? <ChevronDown className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
                                             </TableCell>
+                                            <TableCell>{format(new Date(expense.date), 'dd/MM/yy')}</TableCell>
+                                            <TableCell className="font-medium">{expense.description}</TableCell>
+                                            <TableCell>{expense.paymentMethod}</TableCell>
+                                            <TableCell className="text-right font-medium text-destructive">-₹{Math.abs(expense.amount).toLocaleString()}</TableCell>
                                         </TableRow>
-                                    )}
-                                </React.Fragment>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                        {expandedRows.has(expense.id) && (
+                                            <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                                <TableCell colSpan={5} className="p-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                        <div>
+                                                            <p className="font-semibold flex items-center gap-1"><User className="w-4 h-4 text-muted-foreground"/>Paid To</p>
+                                                            <p className="text-muted-foreground pl-5">{expense.userName || 'N/A'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold">Reference Number</p>
+                                                            <p className="text-muted-foreground">{expense.referenceNumber || 'N/A'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold">Remarks</p>
+                                                            <p className="text-muted-foreground">{expense.remarks || 'N/A'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold">Transaction ID</p>
+                                                            <p className="text-muted-foreground text-xs font-mono">{expense.id}</p>
+                                                        </div>
+                                                        {expense.purchaseOrderId && (
+                                                            <div>
+                                                                <p className="font-semibold">Linked Purchase Order</p>
+                                                                <p className="text-muted-foreground">
+                                                                    This expense is part of PO
+                                                                    <Button variant="link" asChild className="p-1 h-auto">
+                                                                        <Link href={`/suppliers/${expense.userName}`}>
+                                                                            #{expense.purchaseOrderId.substring(0, 6)}...
+                                                                        </Link>
+                                                                    </Button>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </React.Fragment>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>

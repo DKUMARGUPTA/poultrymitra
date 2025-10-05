@@ -55,28 +55,30 @@ export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) 
   if (loading) {
     return (
         <div className="mt-4 border rounded-lg">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    {scope === 'all' && <TableHead className="hidden sm:table-cell">User</TableHead>}
-                    <TableHead className="hidden sm:table-cell">Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {[...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                            {scope === 'all' && <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-20" /></TableCell>}
-                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16" /></TableCell>
-                            <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Description</TableHead>
+                        {scope === 'all' && <TableHead className="hidden sm:table-cell">User</TableHead>}
+                        <TableHead className="hidden sm:table-cell">Status</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {[...Array(5)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                {scope === 'all' && <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-20" /></TableCell>}
+                                <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16" /></TableCell>
+                                <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     )
   }
@@ -92,106 +94,108 @@ export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) 
         </div>
       ) : (
       <div className="mt-4 border rounded-lg">
-        <TooltipProvider>
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                {scope === 'all' && <TableHead className="hidden sm:table-cell">User</TableHead>}
-                <TableHead className="hidden sm:table-cell">Method</TableHead>
-                <TableHead className="hidden md:table-cell">Ref / Order ID</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                    <TableCell>
-                    <div className="font-medium">{format(new Date(transaction.date), "dd/MM/yy, p")}</div>
-                    </TableCell>
-                    <TableCell>
-                    <div className="font-medium">{transaction.description}</div>
-                    {transaction.inventoryItemName && (
-                        <div className="text-xs text-muted-foreground">
-                        {transaction.inventoryItemName}
-                        </div>
-                    )}
-                    {transaction.remarks && (
-                        <div className="text-xs text-muted-foreground">
-                        Remark: {transaction.remarks}
-                        </div>
-                    )}
-                    </TableCell>
-                    {scope === 'all' && (
-                      <TableCell className="hidden sm:table-cell">
-                        {transaction.userName}
-                      </TableCell>
-                    )}
-                    <TableCell className="hidden sm:table-cell text-muted-foreground">
-                    {transaction.paymentMethod}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground truncate">
-                        {transaction.purchaseOrderId && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link href={`/orders`} className="hover:underline">
-                                        PO #{transaction.purchaseOrderId.substring(0, 6)}...
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Order ID: {transaction.purchaseOrderId}</p>
-                                </TooltipContent>
-                            </Tooltip>
+        <div className="overflow-x-auto">
+            <TooltipProvider>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    {scope === 'all' && <TableHead className="hidden sm:table-cell">User</TableHead>}
+                    <TableHead className="hidden sm:table-cell">Method</TableHead>
+                    <TableHead className="hidden md:table-cell">Ref / Order ID</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                        <TableCell>
+                        <div className="font-medium whitespace-nowrap">{format(new Date(transaction.date), "dd/MM/yy, p")}</div>
+                        </TableCell>
+                        <TableCell>
+                        <div className="font-medium">{transaction.description}</div>
+                        {transaction.inventoryItemName && (
+                            <div className="text-xs text-muted-foreground">
+                            {transaction.inventoryItemName}
+                            </div>
                         )}
-                        {transaction.referenceNumber && (
-                             <Tooltip>
-                                <TooltipTrigger>
-                                    <p>Ref: {transaction.referenceNumber}</p>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{transaction.referenceNumber}</p>
-                                </TooltipContent>
-                            </Tooltip>
+                        {transaction.remarks && (
+                            <div className="text-xs text-muted-foreground">
+                            Remark: {transaction.remarks}
+                            </div>
                         )}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <Badge
-                                    variant={transaction.status === 'Paid' ? 'secondary' : 'destructive'}
-                                    className={
-                                    transaction.status === 'Paid'
-                                        ? 'text-green-700 border-green-500/50'
-                                        : ''
-                                    }
-                                >
-                                    {transaction.status}
-                                </Badge>
-                            </TooltipTrigger>
-                            {transaction.status === 'Pending' && (
-                                <TooltipContent>
-                                    <p>This amount is due to be paid.</p>
-                                </TooltipContent>
+                        </TableCell>
+                        {scope === 'all' && (
+                        <TableCell className="hidden sm:table-cell">
+                            {transaction.userName}
+                        </TableCell>
+                        )}
+                        <TableCell className="hidden sm:table-cell text-muted-foreground">
+                        {transaction.paymentMethod}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-xs text-muted-foreground truncate">
+                            {transaction.purchaseOrderId && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link href={`/orders`} className="hover:underline">
+                                            PO #{transaction.purchaseOrderId.substring(0, 6)}...
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Order ID: {transaction.purchaseOrderId}</p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )}
-                        </Tooltip>
-                    </TableCell>
-                    <TableCell className={`text-right font-medium`}>
-                    <div className={`${transaction.amount >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        {transaction.amount < 0 ? `-₹${Math.abs(transaction.amount).toLocaleString()}` : `+₹${transaction.amount.toLocaleString()}`}
-                    </div>
-                    {(transaction.costOfGoodsSold ?? 0) > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                        (Cost: ₹{transaction.costOfGoodsSold!.toLocaleString()})
+                            {transaction.referenceNumber && (
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <p>Ref: {transaction.referenceNumber}</p>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>{transaction.referenceNumber}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <Badge
+                                        variant={transaction.status === 'Paid' ? 'secondary' : 'destructive'}
+                                        className={
+                                        transaction.status === 'Paid'
+                                            ? 'text-green-700 border-green-500/50'
+                                            : ''
+                                        }
+                                    >
+                                        {transaction.status}
+                                    </Badge>
+                                </TooltipTrigger>
+                                {transaction.status === 'Pending' && (
+                                    <TooltipContent>
+                                        <p>This amount is due to be paid.</p>
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </TableCell>
+                        <TableCell className={`text-right font-medium`}>
+                        <div className={`${transaction.amount >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                            {transaction.amount < 0 ? `-₹${Math.abs(transaction.amount).toLocaleString()}` : `+₹${transaction.amount.toLocaleString()}`}
                         </div>
-                    )}
-                    </TableCell>
-                </TableRow>
-                ))}
-            </TableBody>
-            </Table>
-        </TooltipProvider>
+                        {(transaction.costOfGoodsSold ?? 0) > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                            (Cost: ₹{transaction.costOfGoodsSold!.toLocaleString()})
+                            </div>
+                        )}
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </TooltipProvider>
+        </div>
       </div>
       )}
     </div>

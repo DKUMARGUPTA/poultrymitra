@@ -48,11 +48,10 @@ export default function WhatsappPage() {
         router.push('/dashboard');
       } else if (userProfile.isPremium) {
         setFarmersLoading(true);
-        const unsubscribe = getFarmersByDealer(user.uid, (newFarmers) => {
+        getFarmersByDealer(user.uid).then(newFarmers => {
           setFarmers(newFarmers);
           setFarmersLoading(false);
         });
-        return () => unsubscribe();
       } else {
         setFarmersLoading(false);
       }
@@ -174,7 +173,7 @@ export default function WhatsappPage() {
              </main>
             ) : (
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-hidden">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     <h1 className="text-lg font-semibold md:text-2xl font-headline">WhatsApp Messaging</h1>
                     <WhatsappTemplatesModal onDraftGenerated={handleDraftGenerated}>
                         <Button variant="outline">

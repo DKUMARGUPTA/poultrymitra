@@ -30,13 +30,10 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile, getUserProfile } from '@/services/users.service';
 import { AddConnectFarmerModal } from '@/components/add-connect-farmer-modal';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function FarmersPage() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const { toast } = useToast();
@@ -44,35 +41,22 @@ export default function FarmersPage() {
   const [farmersLoading, setFarmersLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const profile = await getUserProfile(currentUser.uid);
-        setUserProfile(profile);
-        if (profile?.role !== 'dealer') {
+    if (!authLoading) {
+      if (user) {
+        if (userProfile?.role !== 'dealer') {
           router.push('/dashboard');
         } else {
-            setFarmersLoading(true);
-            try {
-                const newFarmers = await getFarmersByDealer(currentUser.uid);
-                setFarmers(newFarmers);
-            } catch (error) {
-                console.error("Failed to fetch farmers:", error);
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not load your farmers.' });
-            } finally {
-                setFarmersLoading(false);
-            }
+          setFarmersLoading(true);
+          getFarmersByDealer(user.uid).then(newFarmers => {
+            setFarmers(newFarmers);
+            setFarmersLoading(false);
+          });
         }
       } else {
-        setUser(null);
-        setUserProfile(null);
         router.push('/auth');
       }
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router, toast]);
+    }
+  }, [user, userProfile, authLoading, router]);
   
   const handleFarmerAction = async () => {
     // The list is now fetched on load, so we just need to re-fetch
@@ -149,7 +133,7 @@ export default function FarmersPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav user={user} userProfile={userProfile}/>
+            <UserNav />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">
