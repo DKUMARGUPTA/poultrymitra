@@ -123,7 +123,7 @@ export const createTransaction = async (db: Firestore, transactionData: Transact
             ? `A new sale of ₹${validatedData.amount.toLocaleString()} has been added to your ledger.`
             : `Your payment of ₹${Math.abs(validatedData.amount).toLocaleString()} has been logged by your dealer.`;
         
-        await createNotification(db, {
+        await createNotification({
             userId: validatedData.userId,
             title: notificationTitle,
             message: notificationMessage,

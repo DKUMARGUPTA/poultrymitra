@@ -1,3 +1,4 @@
+// src/components/reports/sales-report.tsx
 
 "use client";
 

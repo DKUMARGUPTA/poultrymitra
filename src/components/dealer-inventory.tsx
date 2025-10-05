@@ -21,11 +21,9 @@ export function DealerInventory() {
     const { db } = useFirebase();
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [inventoryLoading, setInventoryLoading] = useState(true);
-    const [suppliers, setSuppliers] = useState<string[]>([]);
 
     // Filter states
     const [selectedCategory, setSelectedCategory] = useState<string>('');
-    const [selectedSupplier, setSelectedSupplier] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -36,9 +34,6 @@ export function DealerInventory() {
                 setInventoryLoading(false);
             });
             
-            // This is incorrect, a farmer should not see suppliers, only the dealer's inventory
-            // getUniquePurchaseSources(userProfile.dealerCode).then(setSuppliers);
-
             return () => unsubscribe();
         } else {
             setInventoryLoading(false);

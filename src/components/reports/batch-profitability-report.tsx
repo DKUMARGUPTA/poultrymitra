@@ -1,3 +1,4 @@
+// src/components/reports/batch-profitability-report.tsx
 
 "use client";
 
@@ -50,16 +51,10 @@ export function BatchProfitabilityReport() {
             }
 
             const transactions = await new Promise<any[]>(res => {
-                const unsub = getTransactionsForBatch(db, batch.id, data => {
-                    unsub();
-                    res(data);
-                });
+                getTransactionsForBatch(db, batch.id, data => res(data));
             });
             const entries = await new Promise<any[]>(res => {
-                const unsub = getDailyEntriesForBatch(db, batch.id, data => {
-                    unsub();
-                    res(data);
-                });
+                getDailyEntriesForBatch(db, batch.id, data => res(data));
             });
 
             const revenue = Math.abs(transactions.filter(t => t.description.toLowerCase().includes('sale')).reduce((sum, t) => sum + t.amount, 0));
@@ -81,10 +76,9 @@ export function BatchProfitabilityReport() {
             // Calculate FCR and Mortality
             const totalMortality = entries.reduce((sum, entry) => sum + entry.mortality, 0);
             const totalFeedConsumed = entries.reduce((sum, entry) => sum + entry.feedConsumedInKg, 0);
-            const finalBirdCount = batch.initialBirdCount - totalMortality;
-            const mortalityRate = (totalMortality / batch.initialBirdCount) * 100;
             
             const totalWeightSold = transactions.filter(t => t.description.toLowerCase().includes('sale')).reduce((sum, t) => sum + (t.totalWeight || 0), 0);
+            const mortalityRate = (totalMortality / batch.initialBirdCount) * 100;
             
             const fcr = totalWeightSold > 0 ? totalFeedConsumed / totalWeightSold : 0;
             

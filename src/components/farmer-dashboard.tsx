@@ -28,6 +28,7 @@ import { AddBatchModal } from './add-batch-modal';
 import { Batch, getBatchesByFarmer } from '@/services/batches.service';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirebase } from '@/firebase';
+import { DealerInventory } from './dealer-inventory';
 
 
 export function FarmerDashboard() {
@@ -169,41 +170,7 @@ export function FarmerDashboard() {
       </div>
       
        <div className="grid gap-6 md:grid-cols-2">
-         <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><Briefcase className="w-5 h-5 text-primary" />My Dealer</CardTitle>
-            <CardDescription>Your main point of contact for supplies and payments.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center">
-            {!userProfile ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-1/2" />
-                <Skeleton className="h-4 w-1/3" />
-              </div>
-            ) : dealerProfile ? (
-                <div className="space-y-4">
-                    <div>
-                        <p className="text-xl font-bold">{dealerProfile.name}</p>
-                        <p className="text-sm text-muted-foreground">{dealerProfile.email}</p>
-                    </div>
-                     <CreateOrderModal onOrderCreated={handleOrderCreated}>
-                        <Button>
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            Request New Order
-                        </Button>
-                    </CreateOrderModal>
-                </div>
-            ) : (
-                <div className="text-center bg-yellow-50 border-yellow-200 border text-yellow-900 p-6 rounded-lg">
-                    <div className="flex items-center justify-center mb-4">
-                      <Clock className="w-8 h-8 mr-2" />
-                      <h3 className="text-xl font-bold font-headline">Connection Pending</h3>
-                    </div>
-                    <p className="text-sm">Your request to connect with a dealer is awaiting approval. Your dashboard will update once they accept.</p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
+         <DealerInventory />
 
         {userProfile.isPremium ? (
           <MarketRateDisplay />
