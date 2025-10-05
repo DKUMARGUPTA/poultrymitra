@@ -35,6 +35,18 @@ const nextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...config.externals, "handlebars"];
+    }
+    return config;
+  },
+  experimental: {
+    allowedDevOrigins: [
+        "https://6000-firebase-studio-1757941805991.cluster-zumahodzirciuujpqvsniawo3o.cloudworkstations.dev",
+        "https://9000-firebase-studio-1757941805991.cluster-zumahodzirciuujpqvsniawo3o.cloudworkstations.dev"
+    ],
+  },
 };
 
 module.exports = nextConfig;
