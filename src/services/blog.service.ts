@@ -101,13 +101,20 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 };
 
 /**
- * Fetches all posts, including drafts.
+ * Gets posts for client-side rendering with real-time updates.
  */
-export const getAllPosts = async (): Promise<Post[]> => {
-    const db = getClientFirestore();
-    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+export const getPosts = (db: Firestore, callback: (posts: Post[]) => void, includeDrafts = false): Unsubscribe => {
+    let q;
+    if (includeDrafts) {
+        q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    } else {
+        q = query(collection(db, 'posts'), where('isPublished', '==', true), orderBy('createdAt', 'desc'));
+    }
+    
+    return onSnapshot(q, (snapshot) => {
+        const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+        callback(posts);
+    });
 };
 
 

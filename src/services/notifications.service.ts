@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getAllUsers } from './users.service';
+import { getClientFirestore } from '@/lib/firebase';
 
 export const NotificationTypeSchema = z.enum([
   'announcement',
@@ -46,9 +47,9 @@ export type NotificationInput = z.infer<typeof NotificationSchema>;
  * Creates a single notification for a specific user.
  */
 export const createNotification = async (
-  db: Firestore,
   notificationData: Omit<NotificationInput, 'createdAt' | 'isRead'>
 ): Promise<string> => {
+  const db = getClientFirestore();
   const validatedData = NotificationSchema.omit({ createdAt: true, isRead: true }).parse(notificationData);
   const docRef = await addDoc(collection(db, 'notifications'), {
     ...validatedData,
@@ -61,7 +62,8 @@ export const createNotification = async (
 /**
  * Creates an announcement notification for all users.
  */
-export const createAnnouncement = async (db: Firestore, title: string, message: string, link?: string): Promise<void> => {
+export const createAnnouncement = async (title: string, message: string, link?: string): Promise<void> => {
+    const db = getClientFirestore();
     const allUsers = await getAllUsers();
     const batch = writeBatch(db);
 

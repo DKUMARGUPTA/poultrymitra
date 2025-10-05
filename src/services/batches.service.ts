@@ -41,16 +41,15 @@ export const createBatch = async (db: Firestore, batchData: Omit<BatchInput, 'cr
 };
 
 
-export const getBatchesByFarmer = (db: Firestore, farmerId: string, callback: (batches: Batch[]) => void): Unsubscribe => {
+export const getBatchesByFarmer = async (db: Firestore, farmerId: string): Promise<Batch[]> => {
     const q = query(collection(db, 'batches'), where("farmerId", "==", farmerId), orderBy("startDate", "desc"));
     
-    return onSnapshot(q, (querySnapshot) => {
-        const batches: Batch[] = [];
-        querySnapshot.forEach((doc) => {
-            batches.push({ id: doc.id, ...doc.data() } as Batch);
-        });
-        callback(batches);
+    const querySnapshot = await getDocs(q);
+    const batches: Batch[] = [];
+    querySnapshot.forEach((doc) => {
+        batches.push({ id: doc.id, ...doc.data() } as Batch);
     });
+    return batches;
 };
 
 export const updateBatch = async (db: Firestore, batchId: string, data: { name?: string; startDate?: string }) => {

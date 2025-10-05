@@ -1,6 +1,6 @@
 // src/services/dashboard.service.ts
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { getClientFirestore } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Unsubscribe, getDocs, orderBy, getDoc, doc, getCountFromServer } from 'firebase/firestore';
 import { DailyEntry } from './daily-entries.service';
 import { InventoryItem } from './inventory.service';
@@ -9,7 +9,7 @@ import { UserProfile, getAllUsers } from './users.service';
 import { Farmer, getAllFarmers } from './farmers.service';
 
 
-const db = getFirestore(app);
+const db = getClientFirestore();
 
 export interface DealerStats {
   totalFarmers: number;
@@ -63,7 +63,7 @@ export const getAdminDashboardStats = async (): Promise<AdminStats> => {
     };
 };
 
-export const getDealerDashboardStats = (dealerId: string, callback: (stats: DealerStats) => void): Unsubscribe => {
+export const getDealerDashboardStats = async (dealerId: string): Promise<DealerStats> => {
   // This is a simplified implementation for demonstration.
   // A real-world scenario would likely use Cloud Functions for aggregation for performance.
 
@@ -71,107 +71,75 @@ export const getDealerDashboardStats = (dealerId: string, callback: (stats: Deal
   const inventoryQuery = query(collection(db, 'inventory'), where("ownerId", "==", dealerId));
   const transactionsQuery = query(collection(db, 'transactions'), where("dealerId", "==", dealerId));
 
-  let stats: Partial<DealerStats> = {
-    totalFarmers: 0,
-    pendingPayments: 0,
-    stockValue: 0,
-    avgOrderValue: 0,
-    recentTransactionsCount: 0,
-    monthlyRevenue: [],
-  };
+  const [farmersSnapshot, inventorySnapshot, transactionsSnapshot] = await Promise.all([
+    getDocs(farmersQuery),
+    getDocs(inventoryQuery),
+    getDocs(transactionsQuery),
+  ]);
 
-  const emitUpdate = () => {
-    // Ensure all stats are numbers before sending
-    const completeStats: DealerStats = {
-      totalFarmers: stats.totalFarmers ?? 0,
-      pendingPayments: stats.pendingPayments ?? 0,
-      stockValue: stats.stockValue ?? 0,
-      avgOrderValue: stats.avgOrderValue ?? 0,
-      recentTransactionsCount: stats.recentTransactionsCount ?? 0,
-      monthlyRevenue: stats.monthlyRevenue ?? [],
-    };
-    callback(completeStats);
-  };
-
-  const unsubFarmers = onSnapshot(farmersQuery, (snapshot) => {
-    stats.totalFarmers = snapshot.size;
-    let totalOutstanding = 0;
-    snapshot.forEach(doc => {
-        const farmer = doc.data() as Farmer;
-        if(farmer.outstanding > 0) {
-            totalOutstanding += farmer.outstanding;
-        }
-    });
-    stats.pendingPayments = totalOutstanding;
-    emitUpdate();
+  const totalFarmers = farmersSnapshot.size;
+  let totalOutstanding = 0;
+  farmersSnapshot.forEach(doc => {
+      const farmer = doc.data() as Farmer;
+      if(farmer.outstanding > 0) {
+          totalOutstanding += farmer.outstanding;
+      }
   });
 
-  const unsubInventory = onSnapshot(inventoryQuery, (snapshot) => {
-    let totalValue = 0;
-    snapshot.forEach(doc => {
-      const item = doc.data() as InventoryItem;
-      totalValue += (item.purchasePrice || 0) * item.quantity;
-    });
-    stats.stockValue = totalValue;
-    emitUpdate();
+  let totalValue = 0;
+  inventorySnapshot.forEach(doc => {
+    const item = doc.data() as InventoryItem;
+    totalValue += (item.purchasePrice || 0) * item.quantity;
   });
 
-  const unsubTransactions = onSnapshot(transactionsQuery, (snapshot) => {
-    let totalOrderValue = 0;
-    let salesCount = 0;
-    const monthlyData: { [key: string]: { revenue: number, cogs: number } } = {};
+  let totalOrderValue = 0;
+  let salesCount = 0;
+  const monthlyData: { [key: string]: { revenue: number, cogs: number } } = {};
 
-    snapshot.forEach(doc => {
-      const trans = doc.data() as Transaction;
-      
-      // Calculate average order value from sales to farmers (debits for the farmer)
-      if (trans.amount > 0 && trans.userId !== dealerId) {
-          totalOrderValue += trans.amount;
-          salesCount++;
-      }
+  transactionsSnapshot.forEach(doc => {
+    const trans = doc.data() as Transaction;
+    
+    if (trans.amount > 0 && trans.userId !== dealerId) {
+        totalOrderValue += trans.amount;
+        salesCount++;
+    }
 
-      // Aggregate revenue by month
-      const month = new Date(trans.date).toLocaleString('default', { month: 'short' });
-       if (!monthlyData[month]) {
-          monthlyData[month] = { revenue: 0, cogs: 0 };
-       }
+    const month = new Date(trans.date).toLocaleString('default', { month: 'short' });
+     if (!monthlyData[month]) {
+        monthlyData[month] = { revenue: 0, cogs: 0 };
+     }
 
-      // Revenue for a dealer is positive amounts (sales) to farmers
-      if (trans.amount > 0 && trans.userId !== dealerId) {
-        monthlyData[month].revenue += Math.abs(trans.amount);
-      }
-       if (trans.costOfGoodsSold) {
-        monthlyData[month].cogs += trans.costOfGoodsSold;
-      }
-    });
-
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    stats.monthlyRevenue = monthNames.map(name => ({
-        name,
-        revenue: monthlyData[name]?.revenue || 0,
-        cogs: monthlyData[name]?.cogs || 0
-    }));
-
-    stats.recentTransactionsCount = snapshot.size;
-    stats.avgOrderValue = salesCount > 0 ? totalOrderValue / salesCount : 0;
-    emitUpdate();
+    if (trans.amount > 0 && trans.userId !== dealerId) {
+      monthlyData[month].revenue += Math.abs(trans.amount);
+    }
+     if (trans.costOfGoodsSold) {
+      monthlyData[month].cogs += trans.costOfGoodsSold;
+    }
   });
 
-  // Return a function that unsubscribes from all listeners
-  return () => {
-    unsubFarmers();
-    unsubInventory();
-    unsubTransactions();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthlyRevenue = monthNames.map(name => ({
+      name,
+      revenue: monthlyData[name]?.revenue || 0,
+      cogs: monthlyData[name]?.cogs || 0
+  }));
+
+  return {
+    totalFarmers: totalFarmers,
+    pendingPayments: totalOutstanding,
+    stockValue: totalValue,
+    avgOrderValue: salesCount > 0 ? totalOrderValue / salesCount : 0,
+    recentTransactionsCount: transactionsSnapshot.size,
+    monthlyRevenue: monthlyRevenue,
   };
 };
 
 export const getFarmerDashboardStats = async (farmerId: string): Promise<FarmerStats> => {
-  const batchesQuery = query(collection(db, 'batches'), where("farmerId", "==", farmerId));
-  
-  // Also get farmer's own document for outstanding balance
-  const farmerDocRef = doc(db, 'farmers', farmerId);
+    const db = getClientFirestore();
+    const batchesQuery = query(collection(db, 'batches'), where("farmerId", "==", farmerId));
+    const farmerDocRef = doc(db, 'farmers', farmerId);
 
-  const batchesSnapshot = await getDocs(batchesQuery);
+    const batchesSnapshot = await getDocs(batchesQuery);
     const activeBatchesCount = batchesSnapshot.size;
     let totalInitialBirds = 0;
     let totalMortality = 0;
