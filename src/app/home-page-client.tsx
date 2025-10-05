@@ -1,21 +1,27 @@
 // src/app/home-page-client.tsx
 "use client";
 
-import { ArrowRight, BarChart, BookText, BrainCircuit, Check, DollarSign, Facebook, FlaskConical, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { ArrowRight, BarChart, BookText, Bot, BrainCircuit, Check, DollarSign, Facebook, FlaskConical, Instagram, Linkedin, Twitter, LineChart, Users, Warehouse } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { Badge } from '@/components/ui/badge';
+import { AiFeatureCard } from '@/components/ai/ai-feature-card';
 import { AnimatedLogo } from '@/components/animated-logo';
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker';
 import { RecentPosts } from '@/components/recent-posts';
 import { SerializablePost } from '../app/page';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { Testimonials, SerializableTestimonial } from '@/components/testimonials';
 import { useUser } from '@/firebase';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { MainNav } from '@/components/main-nav';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { UserNav } from '@/components/user-nav';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const features = [
@@ -57,195 +63,252 @@ const faqItems = [
 
 export default function HomePageClient({ initialPosts, initialTestimonials }: { initialPosts: SerializablePost[], initialTestimonials: SerializableTestimonial[]}) {
   const { user, userProfile, loading } = useUser();
-  const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
   const isLoggedIn = !loading && !!user;
-  
+  const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
+
   const showFarmerPlan = !userProfile || userProfile.role === 'farmer';
   const showDealerPlan = !userProfile || userProfile.role === 'dealer';
 
   const numPlans = [showFarmerPlan, showDealerPlan].filter(Boolean).length;
   const gridColsClass = numPlans === 2 ? 'md:grid-cols-3' : 'md:grid-cols-2';
   
+  if (loading) {
+     return (
+        <div className="flex flex-col h-screen">
+          <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
+            <Skeleton className="h-8 w-32" />
+            <div className="w-full flex-1" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+          </header>
+          <main className="flex-1 pt-16">
+            <Skeleton className="h-[500px] w-full" />
+            <Skeleton className="h-[300px] w-full mt-4" />
+          </main>
+        </div>
+      );
+  }
+
+  // Define button links and text based on auth state
+  const freePlanLink = isLoggedIn ? dashboardUrl : '/auth?view=signup';
+  const freePlanText = isLoggedIn ? 'Go to Dashboard' : 'Get Started for Free';
+
+  const premiumPlanLink = isLoggedIn ? (userProfile?.isPremium ? dashboardUrl : '/settings/billing') : '/auth?view=signup';
+  const premiumPlanText = isLoggedIn ? (userProfile?.isPremium ? 'Go to Dashboard' : 'Upgrade Now') : 'Upgrade Now';
+  
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <LandingPageHeader isLoggedIn={isLoggedIn} />
-         <main className="flex-1 pt-16">
-        {/* Hero Section */}
-        <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
-            {!user && <BreakingNewsTicker />}
-          <div className="container px-4 md:px-6 text-center">
-            <div className="flex flex-col items-center space-y-6">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-headline">
-                The Future of Poultry Farming is Digital
-              </h1>
-              <p className="max-w-2xl mx-auto text-muted-foreground md:text-xl">
-                Digitize your poultry business. From FCR calculation and AI-powered disease prediction to complete financial management - everything in one place.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-shadow">
-                  <Link href={user ? dashboardUrl : "/auth?view=signup"}>Get Started for Free <ArrowRight className="ml-2" /></Link>
-                </Button>
-                 <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md transition-shadow">
-                    <Link href="/#features">Explore Features</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {features.map((feature) => (
-                <div key={feature.title} className="flex items-start gap-4 p-4 rounded-lg hover:bg-card transition-colors">
-                  <div className="p-3 rounded-full bg-primary/10 text-primary">{feature.icon}</div>
-                  <div>
-                    <h3 className="text-lg font-bold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+        <LandingPageHeader />
+        
+        {isLoggedIn ? (
+          <SidebarProvider>
+            <Sidebar>
+                <SidebarHeader className="p-4">
+                  <div className="flex items-center gap-2">
+                      <AnimatedLogo className="w-8 h-8 text-primary" /><h1 className="text-2xl font-headline text-primary">Poultry Mitra</h1>
                   </div>
+                </SidebarHeader>
+                <SidebarContent><MainNav /></SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+                <div className="flex flex-col">
+                  <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+                      <SidebarTrigger className="md:hidden" />
+                      <div className="w-full flex-1" />
+                      <UserNav />
+                  </header>
+                   <main className="flex-1 p-4 lg:p-6">
+                       <div className="bg-card p-6 rounded-lg shadow-sm">
+                         <h1 className="text-2xl font-bold font-headline">Welcome back, {userProfile?.name}!</h1>
+                          <p className="text-muted-foreground">What would you like to do today?</p>
+                          <Button asChild className="mt-4">
+                            <Link href={dashboardUrl}>Go to Your Dashboard</Link>
+                          </Button>
+                       </div>
+                   </main>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <Testimonials testimonials={initialTestimonials} />
-
-        {/* Pricing Section */}
-        <section id="pricing" className="w-full py-12 md:py-20 bg-muted">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Find the Perfect Plan</h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-                  Start for free and scale up as you grow. All our plans are designed to help you succeed.
+            </SidebarInset>
+          </SidebarProvider>
+        ) : (
+          <main className="flex-1 pt-16">
+          {/* Hero Section */}
+          <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
+              <BreakingNewsTicker />
+            <div className="container px-4 md:px-6 text-center">
+              <div className="flex flex-col items-center space-y-6">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-headline">
+                  The Future of Poultry Farming is Digital
+                </h1>
+                <p className="max-w-2xl mx-auto text-muted-foreground md:text-xl">
+                  Digitize your poultry business. From FCR calculation and AI-powered disease prediction to complete financial management - everything in one place.
                 </p>
-              </div>
-            </div>
-            <div className={cn(
-                "mx-auto grid max-w-6xl items-stretch gap-8 pt-12 sm:grid-cols-1",
-                gridColsClass
-            )}>
-              <Card className="flex flex-col transform hover:-translate-y-2 transition-transform duration-300">
-                <CardHeader>
-                  <CardTitle className="font-headline text-2xl">Free Plan</CardTitle>
-                  <CardDescription>Perfect for getting started and managing smaller operations.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                  <p className="text-4xl font-bold">₹0 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> 1 Batch Management (for Farmers)</li>
-                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> 3 Farmer Connections (for Dealers)</li>
-                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Financial Ledgers</li>
-                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Inventory and Order Management</li>
-                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Free FCR Calculator</li>
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button asChild variant="outline" className="w-full">
-                     <Link href="/auth?view=signup">Get Started for Free</Link>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-shadow">
+                    <Link href={freePlanLink}>{freePlanText} <ArrowRight className="ml-2" /></Link>
                   </Button>
-                </CardFooter>
-              </Card>
-              {showFarmerPlan && (
-                <Card className="flex flex-col border-primary border-2 relative shadow-lg transform hover:-translate-y-2 transition-transform duration-300">
-                    <Badge className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">Farmer</Badge>
-                    <CardHeader>
-                    <CardTitle className="font-headline text-2xl text-primary">Farmer Premium</CardTitle>
-                    <CardDescription>Unlock powerful AI tools and unlimited potential for your farm.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 space-y-4">
-                    <p className="text-4xl font-bold">₹125 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
-                    <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> <span className="font-semibold">Everything in Free, plus:</span></li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Unlimited Batch Management</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI-Powered Chat Assistant</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI Disease Detection & Advisory</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Daily Market Rate Access</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Exclusive "Gold" Theme</li>
-                    </ul>
-                    </CardContent>
-                    <CardFooter>
-                    <Button asChild className="w-full">
-                        <Link href="/auth?view=signup">Upgrade Now</Link>
-                    </Button>
-                    </CardFooter>
-                </Card>
-              )}
-               {showDealerPlan && (
-                <Card className="flex flex-col border-primary border-2 relative shadow-lg transform hover:-translate-y-2 transition-transform duration-300">
-                    <Badge className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">Dealer</Badge>
-                    <CardHeader>
-                    <CardTitle className="font-headline text-2xl text-primary">Dealer Premium</CardTitle>
-                    <CardDescription>Scale your business with advanced tools and customer management.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 space-y-4">
-                    <p className="text-4xl font-bold">₹499 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
-                    <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> <span className="font-semibold">Everything in Free, plus:</span></li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Unlimited Farmer Connections</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI-Powered Chat Assistant</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI Stock Advisory & WhatsApp Tools</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Daily Market Rate Access</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Rate Posting Permissions</li>
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Exclusive "Gold" Theme</li>
-                    </ul>
-                    </CardContent>
-                    <CardFooter>
-                    <Button asChild className="w-full">
-                        <Link href="/auth?view=signup">Upgrade Now</Link>
-                    </Button>
-                    </CardFooter>
-                </Card>
-               )}
-            </div>
-          </div>
-        </section>
-
-         <RecentPosts posts={initialPosts} />
-         
-         {/* FAQ Section */}
-        <section id="faq" className="w-full py-12 md:py-20">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Frequently Asked Questions</h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-                  Have questions? We have answers. Here are some of the most common questions we get.
-                </p>
+                   <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md transition-shadow">
+                      <Link href="/#features">Explore Features</Link>
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                {features.map((feature) => (
+                  <div key={feature.title} className="flex items-start gap-4 p-4 rounded-lg hover:bg-card transition-colors">
+                    <div className="p-3 rounded-full bg-primary/10 text-primary">{feature.icon}</div>
+                    <div>
+                      <h3 className="text-lg font-bold">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="mx-auto max-w-3xl pt-12">
-              <Accordion type="single" collapsible className="w-full">
-                {faqItems.map((item, index) => (
-                  <AccordionItem value={`item-${index}`} key={index}>
-                    <AccordionTrigger className="text-lg font-semibold">{item.question}</AccordionTrigger>
-                    <AccordionContent className="text-base text-muted-foreground">
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </div>
-        </section>
+          </section>
 
-         {/* Final CTA */}
-         <section className="w-full py-12 md:py-16 text-white bg-gradient-to-r from-primary to-green-600">
-          <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
-            <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">Start Your Digital Poultry Journey Today</h2>
-              <p className="mx-auto max-w-xl text-white/80">
-                Join thousands of farmers and dealers who are building the future of poultry farming.
-              </p>
+          {/* Testimonials Section */}
+          <Testimonials testimonials={initialTestimonials} />
+
+          {/* Pricing Section */}
+          <section id="pricing" className="w-full py-12 md:py-20 bg-muted">
+            <div className="container px-4 md:px-6">
+              <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Find the Perfect Plan</h2>
+                  <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+                    Start for free and scale up as you grow. All our plans are designed to help you succeed.
+                  </p>
+                </div>
+              </div>
+              <div className={cn(
+                  "mx-auto grid max-w-6xl items-stretch gap-8 pt-12 sm:grid-cols-1",
+                  gridColsClass
+              )}>
+                <Card className="flex flex-col transform hover:-translate-y-2 transition-transform duration-300">
+                  <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Free Plan</CardTitle>
+                    <CardDescription>Perfect for getting started and managing smaller operations.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 space-y-4">
+                    <p className="text-4xl font-bold">₹0 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> 1 Batch Management (for Farmers)</li>
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> 3 Farmer Connections (for Dealers)</li>
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Financial Ledgers</li>
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Inventory and Order Management</li>
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Free FCR Calculator</li>
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button asChild variant="outline" className="w-full">
+                       <Link href={freePlanLink}>{freePlanText}</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+                {showFarmerPlan && (
+                  <Card className="flex flex-col border-primary border-2 relative shadow-lg transform hover:-translate-y-2 transition-transform duration-300">
+                      <Badge className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">Farmer</Badge>
+                      <CardHeader>
+                      <CardTitle className="font-headline text-2xl text-primary">Farmer Premium</CardTitle>
+                      <CardDescription>Unlock powerful AI tools and unlimited potential for your farm.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-1 space-y-4">
+                      <p className="text-4xl font-bold">₹125 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+                      <ul className="space-y-2 text-sm">
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> <span className="font-semibold">Everything in Free, plus:</span></li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Unlimited Batch Management</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI-Powered Chat Assistant</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI Disease Detection & Advisory</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Daily Market Rate Access</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Exclusive "Gold" Theme</li>
+                      </ul>
+                      </CardContent>
+                      <CardFooter>
+                      <Button asChild className="w-full">
+                          <Link href={premiumPlanLink}>{premiumPlanText}</Link>
+                      </Button>
+                      </CardFooter>
+                  </Card>
+                )}
+                 {showDealerPlan && (
+                  <Card className="flex flex-col border-primary border-2 relative shadow-lg transform hover:-translate-y-2 transition-transform duration-300">
+                      <Badge className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">Dealer</Badge>
+                      <CardHeader>
+                      <CardTitle className="font-headline text-2xl text-primary">Dealer Premium</CardTitle>
+                      <CardDescription>Scale your business with advanced tools and customer management.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-1 space-y-4">
+                      <p className="text-4xl font-bold">₹499 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+                      <ul className="space-y-2 text-sm">
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> <span className="font-semibold">Everything in Free, plus:</span></li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Unlimited Farmer Connections</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI-Powered Chat Assistant</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI Stock Advisory & WhatsApp Tools</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Daily Market Rate Access</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Rate Posting Permissions</li>
+                          <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Exclusive "Gold" Theme</li>
+                      </ul>
+                      </CardContent>
+                      <CardFooter>
+                      <Button asChild className="w-full">
+                           <Link href={premiumPlanLink}>{premiumPlanText}</Link>
+                      </Button>
+                      </CardFooter>
+                  </Card>
+                 )}
+              </div>
             </div>
-            <div className="mt-6">
-              <Button asChild size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-shadow">
-                <Link href={user ? dashboardUrl : "/auth?view=signup"}>
-                  {user ? "Go to Your Dashboard" : "Register for Free"}
-                </Link>
-              </Button>
+          </section>
+
+           <RecentPosts posts={initialPosts} />
+           
+           {/* FAQ Section */}
+          <section id="faq" className="w-full py-12 md:py-20">
+            <div className="container px-4 md:px-6">
+              <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Frequently Asked Questions</h2>
+                  <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+                    Have questions? We have answers. Here are some of the most common questions we get.
+                  </p>
+                </div>
+              </div>
+              <div className="mx-auto max-w-3xl pt-12">
+                <Accordion type="single" collapsible className="w-full">
+                  {faqItems.map((item, index) => (
+                    <AccordionItem value={`item-${index}`} key={index}>
+                      <AccordionTrigger className="text-lg font-semibold">{item.question}</AccordionTrigger>
+                      <AccordionContent className="text-base text-muted-foreground">
+                        {item.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
             </div>
-            <p className="text-xs text-white/60 mt-2">No credit card required.</p>
-          </div>
-        </section>
-      </main>
+          </section>
+
+           {/* Final CTA */}
+           <section className="w-full py-12 md:py-16 text-white bg-gradient-to-r from-primary to-green-600">
+            <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
+              <div className="space-y-3">
+                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">Start Your Digital Poultry Journey Today</h2>
+                <p className="mx-auto max-w-xl text-white/80">
+                  Join thousands of farmers and dealers who are building the future of poultry farming.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Button asChild size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-shadow">
+                  <Link href={user ? dashboardUrl : "/auth?view=signup"}>
+                    {user ? "Go to Your Dashboard" : "Register for Free"}
+                  </Link>
+                </Button>
+              </div>
+              <p className="text-xs text-white/60 mt-2">No credit card required.</p>
+            </div>
+          </section>
+        </main>
+        )}
+        
         {/* Footer */}
         <footer className="bg-gray-900 text-white">
             <div className="container px-4 md:px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
