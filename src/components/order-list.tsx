@@ -1,4 +1,4 @@
-
+// src/components/order-list.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,33 +14,41 @@ import { useToast } from '@/hooks/use-toast';
 import { CancelOrderAlert } from './cancel-order-alert';
 import { DealerInventory } from './dealer-inventory';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { User } from 'firebase/auth';
-import { UserProfile } from '@/services/users.service';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { getUserProfile, UserProfile } from '@/services/users.service';
+import { useRouter } from 'next/navigation';
 
-interface OrderListProps {
-  user: User;
-  userProfile: UserProfile;
-}
-
-export function OrderList({ user, userProfile }: OrderListProps) {
+export function OrderList() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const [user, setUser] = useState<User | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const router = useRouter();
+
 
     useEffect(() => {
-        async function fetchOrders() {
-            if (user && userProfile) {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                const profile = await getUserProfile(currentUser.uid);
+                setUserProfile(profile);
+
                 setLoading(true);
-                const isDealer = userProfile.role === 'dealer';
+                const isDealer = profile?.role === 'dealer';
                 const fetchedOrders = isDealer
-                    ? await getOrdersForDealer(user.uid)
-                    : await getOrdersForFarmer(user.uid);
+                    ? await getOrdersForDealer(currentUser.uid)
+                    : await getOrdersForFarmer(currentUser.uid);
                 setOrders(fetchedOrders);
                 setLoading(false);
+            } else {
+                router.push('/auth');
             }
-        }
-        fetchOrders();
-    }, [user, userProfile]);
+        });
+
+        return () => unsubscribe();
+    }, [router]);
 
     const handleStatusUpdate = async (order: Order, status: 'Accepted' | 'Rejected' | 'Shipped' | 'Completed') => {
         try {

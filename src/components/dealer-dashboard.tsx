@@ -15,10 +15,11 @@ import { StatCard } from "@/components/stat-card";
 import { OverviewChart } from "@/components/overview-chart";
 import { TransactionHistory } from "./transaction-history";
 import { Button } from "./ui/button";
-import { useAuth } from "@/hooks/use-auth";
 import { getDealerDashboardStats, DealerStats } from "@/services/dashboard.service";
 import { Skeleton } from "./ui/skeleton";
-import { getUserProfile, UserProfile } from "@/services/users.service";
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { UserProfile, getUserProfile } from '@/services/users.service';
 import { MarketRateDisplay } from "./market-rate-display";
 import { AiFeatureCard } from "./ai/ai-feature-card";
 import { MyFarmers } from "./my-farmers";
@@ -33,20 +34,28 @@ import { WhatsappTemplatesModal } from "./whatsapp-templates-modal";
 
 
 export function DealerDashboard() {
-  const { user, userProfile } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<DealerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-        setLoading(true);
-        getDealerDashboardStats(user.uid).then(initialStats => {
-            setStats(initialStats);
-            setLoading(false);
-        });
-    }
-  }, [user]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if(currentUser) {
+            setUser(currentUser);
+            const profile = await getUserProfile(currentUser.uid);
+            setUserProfile(profile);
+            
+            getDealerDashboardStats(currentUser.uid).then(initialStats => {
+                setStats(initialStats);
+                setLoading(false);
+            });
+        }
+    });
+
+    return () => unsubscribe();
+  }, []);
   
   const handleCopyCode = () => {
     if (userProfile?.invitationCode) {
@@ -77,15 +86,15 @@ export function DealerDashboard() {
     }
   }
 
-  const handleFarmerAction = () => {
+  const handleFarmerAction = async () => {
     if (user) {
-        getDealerDashboardStats(user.uid).then(setStats);
+        setStats(await getDealerDashboardStats(user.uid));
     }
   };
   
-   const handleOrderCreated = (newOrder: Order) => {
+   const handleOrderCreated = async (newOrder: Order) => {
     if (user) {
-        getDealerDashboardStats(user.uid).then(setStats);
+        setStats(await getDealerDashboardStats(user.uid));
     }
   }
   

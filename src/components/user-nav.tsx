@@ -30,26 +30,41 @@ import { formatDistanceToNow } from "date-fns";
 import { ThemeToggle } from "./theme-toggle";
 import { useSidebar } from "./ui/sidebar";
 import { auth } from "@/lib/firebase";
-import { useAuth } from "@/hooks/use-auth";
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { getUserProfile } from '@/services/users.service';
+
 
 export function UserNav() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { setOpenMobile } = useSidebar();
 
 
   useEffect(() => {
-    if (!user) return;
-    
-    getNotifications(user.uid).then(initialNotifications => {
-        setNotifications(initialNotifications);
-        setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
-    });
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+            setUser(currentUser);
+            const profile = await getUserProfile(currentUser.uid);
+            setUserProfile(profile);
 
-  }, [user]);
+             getNotifications(currentUser.uid).then(initialNotifications => {
+                setNotifications(initialNotifications);
+                setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
+            });
+        } else {
+            setUser(null);
+            setUserProfile(null);
+        }
+        setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -81,7 +96,7 @@ export function UserNav() {
     }
   };
   
-  if (!user || !userProfile) {
+  if (loading || !user || !userProfile) {
     return null;
   }
 

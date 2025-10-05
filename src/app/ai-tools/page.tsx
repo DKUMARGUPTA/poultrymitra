@@ -1,7 +1,11 @@
 // src/app/ai-tools/page.tsx
 "use client";
 
-import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { getUserProfile, UserProfile } from '@/services/users.service';
 import { Bird, FlaskConical, Calculator, BrainCircuit, Bot, MessageCircle } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -23,9 +27,27 @@ import { WhatsappTemplatesModal } from '@/components/whatsapp-templates-modal';
 import { FeedCalculator } from '@/components/feed-calculator';
 
 export default function AiToolsPage() {
-  const { user, userProfile, loading } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } else {
+        setUser(null);
+        setUserProfile(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
   
-  if (loading || !user || !userProfile) {
+  if (loading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -73,7 +95,7 @@ export default function AiToolsPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav user={user} userProfile={userProfile} />
+            <UserNav />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center">
