@@ -7,7 +7,6 @@ import { Skeleton } from './ui/skeleton';
 import { UserNav } from './user-nav';
 import { AnimatedLogo } from './animated-logo';
 import { ThemeToggle } from './theme-toggle';
-import { UserProfile } from '@/services/users.service';
 import { useUser } from '@/firebase';
 
 
