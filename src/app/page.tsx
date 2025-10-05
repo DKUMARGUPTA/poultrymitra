@@ -1,9 +1,8 @@
 // src/app/page.tsx
 import HomePageClient from './home-page-client';
 import { getPostsAsync } from '@/services/blog.service';
-import { getTestimonials } from '@/services/testimonials.service';
+import { getTestimonials, SerializableTestimonial } from '@/services/testimonials.service';
 import { Timestamp } from 'firebase/firestore';
-import type { SerializableTestimonial } from '@/components/testimonials';
 
 export interface SerializablePost {
   id: string;

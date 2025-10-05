@@ -15,6 +15,31 @@ export function MainNav() {
   const userRole = userProfile?.role;
   
   const isHomepage = pathname === '/';
+  
+  // If we are on the homepage and logged in, we don't want to show any main navigation.
+  if (isHomepage && userProfile) {
+     return (
+        <SidebarGroup>
+            <SidebarGroupLabel>AI Suite</SidebarGroupLabel>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <Link href="/ai-chat" passHref onClick={handleLinkClick}>
+                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-chat')}>
+                            <span><Bot /><span>AI Assistant</span></span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <Link href="/ai-tools" passHref onClick={handleLinkClick}>
+                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools')}>
+                            <span><BrainCircuit /><span>AI Tools</span></span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarGroup>
+     );
+  }
 
   const handleLinkClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -221,7 +246,7 @@ export function MainNav() {
 
   return (
     <>
-    {!isHomepage && renderCoreNav()}
+    {renderCoreNav()}
     
     {(userRole !== 'admin') && (
         <SidebarGroup>
@@ -261,29 +286,27 @@ export function MainNav() {
         </SidebarGroup>
     )}
     
-    {!isHomepage && (
-        <SidebarGroup>
-        <SidebarGroupLabel>Account</SidebarGroupLabel>
-        <SidebarMenu>
+    <SidebarGroup>
+    <SidebarGroupLabel>Account</SidebarGroupLabel>
+    <SidebarMenu>
+        <SidebarMenuItem>
+            <Link href="/settings" passHref onClick={handleLinkClick}>
+                <SidebarMenuButton asChild isActive={isNavItemActive('/settings')}>
+                    <span><Settings /><span>Settings</span></span>
+                </SidebarMenuButton>
+            </Link>
+        </SidebarMenuItem>
+        {userRole !== 'admin' && (
             <SidebarMenuItem>
-                <Link href="/settings" passHref onClick={handleLinkClick}>
-                    <SidebarMenuButton asChild isActive={isNavItemActive('/settings')}>
-                        <span><Settings /><span>Settings</span></span>
+                <Link href="/settings/billing" passHref onClick={handleLinkClick}>
+                    <SidebarMenuButton asChild isActive={isNavItemActive('/settings/billing')}>
+                        <span><CreditCard /><span>Billing</span></span>
                     </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
-            {userRole !== 'admin' && (
-                <SidebarMenuItem>
-                    <Link href="/settings/billing" passHref onClick={handleLinkClick}>
-                        <SidebarMenuButton asChild isActive={isNavItemActive('/settings/billing')}>
-                            <span><CreditCard /><span>Billing</span></span>
-                        </SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-            )}
-        </SidebarMenu>
-        </SidebarGroup>
-    )}
+        )}
+    </SidebarMenu>
+    </SidebarGroup>
     </>
   );
 }
