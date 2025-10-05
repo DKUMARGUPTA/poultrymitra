@@ -50,7 +50,7 @@ export function FarmerDashboard() {
         getUserProfile(userProfile.dealerCode).then(setDealerProfile);
     }
     
-    getFarmerDashboardStats(user.uid).then(setStats);
+    getFarmerDashboardStats(db, user.uid).then(setStats);
     getBatchesByFarmer(db, user.uid).then(setBatches);
 
     setLoading(false);
