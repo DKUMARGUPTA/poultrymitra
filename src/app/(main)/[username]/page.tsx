@@ -12,7 +12,7 @@ import { SerializablePost } from '../../page';
 import { RecentPosts } from '@/components/recent-posts';
 import { MarketRateDisplay } from '@/components/market-rate-display';
 import { Timestamp, collection, query, where, orderBy, limit, getDocs, getFirestore } from 'firebase/firestore';
-import { app, db } from '@/lib/firebase';
+import { app } from '@/lib/firebase';
 import { Farmer } from '@/services/farmers.service';
 import { InventoryItem } from '@/services/inventory.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,6 +37,7 @@ async function getRecentInventory(dealerId: string, count: number): Promise<Inve
 }
 
 async function getRecentBatches(farmerId: string, count: number): Promise<Batch[]> {
+    const db = getFirestore(app);
     const q = query(collection(db, 'batches'), where('farmerId', '==', farmerId), orderBy('startDate', 'desc'), limit(count));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Batch));
@@ -72,7 +73,7 @@ export default async function UserVCardPage({ params }: { params: { username: st
       recentBatches = await getRecentBatches(user.uid, 5);
   }
 
-  const contributedRates = (user.role === 'dealer' || user.role === 'admin') ? await getRatesByUser(user.uid, 5) : [];
+  const contributedRates = (user.role === 'dealer' || user.role === 'admin' || user.role === 'farmer') ? await getRatesByUser(user.uid, 5) : [];
 
   const roleDescription = user.role === 'dealer' ? 'Poultry Dealer' : user.role === 'admin' ? 'Administrator' : 'Poultry Farmer';
 
