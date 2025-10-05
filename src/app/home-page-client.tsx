@@ -18,8 +18,6 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
 import { useUser } from '@/firebase';
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset } from '@/components/ui/sidebar';
-import { MainNav } from '@/components/main-nav';
 
 
 const features = [
@@ -107,8 +105,10 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
   const numPlans = [showFarmerPlan, showDealerPlan].filter(Boolean).length;
   const gridColsClass = numPlans === 2 ? 'md:grid-cols-3' : 'md:grid-cols-2';
   
-  const HomePageContent = () => (
-      <main className="flex-1 pt-16">
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <LandingPageHeader />
+         <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
             {!user && <BreakingNewsTicker />}
@@ -424,61 +424,43 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
           </div>
         </section>
       </main>
-  );
-
-  return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <SidebarProvider>
-            <Sidebar>
-                <SidebarHeader>
-                    {/* Header content can go here if needed */}
-                </SidebarHeader>
-                <SidebarContent>
-                    <MainNav />
-                </SidebarContent>
-            </Sidebar>
-            <SidebarInset>
-                <LandingPageHeader />
-                <HomePageContent />
-                {/* Footer */}
-                <footer className="bg-gray-900 text-white">
-                    <div className="container px-4 md:px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <AnimatedLogo className="h-8 w-8" />
-                                <span className="text-xl font-headline font-bold">Poultry Mitra</span>
-                            </div>
-                            <p className="text-sm text-gray-400">India's #1 Poultry Farm Management and Advisory company.</p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-4">Quick Links</h4>
-                            <nav className="flex flex-col gap-2 text-sm">
-                                <Link href="/#features" className="text-gray-400 hover:text-white">Features</Link>
-                                <Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link>
-                                <Link href="/#faq" className="text-gray-400 hover:text-white">FAQ</Link>
-                            </nav>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-4">Support</h4>
-                            <nav className="flex flex-col gap-2 text-sm">
-                                <Link href="#" className="text-gray-400 hover:text-white">Help</Link>
-                                <Link href="#" className="text-gray-400 hover:text-white">Privacy Policy</Link>
-                            </nav>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-4">Contact</h4>
-                            <div className="text-sm text-gray-400">
-                                <p>+91 9123456789</p>
-                                <p>help@poultrymitra.com</p>
-                            </div>
-                        </div>
+        {/* Footer */}
+        <footer className="bg-gray-900 text-white">
+            <div className="container px-4 md:px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <div className="flex items-center gap-2 mb-4">
+                        <AnimatedLogo className="h-8 w-8" />
+                        <span className="text-xl font-headline font-bold">Poultry Mitra</span>
                     </div>
-                    <div className="py-6 border-t border-gray-800">
-                        <p className="text-center text-xs text-gray-500">&copy; 2024 Poultry Mitra. All rights reserved.</p>
+                    <p className="text-sm text-gray-400">India's #1 Poultry Farm Management and Advisory company.</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold mb-4">Quick Links</h4>
+                    <nav className="flex flex-col gap-2 text-sm">
+                        <Link href="/#features" className="text-gray-400 hover:text-white">Features</Link>
+                        <Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link>
+                        <Link href="/#faq" className="text-gray-400 hover:text-white">FAQ</Link>
+                    </nav>
+                </div>
+                <div>
+                    <h4 className="font-semibold mb-4">Support</h4>
+                    <nav className="flex flex-col gap-2 text-sm">
+                        <Link href="#" className="text-gray-400 hover:text-white">Help</Link>
+                        <Link href="#" className="text-gray-400 hover:text-white">Privacy Policy</Link>
+                    </nav>
+                </div>
+                <div>
+                    <h4 className="font-semibold mb-4">Contact</h4>
+                    <div className="text-sm text-gray-400">
+                        <p>+91 9123456789</p>
+                        <p>help@poultrymitra.com</p>
                     </div>
-                </footer>
-            </SidebarInset>
-        </SidebarProvider>
+                </div>
+            </div>
+            <div className="py-6 border-t border-gray-800">
+                <p className="text-center text-xs text-gray-500">&copy; 2024 Poultry Mitra. All rights reserved.</p>
+            </div>
+        </footer>
     </div>
   );
 }

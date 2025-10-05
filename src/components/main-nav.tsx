@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bird, Users, Warehouse, BookText, LineChart, Bot, MessageCircle, Briefcase, Shield, Settings, TrendingUp, Building, ShoppingCart, PencilRuler, CreditCard, TicketPercent, BarChart, Wallet, Image as ImageIcon } from "lucide-react";
+import { Bird, Users, Warehouse, BookText, LineChart, Bot, MessageCircle, Briefcase, Shield, Settings, TrendingUp, Building, ShoppingCart, PencilRuler, CreditCard, TicketPercent, BarChart, Wallet, Image as ImageIcon, BrainCircuit } from "lucide-react";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, useSidebar } from "./ui/sidebar";
 import { useUser } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
@@ -13,6 +13,8 @@ export function MainNav() {
   const { setOpenMobile } = useSidebar();
   const { userProfile } = useUser();
   const userRole = userProfile?.role;
+  
+  const isHomepage = pathname === '/';
 
   const handleLinkClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -27,8 +29,6 @@ export function MainNav() {
     return pathname.startsWith(href);
   };
   
-  const showMainNavigation = pathname !== '/';
-
   const navItems = {
     farmer: [
         { href: '/dashboard', label: 'Dashboard', icon: <LineChart /> },
@@ -221,108 +221,68 @@ export function MainNav() {
 
   return (
     <>
-    {showMainNavigation ? (
-      <>
-        {renderCoreNav()}
-        {userRole !== 'admin' && (
-          <SidebarGroup>
-              <SidebarGroupLabel>AI Suite</SidebarGroupLabel>
-              <SidebarMenu>
-                  <SidebarMenuItem>
-                      <Link href="/ai-chat" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/ai-chat')}>
-                              <span><Bot /><span>AI Assistant</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                      <Link href="/ai-tools/image-generation" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools/image-generation')}>
-                              <span><ImageIcon /><span>Image Generation</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                      <Link href="/ai-tools" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools')}>
-                              <span><BrainCircuit /><span>AI Tools</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-                  {userRole === 'dealer' && (
-                      <SidebarMenuItem>
-                          <Link href="/whatsapp" passHref onClick={handleLinkClick}>
-                              <SidebarMenuButton asChild isActive={isNavItemActive('/whatsapp')}>
-                                  <span><MessageCircle /><span>WhatsApp</span></span>
-                              </SidebarMenuButton>
-                          </Link>
-                      </SidebarMenuItem>
-                  )}
-              </SidebarMenu>
-          </SidebarGroup>
-        )}
+    {!isHomepage && renderCoreNav()}
+    
+    {(userRole !== 'admin') && (
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
-          <SidebarMenu>
-              <SidebarMenuItem>
-                  <Link href="/settings" passHref onClick={handleLinkClick}>
-                      <SidebarMenuButton asChild isActive={isNavItemActive('/settings')}>
-                          <span><Settings /><span>Settings</span></span>
-                      </SidebarMenuButton>
-                  </Link>
-              </SidebarMenuItem>
-              {userRole !== 'admin' && (
-                  <SidebarMenuItem>
-                      <Link href="/settings/billing" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/settings/billing')}>
-                              <span><CreditCard /><span>Billing</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-              )}
-          </SidebarMenu>
+            <SidebarGroupLabel>AI Suite</SidebarGroupLabel>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <Link href="/ai-chat" passHref onClick={handleLinkClick}>
+                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-chat')}>
+                            <span><Bot /><span>AI Assistant</span></span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <Link href="/ai-tools/image-generation" passHref onClick={handleLinkClick}>
+                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools/image-generation')}>
+                            <span><ImageIcon /><span>Image Generation</span></span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <Link href="/ai-tools" passHref onClick={handleLinkClick}>
+                        <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools')}>
+                            <span><BrainCircuit /><span>AI Tools</span></span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+                {userRole === 'dealer' && (
+                    <SidebarMenuItem>
+                        <Link href="/whatsapp" passHref onClick={handleLinkClick}>
+                            <SidebarMenuButton asChild isActive={isNavItemActive('/whatsapp')}>
+                                <span><MessageCircle /><span>WhatsApp</span></span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                )}
+            </SidebarMenu>
         </SidebarGroup>
-      </>
-    ) : (
-      <>
-      {userRole !== 'admin' && (
-          <SidebarGroup>
-              <SidebarGroupLabel>AI Suite</SidebarGroupLabel>
-              <SidebarMenu>
-                  <SidebarMenuItem>
-                      <Link href="/ai-chat" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/ai-chat')}>
-                              <span><Bot /><span>AI Assistant</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                      <Link href="/ai-tools/image-generation" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools/image-generation')}>
-                              <span><ImageIcon /><span>Image Generation</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                      <Link href="/ai-tools" passHref onClick={handleLinkClick}>
-                          <SidebarMenuButton asChild isActive={isNavItemActive('/ai-tools')}>
-                              <span><BrainCircuit /><span>AI Tools</span></span>
-                          </SidebarMenuButton>
-                      </Link>
-                  </SidebarMenuItem>
-                  {userRole === 'dealer' && (
-                      <SidebarMenuItem>
-                          <Link href="/whatsapp" passHref onClick={handleLinkClick}>
-                              <SidebarMenuButton asChild isActive={isNavItemActive('/whatsapp')}>
-                                  <span><MessageCircle /><span>WhatsApp</span></span>
-                              </SidebarMenuButton>
-                          </Link>
-                      </SidebarMenuItem>
-                  )}
-              </SidebarMenu>
-          </SidebarGroup>
-        )}
-      </>
+    )}
+    
+    {!isHomepage && (
+        <SidebarGroup>
+        <SidebarGroupLabel>Account</SidebarGroupLabel>
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <Link href="/settings" passHref onClick={handleLinkClick}>
+                    <SidebarMenuButton asChild isActive={isNavItemActive('/settings')}>
+                        <span><Settings /><span>Settings</span></span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+            {userRole !== 'admin' && (
+                <SidebarMenuItem>
+                    <Link href="/settings/billing" passHref onClick={handleLinkClick}>
+                        <SidebarMenuButton asChild isActive={isNavItemActive('/settings/billing')}>
+                            <span><CreditCard /><span>Billing</span></span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+            )}
+        </SidebarMenu>
+        </SidebarGroup>
     )}
     </>
   );
