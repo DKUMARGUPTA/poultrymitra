@@ -7,10 +7,10 @@ import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Testimonial } from '@/services/testimonials.service';
+import { Testimonial, SerializableTestimonial } from '@/services/testimonials.service';
 import { Skeleton } from './ui/skeleton';
 
-export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
+export function Testimonials({ testimonials }: { testimonials: SerializableTestimonial[] }) {
   const [loading, setLoading] = useState(false);
 
   // If testimonials are passed as props, we assume they are loaded.

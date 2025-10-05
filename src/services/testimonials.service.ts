@@ -21,6 +21,8 @@ export const TestimonialSchema = z.object({
 });
 
 export type Testimonial = z.infer<typeof TestimonialSchema> & { id: string };
+export type SerializableTestimonial = Omit<Testimonial, 'createdAt'> & { createdAt: string };
+
 
 export const getTestimonials = async (count: number = 5): Promise<Testimonial[]> => {
   try {
