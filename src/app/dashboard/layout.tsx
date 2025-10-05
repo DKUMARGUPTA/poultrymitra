@@ -1,7 +1,7 @@
 // src/app/dashboard/layout.tsx
 "use client";
 
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-    const { userProfile } = useAuth();
+    const { userProfile } = useUser();
     
     return (
         <div className={cn(userProfile?.isPremium && 'theme-gold')}>

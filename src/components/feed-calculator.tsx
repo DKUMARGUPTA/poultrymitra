@@ -14,7 +14,7 @@ import { Loader, Calculator, CheckCircle, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 import { Batch, getBatchesByFarmer } from '@/services/batches.service';
 import { getDailyEntriesForBatch } from '@/services/daily-entries.service';
 import { getTransactionsForBatch } from '@/services/transactions.service';
@@ -25,7 +25,8 @@ export function FeedCalculator() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CalculateFeedCostAndMortalityOutput | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { db } = useFirebase();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [batchesLoading, setBatchesLoading] = useState(false);
 
@@ -37,30 +38,27 @@ export function FeedCalculator() {
   const [averageChickWeight, setAverageChickWeight] = useState('');
   
   useEffect(() => {
-    if (user) {
+    if (user && db) {
       setBatchesLoading(true);
-      const unsubscribe = getBatchesByFarmer(user.uid, (newBatches) => {
+      getBatchesByFarmer(db, user.uid).then((newBatches) => {
         setBatches(newBatches);
         setBatchesLoading(false);
       });
-      return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, db]);
 
   useEffect(() => {
     const autoFillFromBatch = async () => {
         const selectedBatch = batches.find(b => b.id === selectedBatchId);
-        if (selectedBatch) {
+        if (selectedBatch && db) {
             setLoading(true);
             const entries = await new Promise<any[]>(res => {
-                const unsub = getDailyEntriesForBatch(selectedBatch.id, data => {
-                    unsub();
+                getDailyEntriesForBatch(db, selectedBatch.id, data => {
                     res(data);
                 });
             });
             const transactions = await new Promise<any[]>(res => {
-                const unsub = getTransactionsForBatch(selectedBatch.id, data => {
-                    unsub();
+                getTransactionsForBatch(db, selectedBatch.id, data => {
                     res(data);
                 });
             });
@@ -87,7 +85,7 @@ export function FeedCalculator() {
     if (selectedBatchId) {
       autoFillFromBatch();
     }
-  }, [selectedBatchId, batches]);
+  }, [selectedBatchId, batches, db]);
 
 
   const handleSubmit = async () => {

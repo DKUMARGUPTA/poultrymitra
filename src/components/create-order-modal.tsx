@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader, ShoppingCart, PlusCircle, Trash2, IndianRupee, UserPlus, Calendar as CalendarIcon } from 'lucide-react';
 import { createOrder, Order, OrderItem } from '@/services/orders.service';
 import { getInventoryItems, InventoryItem } from '@/services/inventory.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import Image from 'next/image';
@@ -85,7 +85,8 @@ export function CreateOrderModal({ children, onOrderCreated, farmer }: CreateOrd
   const [dataLoading, setDataLoading] = useState(true);
   const [isCreatingNewFarmer, setIsCreatingNewFarmer] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth(); // This is the dealer
+  const { user } = useUser(); // This is the dealer
+  const { db } = useFirebase();
 
   const form = useForm<CreateOrderValues>({
     resolver: zodResolver(CreateOrderSchema),
@@ -126,28 +127,23 @@ export function CreateOrderModal({ children, onOrderCreated, farmer }: CreateOrd
   }, [watchFarmerId, form]);
 
   useEffect(() => {
-    if (open && user) {
+    if (open && user && db) {
       setDataLoading(true);
-      const unsubInventory = getInventoryItems(user.uid, (items) => {
+      getInventoryItems(db, user.uid).then((items) => {
         setInventory(items.filter(item => (item.salesPrice ?? 0) > 0 && item.quantity > 0));
       });
       if (!farmer) {
-        const unsubFarmers = getFarmersByDealer(user.uid, (f) => {
+        getFarmersByDealer(db, user.uid, (f) => {
           setFarmers(f);
         });
         setDataLoading(false);
-        return () => {
-          unsubInventory();
-          unsubFarmers();
-        };
       } else {
         setFarmers([farmer]);
         form.setValue('farmerId', farmer.id);
         setDataLoading(false);
-        return () => unsubInventory();
       }
     }
-  }, [open, user, farmer, form]);
+  }, [open, user, farmer, form, db]);
 
   const handleAddItem = (item: InventoryItem) => {
     const existingItemIndex = fields.findIndex(field => field.itemId === item.id);
@@ -168,7 +164,7 @@ export function CreateOrderModal({ children, onOrderCreated, farmer }: CreateOrd
   };
   
   const handleSubmit = async (values: CreateOrderValues) => {
-    if (!user) {
+    if (!user || !db) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find your dealer information.' });
       return;
     }
@@ -183,7 +179,7 @@ export function CreateOrderModal({ children, onOrderCreated, farmer }: CreateOrd
             remarks: values.remarks,
         } : undefined;
 
-      const orderId = await createOrder({
+      const orderId = await createOrder(db, {
         farmerId: values.farmerId,
         newFarmer: values.newFarmer,
         dealerId: user.uid,

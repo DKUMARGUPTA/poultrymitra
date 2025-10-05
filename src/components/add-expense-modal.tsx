@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, Wallet, Calendar as CalendarIcon } from 'lucide-react';
 import { createTransaction, Transaction, TransactionInput } from '@/services/transactions.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -40,7 +40,8 @@ export function AddExpenseModal({ children, onExpenseAdded }: AddExpenseModalPro
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile } = useUser();
+  const { db } = useFirebase();
 
   const form = useForm<AddExpenseFormValues>({
     resolver: zodResolver(AddExpenseFormSchema),
@@ -56,7 +57,7 @@ export function AddExpenseModal({ children, onExpenseAdded }: AddExpenseModalPro
   });
 
   const handleSubmit = async (values: AddExpenseFormValues) => {
-    if (!user || !userProfile) {
+    if (!user || !userProfile || !db) {
       toast({ variant: 'destructive', title: 'Authentication Error' });
       return;
     }
@@ -77,7 +78,7 @@ export function AddExpenseModal({ children, onExpenseAdded }: AddExpenseModalPro
         isBusinessExpense: true,
       };
 
-      await createTransaction(transactionInput);
+      await createTransaction(db, transactionInput);
 
       toast({
         title: 'Expense Logged',

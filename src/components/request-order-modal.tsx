@@ -8,22 +8,27 @@ import { z } from 'zod';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, ShoppingCart, PlusCircle, Trash2, IndianRupee, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader, ShoppingCart, PlusCircle, Trash2, IndianRupee, UserPlus, Calendar as CalendarIcon } from 'lucide-react';
 import { createOrder, Order, OrderItem } from '@/services/orders.service';
 import { getInventoryItems, InventoryItem } from '@/services/inventory.service';
-import { useAuth } from '@/hooks/use-auth';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useUser, useFirebase } from '@/firebase';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { Skeleton } from './ui/skeleton';
-import { Checkbox } from './ui/checkbox';
-import { Input } from './ui/input';
+import type { Farmer } from '@/services/farmers.service';
+import { getFarmersByDealer } from '@/services/farmers.service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
+
 
 const OrderItemSchema = z.object({
   itemId: z.string(),
@@ -31,9 +36,17 @@ const OrderItemSchema = z.object({
   quantity: z.number().min(1, 'Min 1'),
   unit: z.string(),
   price: z.number(),
+  purchaseSource: z.string().optional(),
 });
 
-const RequestOrderSchema = z.object({
+const NewFarmerSchema = z.object({
+    name: z.string(),
+    location: z.string(),
+});
+
+const CreateOrderSchema = z.object({
+  farmerId: z.string().optional(),
+  newFarmer: NewFarmerSchema.optional(),
   items: z.array(OrderItemSchema).min(1, 'Please add at least one item to your order.'),
   createPayment: z.boolean().default(false),
   paymentAmount: z.union([z.number(), z.string()]).optional(),
@@ -41,6 +54,9 @@ const RequestOrderSchema = z.object({
   paymentMethod: z.enum(['Cash', 'Bank Transfer', 'UPI', 'RTGS', 'NEFT']).optional(),
   referenceNumber: z.string().optional(),
   remarks: z.string().optional(),
+}).refine(data => data.farmerId || (data.newFarmer?.name && data.newFarmer.location), {
+    message: 'Either select an existing farmer or create a new one.',
+    path: ['farmerId'],
 }).refine(data => {
     if (data.createPayment) {
         const amount = parseFloat(String(data.paymentAmount));
@@ -52,25 +68,32 @@ const RequestOrderSchema = z.object({
     path: ["paymentAmount"],
 });
 
-type RequestOrderValues = z.infer<typeof RequestOrderSchema>;
 
-interface RequestOrderModalProps {
+type CreateOrderValues = z.infer<typeof CreateOrderSchema>;
+
+interface CreateOrderModalProps {
   children: React.ReactNode;
   onOrderCreated: (order: Order) => void;
+  farmer?: Farmer;
 }
 
-export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModalProps) {
+export function CreateOrderModal({ children, onOrderCreated, farmer }: CreateOrderModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [farmers, setFarmers] = useState<Farmer[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [isCreatingNewFarmer, setIsCreatingNewFarmer] = useState(false);
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const { user } = useUser(); // This is the dealer
+  const { db } = useFirebase();
 
-  const form = useForm<RequestOrderValues>({
-    resolver: zodResolver(RequestOrderSchema),
+  const form = useForm<CreateOrderValues>({
+    resolver: zodResolver(CreateOrderSchema),
     defaultValues: {
+      farmerId: farmer?.id || '',
       items: [],
+      newFarmer: { name: '', location: '' },
       createPayment: false,
       paymentAmount: '',
       paymentDate: new Date(),
@@ -86,25 +109,53 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
   });
 
   const watchItems = useWatch({ control: form.control, name: 'items' });
+  const watchFarmerId = useWatch({ control: form.control, name: 'farmerId' });
   const createPayment = form.watch("createPayment");
   const totalAmount = watchItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  
+  useEffect(() => {
+    if (isCreatingNewFarmer) {
+        form.setValue('farmerId', undefined);
+    }
+  }, [isCreatingNewFarmer, form]);
 
   useEffect(() => {
-    if (open && userProfile?.dealerCode) {
-      setInventoryLoading(true);
-      const unsubscribe = getInventoryItems(userProfile.dealerCode, (items) => {
-        setInventory(items.filter(item => (item.salesPrice ?? 0) > 0 && item.quantity > 0));
-        setInventoryLoading(false);
-      });
-      return () => unsubscribe();
+    if (watchFarmerId) {
+        setIsCreatingNewFarmer(false);
+        form.setValue('newFarmer', { name: '', location: '' });
     }
-  }, [open, userProfile]);
+  }, [watchFarmerId, form]);
+
+  useEffect(() => {
+    if (open && user && db) {
+      setDataLoading(true);
+      const unsubInventory = getInventoryItems(db, user.uid, (items) => {
+        setInventory(items.filter(item => (item.salesPrice ?? 0) > 0 && item.quantity > 0));
+      });
+      if (!farmer) {
+        const unsubFarmers = getFarmersByDealer(db, user.uid, (f) => {
+          setFarmers(f);
+        });
+        setDataLoading(false);
+        return () => {
+          unsubInventory();
+          unsubFarmers();
+        };
+      } else {
+        setFarmers([farmer]);
+        form.setValue('farmerId', farmer.id);
+        setDataLoading(false);
+        return () => unsubInventory();
+      }
+    }
+  }, [open, user, farmer, form, db]);
 
   const handleAddItem = (item: InventoryItem) => {
     const existingItemIndex = fields.findIndex(field => field.itemId === item.id);
     if (existingItemIndex > -1) {
       const existingItem = fields[existingItemIndex];
-      update(existingItemIndex, { ...existingItem, quantity: existingItem.quantity + 1 });
+      const newQuantity = (existingItem.quantity || 0) + 1;
+      update(existingItemIndex, { ...existingItem, quantity: newQuantity });
     } else {
       append({
         itemId: item.id,
@@ -112,38 +163,50 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
         quantity: 1,
         unit: item.unit,
         price: item.salesPrice || 0,
+        purchaseSource: item.purchaseSource,
       });
     }
   };
   
-  const handleSubmit = async (values: RequestOrderValues) => {
-    if (!user || !userProfile?.dealerCode) {
+  const handleSubmit = async (values: CreateOrderValues) => {
+    if (!user || !db) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find your dealer information.' });
       return;
     }
-    
+
     setLoading(true);
     try {
-      const paymentDetails = values.createPayment && values.paymentAmount && values.paymentMethod ? {
-          amount: parseFloat(String(values.paymentAmount)),
-          date: values.paymentDate!,
-          method: values.paymentMethod!,
-          referenceNumber: values.referenceNumber,
-          remarks: values.remarks,
-      } : undefined;
+        const paymentDetails = values.createPayment && values.paymentAmount && values.paymentMethod ? {
+            amount: parseFloat(String(values.paymentAmount)),
+            date: values.paymentDate!,
+            method: values.paymentMethod!,
+            referenceNumber: values.referenceNumber,
+            remarks: values.remarks,
+        } : undefined;
 
-      const orderId = await createOrder({
-        farmerId: user.uid,
-        dealerId: userProfile.dealerCode,
+      const orderId = await createOrder(db, {
+        farmerId: values.farmerId,
+        newFarmer: values.newFarmer,
+        dealerId: user.uid,
         items: values.items,
         totalAmount,
       }, paymentDetails);
+      
+      const newOrder: Order = { 
+        id: orderId, 
+        status: 'Pending', 
+        createdAt: {seconds: Date.now()/1000, nanoseconds: 0},
+        farmerId: values.farmerId || 'new', // placeholder
+        dealerId: user.uid,
+        items: values.items,
+        totalAmount 
+      };
 
-      toast({ title: 'Order Submitted', description: 'Your order has been sent to the dealer for review.' });
-      onOrderCreated({ id: orderId, status: 'Pending', createdAt: {seconds: Date.now()/1000, nanoseconds: 0}, ...values, farmerId: user.uid, dealerId: userProfile.dealerCode, totalAmount });
+      toast({ title: 'Order Created', description: 'The order has been sent to the farmer for approval.' });
+      onOrderCreated(newOrder);
       handleOpenChange(false);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Submission Failed', description: error.message || 'Could not submit your order.' });
+      toast({ variant: 'destructive', title: 'Submission Failed', description: error.message || 'Could not create the order.' });
     } finally {
       setLoading(false);
     }
@@ -152,8 +215,10 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
-      form.reset({ 
+      form.reset({
+        farmerId: farmer?.id || '',
         items: [],
+        newFarmer: { name: '', location: '' },
         createPayment: false,
         paymentAmount: '',
         paymentDate: new Date(),
@@ -161,6 +226,7 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
         referenceNumber: '',
         remarks: '',
       });
+      setIsCreatingNewFarmer(false);
       setLoading(false);
     }
   };
@@ -172,69 +238,134 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl flex items-center gap-2">
             <ShoppingCart className="w-6 h-6 text-primary" />
-            Request New Order
+            Create Order for Farmer
           </DialogTitle>
-          <DialogDescription>Browse your dealer's inventory and add items to request.</DialogDescription>
+          <DialogDescription>Click an item from the inventory to add it to the order cart.</DialogDescription>
         </DialogHeader>
          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} id="order-form" className="grid md:grid-cols-2 gap-6 flex-1 overflow-hidden">
+            <form onSubmit={form.handleSubmit(handleSubmit)} id="order-form" className="flex-1 grid md:grid-cols-2 gap-6 overflow-hidden">
                 <div className="flex flex-col gap-4 overflow-hidden">
                   <Card className="flex-1 flex flex-col overflow-hidden">
                     <CardHeader><CardTitle className="font-headline text-lg">Available Inventory</CardTitle></CardHeader>
                     <div className="flex-1 overflow-y-auto px-6">
-                        {inventoryLoading ? (
+                        {dataLoading ? (
                             <div className="space-y-4">
                                 {[...Array(5)].map((_,i) => <Skeleton key={i} className="h-16 w-full" />)}
                             </div>
                         ) : inventory.length > 0 ? (
                             <div className="space-y-2">
                                 {inventory.map(item => (
-                                    <div key={item.id} className="flex items-center gap-4 p-2 rounded-md border">
+                                    <div key={item.id} className="flex items-center gap-4 p-2 rounded-md border cursor-pointer hover:bg-muted/50" onClick={() => handleAddItem(item)}>
                                         <Image src={`https://picsum.photos/seed/${item.id}/200`} data-ai-hint={`${item.category} product`} alt={item.name} width={48} height={48} className="rounded-md" />
                                         <div className="flex-1">
                                             <p className="font-medium">{item.name}</p>
                                             {item.purchaseSource && <p className="text-xs text-muted-foreground">From: {item.purchaseSource}</p>}
                                             <p className="text-sm text-muted-foreground">₹{item.salesPrice?.toLocaleString()} / {item.unit}</p>
                                         </div>
-                                        <Button type="button" size="icon" onClick={() => handleAddItem(item)}>
-                                            <PlusCircle className="h-4 w-4" />
-                                        </Button>
+                                        <PlusCircle className="h-5 w-5 text-primary" />
                                     </div>
                                 ))}
                             </div>
                         ): (
-                            <p className="text-center text-muted-foreground pt-10">Your dealer has no inventory available for sale.</p>
+                            <p className="text-center text-muted-foreground pt-10">You have no inventory available for sale.</p>
                         )}
                     </div>
                   </Card>
                 </div>
                 <div className="flex flex-col gap-4 overflow-hidden">
                     <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
-                        <Card className="flex flex-col">
-                            <CardHeader><CardTitle className="font-headline text-lg">Your Order</CardTitle></CardHeader>
+                        <Card className="flex-grow flex flex-col">
+                            <CardHeader>
+                                <CardTitle className="font-headline text-lg">Your Order Cart</CardTitle>
+                                
+                                {!isCreatingNewFarmer && !farmer && (
+                                    <FormField
+                                        control={form.control}
+                                        name="farmerId"
+                                        render={({ field }) => (
+                                            <FormItem className="pt-2">
+                                                <Select onValueChange={field.onChange} value={field.value} disabled={dataLoading}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder={dataLoading ? "Loading farmers..." : "Select a farmer"} />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {farmers.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                {farmer && <p className="font-medium pt-2">For: {farmer.name}</p>}
+                                
+                                {!farmer && (
+                                    <div className="text-center my-2">
+                                    <Button type="button" variant="link" className="text-xs" onClick={() => setIsCreatingNewFarmer(!isCreatingNewFarmer)}>
+                                        {isCreatingNewFarmer ? 'Or select an existing farmer' : 'Or create a new farmer'}
+                                    </Button>
+                                    </div>
+                                )}
+                                
+                                {isCreatingNewFarmer && (
+                                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                                        <h4 className="font-semibold text-sm flex items-center gap-2"><UserPlus /> New Farmer Details</h4>
+                                        <FormField
+                                            control={form.control}
+                                            name="newFarmer.name"
+                                            render={({ field }) => (
+                                                <FormItem><FormLabel className="sr-only">Name</FormLabel><FormControl><Input placeholder="Farmer Name" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="newFarmer.location"
+                                            render={({ field }) => (
+                                                <FormItem><FormLabel className="sr-only">Location</FormLabel><FormControl><Input placeholder="Location (e.g. Pune)" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </CardHeader>
                             <CardContent className="flex-1">
-                            {fields.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-10">Your cart is empty. Add items from the inventory.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {fields.map((field, index) => (
-                                        <div key={field.id} className="flex items-center gap-2 p-2 rounded-md border">
-                                            <div className="flex-1">
-                                                    <p className="font-medium">{field.name}</p>
-                                                    <p className="text-sm text-muted-foreground">₹{((watchItems[index]?.price || 0) * (watchItems[index]?.quantity || 0)).toLocaleString()}</p>
+                                {fields.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-10">Your cart is empty. Add items from the inventory.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {fields.map((field, index) => (
+                                            <div key={field.id} className="flex flex-col gap-2 p-2 rounded-md border">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1">
+                                                            <p className="font-medium">{field.name}</p>
+                                                            <p className="text-sm text-muted-foreground">₹{((watchItems[index]?.price || 0) * (watchItems[index]?.quantity || 0)).toLocaleString()}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                         <Input type="number" 
+                                                            {...form.register(`items.${index}.quantity`, { valueAsNumber: true, min: 1 })}
+                                                            className="w-16 h-8 text-center" 
+                                                        />
+                                                        <span className="text-sm text-muted-foreground">{field.unit}</span>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(index)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 pl-1">
+                                                    <Label htmlFor={`price-${index}`} className="text-xs">Price/unit:</Label>
+                                                    <Input
+                                                        id={`price-${index}`}
+                                                        type="number"
+                                                        {...form.register(`items.${index}.price`, { valueAsNumber: true })}
+                                                        className="w-24 h-8"
+                                                    />
+                                                </div>
                                             </div>
-                                            <Input 
-                                                type="number"
-                                                {...form.register(`items.${index}.quantity`, { valueAsNumber: true, min: 1 })}
-                                                className="w-16 text-center"
-                                            />
-                                            <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => remove(index)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                )}
                             </CardContent>
                             {fields.length > 0 && (
                                 <CardContent>
@@ -246,7 +377,7 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
                                 </CardContent>
                             )}
                         </Card>
-                        
+                        {fields.length > 0 && (
                         <Card>
                             <CardContent className="p-4 space-y-4">
                                 <FormField control={form.control} name="createPayment"
@@ -261,7 +392,7 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
                                     <div className="space-y-4 pt-4 border-t">
                                         <FormField control={form.control} name="paymentAmount" render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Amount to Pay</FormLabel>
+                                                <FormLabel>Amount Paid by Farmer</FormLabel>
                                                 <FormControl><Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)} /></FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -299,14 +430,15 @@ export function RequestOrderModal({ children, onOrderCreated }: RequestOrderModa
                                 )}
                             </CardContent>
                         </Card>
+                        )}
                     </div>
                 </div>
             </form>
         </Form>
-        <DialogFooter className="pt-4">
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
           <Button type="submit" form="order-form" disabled={loading || fields.length === 0}>
-            {loading ? <><Loader className="animate-spin mr-2" /> Submitting...</> : 'Submit Order Request'}
+            {loading ? <><Loader className="animate-spin mr-2" /> Creating...</> : 'Create Order Request'}
           </Button>
         </DialogFooter>
       </DialogContent>

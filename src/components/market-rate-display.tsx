@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { MarketRate, getMarketRates, BirdSize, BirdSizes, deleteMarketRate } fro
 import { format, parseISO, subDays } from 'date-fns';
 import { TrendingUp, MapPin, Edit, Trash2, Calendar as CalendarIcon, Plus, ArrowUp, ArrowDown, Minus, Clock, Bot, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 import { Button } from './ui/button';
 import { EditMarketRateModal } from './edit-market-rate-modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -40,7 +41,8 @@ export function MarketRateDisplay({ initialRates }: { initialRates?: MarketRate[
   const [allMarketRates, setAllMarketRates] = useState<MarketRate[]>(initialRates || []);
   const [ratesLoading, setRatesLoading] = useState(!initialRates);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const { userProfile } = useAuth();
+  const { userProfile } = useUser();
+  const { db } = useFirebase();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,8 +57,10 @@ export function MarketRateDisplay({ initialRates }: { initialRates?: MarketRate[
         return;
     }
 
+    if (!db) return;
+
     // Otherwise, subscribe to live updates.
-    const unsubscribe = getMarketRates((rates) => {
+    const unsubscribe = getMarketRates(db, (rates) => {
       setAllMarketRates(rates);
       if (rates.length > 0 && !selectedDate) {
         const mostRecentDate = rates.reduce((latest, rate) => {
@@ -67,15 +71,16 @@ export function MarketRateDisplay({ initialRates }: { initialRates?: MarketRate[
       setRatesLoading(false);
     });
     return () => unsubscribe();
-  }, [selectedDate, initialRates]);
+  }, [selectedDate, initialRates, db]);
   
   const handleRateUpdated = (updatedRate: MarketRate) => {
     // The listener will automatically handle the update.
   };
 
   const handleRateDeleted = async (rateId: string, rateDetails: string) => {
+    if (!db) return;
     try {
-      await deleteMarketRate(rateId);
+      await deleteMarketRate(db, rateId);
       toast({
         title: "Rate Deleted",
         description: `The rate for ${rateDetails} has been removed.`,

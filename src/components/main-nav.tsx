@@ -1,3 +1,4 @@
+
 // src/components/main-nav.tsx
 "use client";
 
@@ -7,6 +8,7 @@ import { Bird, Users, Warehouse, BookText, LineChart, Bot, MessageCircle, Briefc
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarSeparator, useSidebar } from "./ui/sidebar";
 import { UserProfile } from '@/services/users.service';
 import { useUser } from '@/firebase';
+import { Skeleton } from './ui/skeleton';
 
 export function MainNav() {
   const pathname = usePathname();

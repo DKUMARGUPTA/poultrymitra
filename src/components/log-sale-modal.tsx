@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, IndianRupee, Calendar as CalendarIcon, Weight, Bird } from 'lucide-react';
 import { createTransaction } from '@/services/transactions.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -47,7 +47,8 @@ export function LogSaleModal({ children, batch, currentBirdCount, onSaleLogged }
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile } = useUser();
+  const { db } = useFirebase();
 
   const form = useForm<LogSaleFormValues>({
     resolver: zodResolver(LogSaleFormSchema),
@@ -61,7 +62,7 @@ export function LogSaleModal({ children, batch, currentBirdCount, onSaleLogged }
   });
 
   const handleSubmit = async (values: LogSaleFormValues) => {
-    if (!user || !userProfile || !userProfile.dealerCode) {
+    if (!user || !userProfile || !userProfile.dealerCode || !db) {
       toast({ variant: 'destructive', title: 'Error', description: 'User or dealer information is missing.' });
       return;
     }
@@ -70,7 +71,7 @@ export function LogSaleModal({ children, batch, currentBirdCount, onSaleLogged }
     try {
       const totalAmount = values.totalWeight * values.ratePerKg;
 
-      await createTransaction({
+      await createTransaction(db, {
         date: values.date,
         description: `Sale of ${values.quantitySold} birds from batch ${batch.name}`,
         amount: -totalAmount, // Negative amount because it's revenue for the farmer (credit), so it DECREASES their outstanding balance with the dealer

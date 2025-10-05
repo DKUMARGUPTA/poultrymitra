@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, PlusCircle, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
-import { createMarketRatesInBatch, BirdSize } from '@/services/market-rates.service';
+import { createMarketRatesInBatch, BirdSize, createMarketRate } from '@/services/market-rates.service';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { indianStates } from '@/lib/indian-states';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 
 const AddRateFormSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format."),
@@ -57,7 +57,8 @@ export function AddMarketRateModal({ children, onRateAdded, initialData }: AddMa
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { userProfile } = useAuth();
+  const { userProfile } = useUser();
+  const { db } = useFirebase();
   
   const form = useForm<AddRateFormValues>({
     resolver: zodResolver(AddRateFormSchema),
@@ -116,7 +117,7 @@ export function AddMarketRateModal({ children, onRateAdded, initialData }: AddMa
   }, [selectedState, form, initialData]);
 
   const handleSubmit = async (values: AddRateFormValues) => {
-    if (!userProfile) return;
+    if (!userProfile || !db) return;
     setLoading(true);
     try {
         const ratesToCreate: { size: BirdSize, rate: number }[] = [];
@@ -132,7 +133,7 @@ export function AddMarketRateModal({ children, onRateAdded, initialData }: AddMa
             rate: r.rate,
         }));
         
-        await createMarketRatesInBatch(batchData, userProfile.role as 'admin' | 'dealer');
+        await createMarketRatesInBatch(db, batchData, userProfile.role as 'admin' | 'dealer', userProfile.uid);
       
       toast({
         title: 'Market Rates Added',
@@ -140,12 +141,12 @@ export function AddMarketRateModal({ children, onRateAdded, initialData }: AddMa
       });
       onRateAdded();
       handleOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to add market rates. Please try again.',
+        description: error.message || 'Failed to add market rates. Please try again.',
       });
     } finally {
       setLoading(false);

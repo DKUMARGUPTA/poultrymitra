@@ -29,20 +29,21 @@ import { BatchDetails } from '@/components/batch-details';
 import { getBatchesByFarmer, Batch } from '@/services/batches.service';
 import { AddBatchModal } from '@/components/add-batch-modal';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 
 export default function BatchesPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [batchesLoading, setBatchesLoading] = useState(true);
 
   useEffect(() => {
     async function fetchBatches() {
-      if (user) {
+      if (user && db) {
         setBatchesLoading(true);
-        const userBatches = await getBatchesByFarmer(user.uid);
+        const userBatches = await getBatchesByFarmer(db, user.uid);
         setBatches(userBatches);
         setBatchesLoading(false);
       }
@@ -54,7 +55,7 @@ export default function BatchesPage() {
             router.push('/auth');
         }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, db]);
 
   const handleBatchAdded = (newBatch: Batch) => {
     setBatches(prevBatches => [newBatch, ...prevBatches]);
@@ -118,7 +119,7 @@ export default function BatchesPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>
