@@ -17,7 +17,9 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
-import { useAuth } from '@/hooks/use-auth';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { UserProfile, getUserProfile } from '@/services/users.service';
 
 
 const features = [
@@ -90,7 +92,25 @@ const benefits = [
 
 
 export default function HomePageClient({ initialPosts }: { initialPosts: SerializablePost[]}) {
-  const { user, userProfile } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
   const [hasMounted, setHasMounted] = React.useState(false);
 
