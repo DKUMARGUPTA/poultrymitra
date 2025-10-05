@@ -23,7 +23,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 
 interface BulkUploadMarketRatesModalProps {
   children: React.ReactNode;
@@ -39,7 +39,8 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
   const [activeTab, setActiveTab] = useState('image');
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { userProfile } = useAuth();
+  const { userProfile } = useUser();
+  const { db } = useFirebase();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -75,6 +76,10 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
       toast({ variant: 'destructive', title: 'No URL provided' });
       return;
     }
+    if (!db || !userProfile) {
+        toast({ variant: 'destructive', title: 'User not found' });
+        return;
+    }
     setLoading(true);
     try {
       const result = await extractRatesFromUrl({
@@ -86,7 +91,7 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
         throw new Error("AI could not detect any rates at the provided URL.");
       }
       
-      await createMarketRatesInBatch(result.rates, userProfile?.role as 'admin' | 'dealer', userProfile?.uid);
+      await createMarketRatesInBatch(db, result.rates, userProfile?.role as 'admin' | 'dealer', userProfile?.uid);
 
       toast({ title: 'Upload Successful', description: `${result.rates.length} rates extracted and added from the URL.` });
       onRatesAdded();
@@ -104,6 +109,10 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
       toast({ variant: 'destructive', title: 'No file selected' });
       return;
     }
+    if (!db || !userProfile) {
+        toast({ variant: 'destructive', title: 'User not found' });
+        return;
+    }
     setLoading(true);
 
     const reader = new FileReader();
@@ -112,7 +121,7 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
       const imageDataUri = reader.result as string;
       try {
         const result = await extractRatesFromImage({
-          imageDataUri,
+          imageUrl: imageDataUri,
           currentDate: format(new Date(), 'yyyy-MM-dd'),
         });
 
@@ -120,7 +129,7 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
           throw new Error("AI could not detect any rates in the image.");
         }
 
-        await createMarketRatesInBatch(result.rates, userProfile?.role as 'admin' | 'dealer', userProfile?.uid);
+        await createMarketRatesInBatch(db, result.rates, userProfile?.role as 'admin' | 'dealer', userProfile?.uid);
 
         toast({ title: 'Upload Successful', description: `${result.rates.length} rates extracted and added from the image.` });
         onRatesAdded();
@@ -143,6 +152,10 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
       toast({ variant: 'destructive', title: 'No text provided' });
       return;
     }
+     if (!db || !userProfile) {
+        toast({ variant: 'destructive', title: 'User not found' });
+        return;
+    }
     setLoading(true);
     try {
       const result = await extractRatesFromText({
@@ -154,7 +167,7 @@ export function BulkUploadMarketRatesModal({ children, onRatesAdded }: BulkUploa
         throw new Error("AI could not detect any rates in the provided text.");
       }
 
-      await createMarketRatesInBatch(result.rates, userProfile?.role as 'admin' | 'dealer', userProfile?.uid);
+      await createMarketRatesInBatch(db, result.rates, userProfile?.role as 'admin' | 'dealer', userProfile?.uid);
 
       toast({ title: 'Upload Successful', description: `${result.rates.length} rates extracted and added from the text.` });
       onRatesAdded();

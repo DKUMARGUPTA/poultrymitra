@@ -23,9 +23,8 @@ const RateSchema = z.object({
 const ExtractRatesFromImageInputSchema = z.object({
   imageUrl: z
     .string()
-    .url()
     .describe(
-      "A public URL of a photo of a market rate board."
+      "A photo of a market rate board, as a data URI."
     ),
   currentDate: z.string().describe("Today's date in YYYY-MM-DD format, to be used if the date is not in the image.")
 });

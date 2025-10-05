@@ -2,9 +2,10 @@
 'use client';
 
 import { FirebaseApp } from 'firebase/app';
-import { Auth } from 'firebase/auth';
-import { Firestore } from 'firebase/firestore';
-import React, { createContext, useContext, ReactNode } from 'react';
+import { Auth, onAuthStateChanged, User } from 'firebase/auth';
+import { doc, onSnapshot, Firestore } from 'firebase/firestore';
+import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { UserProfile } from '@/services/users.service';
 
 interface FirebaseContextType {
   app: FirebaseApp | null;
@@ -41,3 +42,51 @@ export const useFirebase = () => {
   }
   return context as Required<FirebaseContextType>;
 };
+
+// Moved useUser hook here to colocate with its provider and context.
+interface UserState {
+  user: User | null;
+  userProfile: UserProfile | null;
+  loading: boolean;
+  auth: Auth | null;
+}
+
+export function useUser(): UserState {
+  const { auth, db } = useFirebase();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!auth || !db) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        setUser(authUser);
+        const userDocRef = doc(db, 'users', authUser.uid);
+        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setUserProfile({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
+          } else {
+            setUserProfile(null);
+          }
+          setLoading(false);
+        }, (error) => {
+            console.error("Error fetching user profile:", error);
+            setUserProfile(null);
+            setLoading(false);
+        });
+
+        return () => unsubscribeProfile();
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [auth, db]);
+
+  return { user, userProfile, loading, auth };
+}
