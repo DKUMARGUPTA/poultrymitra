@@ -1,43 +1,38 @@
 // src/app/admin/layout.tsx
-"use client";
-
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Bird } from 'lucide-react';
-import React, { useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-
-// This is now a Client Component to use the useAuth hook
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user, userProfile, loading } = useAuth();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (!loading) {
-            if (!user) {
-                router.push('/auth');
-            } else if (userProfile?.role !== 'admin') {
-                router.push('/dashboard');
-            }
-        }
-    }, [user, userProfile, loading, router]);
+import React from 'react';
+import { auth as adminAuth } from '@/lib/firebase-admin';
+import { getUserProfile, UserProfile } from '@/services/users.service';
 
 
-    if (loading || !userProfile || userProfile.role !== 'admin') {
-         return (
-            <div className="flex flex-col h-screen">
-                <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
-                <div className="flex flex-1">
-                    <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4"><Skeleton className="h-8 w-40 mb-4" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></aside>
-                    <main className="flex flex-1 items-center justify-center"><Skeleton className="h-64 w-full max-w-lg" /></main>
-                </div>
-            </div>
-        );
+async function getSession(): Promise<{ user: UserProfile | null }> {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) {
+        return { user: null };
     }
-    
+    try {
+        const decodedClaims = await adminAuth!.verifySessionCookie(sessionCookie, true);
+        const userProfile = await getUserProfile(decodedClaims.uid);
+        return { user: userProfile };
+    } catch (error) {
+        console.error("Session verification failed:", error);
+        return { user: null };
+    }
+}
+
+
+// This is now a Server Component for robust auth checking
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+    const { user } = await getSession();
+
+    if (!user || user.role !== 'admin') {
+        redirect('/auth');
+    }
 
     return (
         <SidebarProvider>
@@ -48,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
                 </SidebarHeader>
                 <SidebarContent>
-                <MainNav userProfile={userProfile} />
+                <MainNav userProfile={user} />
                 </SidebarContent>
             </Sidebar>
             <SidebarInset>
