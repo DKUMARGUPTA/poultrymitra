@@ -3,7 +3,7 @@ import { getUserByUsername, UserProfile } from '@/services/users.service';
 import { notFound } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mail, Phone, BookOpen, TrendingUp, Users, Warehouse, Package } from 'lucide-react';
+import { Mail, Phone, BookOpen, TrendingUp, Users, Warehouse, Package, Bird as BirdIcon } from 'lucide-react';
 import { VCard } from '@/components/v-card';
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { getPostsByAuthor } from '@/services/blog.service';
@@ -12,11 +12,12 @@ import { SerializablePost } from '../../page';
 import { RecentPosts } from '@/components/recent-posts';
 import { MarketRateDisplay } from '@/components/market-rate-display';
 import { Timestamp, collection, query, where, orderBy, limit, getDocs, getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { app, db } from '@/lib/firebase';
 import { Farmer } from '@/services/farmers.service';
 import { InventoryItem } from '@/services/inventory.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
+import { Batch } from '@/services/batches.service';
 
 
 export const revalidate = 3600; // Revalidate every hour
@@ -35,6 +36,12 @@ async function getRecentInventory(dealerId: string, count: number): Promise<Inve
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
 }
 
+async function getRecentBatches(farmerId: string, count: number): Promise<Batch[]> {
+    const q = query(collection(db, 'batches'), where('farmerId', '==', farmerId), orderBy('startDate', 'desc'), limit(count));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Batch));
+}
+
 
 export default async function UserVCardPage({ params }: { params: { username: string } }) {
   const user = await getUserByUsername(params.username);
@@ -46,6 +53,7 @@ export default async function UserVCardPage({ params }: { params: { username: st
   let posts: SerializablePost[] = [];
   let recentFarmers: Farmer[] = [];
   let recentInventory: InventoryItem[] = [];
+  let recentBatches: Batch[] = [];
 
   if (user.role === 'admin' || user.role === 'dealer') {
      const authorPosts = await getPostsByAuthor(user.uid, 3);
@@ -60,7 +68,11 @@ export default async function UserVCardPage({ params }: { params: { username: st
       recentInventory = await getRecentInventory(user.uid, 5);
   }
 
-  const contributedRates = user.role === 'dealer' ? await getRatesByUser(user.uid, 5) : [];
+  if (user.role === 'farmer') {
+      recentBatches = await getRecentBatches(user.uid, 5);
+  }
+
+  const contributedRates = (user.role === 'dealer' || user.role === 'admin') ? await getRatesByUser(user.uid, 5) : [];
 
   const roleDescription = user.role === 'dealer' ? 'Poultry Dealer' : user.role === 'admin' ? 'Administrator' : 'Poultry Farmer';
 
@@ -177,6 +189,29 @@ export default async function UserVCardPage({ params }: { params: { username: st
                                 )}
                             </TabsContent>
                         </Tabs>
+                    </CardContent>
+                </Card>
+            )}
+
+             {user.role === 'farmer' && recentBatches.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline flex items-center gap-2"><BirdIcon /> Recent Batches</CardTitle>
+                        <CardDescription>A summary of {user.name.split(' ')[0]}'s latest batches.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                        {recentBatches.map(batch => (
+                            <Link href={`/batches`} key={batch.id} className="block p-3 rounded-md border hover:bg-muted">
+                                <div>
+                                    <p className="font-semibold">{batch.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Started on {new Date(batch.startDate).toLocaleDateString()} with {batch.initialBirdCount} birds.
+                                    </p>
+                                </div>
+                            </Link>
+                        ))}
+                        </div>
                     </CardContent>
                 </Card>
             )}
