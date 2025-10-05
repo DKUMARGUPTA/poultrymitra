@@ -99,21 +99,14 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 };
 
 /**
- * Subscribes to real-time updates for posts.
+ * Fetches all posts, including drafts.
  */
-export const getPosts = (db: any, callback: (posts: Post[]) => void, includeDrafts = false): Unsubscribe => {
-    let q;
-    if (includeDrafts) {
-        q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
-    } else {
-        q = query(collection(db, 'posts'), where('isPublished', '==', true), orderBy('createdAt', 'desc'));
-    }
-    
-    return onSnapshot(q, (snapshot) => {
-        const posts: Post[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
-        callback(posts);
-    });
+export const getAllPosts = async (): Promise<Post[]> => {
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
 };
+
 
 /**
  * Fetches posts once for server-side rendering.

@@ -1,4 +1,4 @@
-
+// src/components/connection-requests.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -21,11 +21,10 @@ export function ConnectionRequests() {
     useEffect(() => {
         if (user) {
             setLoading(true);
-            const unsubscribe = getConnectionRequestsForDealer(user.uid, (newRequests) => {
+            getConnectionRequestsForDealer(user.uid).then(newRequests => {
                 setRequests(newRequests);
                 setLoading(false);
             });
-            return () => unsubscribe();
         }
     }, [user]);
 
@@ -33,6 +32,7 @@ export function ConnectionRequests() {
         setUpdating(request.id);
         try {
             await acceptConnectionRequest(request.id, request.requesterId, request.recipientId);
+            setRequests(prev => prev.filter(r => r.id !== request.id));
             toast({
                 title: "Connection Accepted",
                 description: `You are now connected with ${request.requesterProfile.name}.`,
@@ -48,6 +48,7 @@ export function ConnectionRequests() {
         setUpdating(request.id);
         try {
             await rejectConnectionRequest(request.id, request.requesterId);
+            setRequests(prev => prev.filter(r => r.id !== request.id));
             toast({
                 title: "Connection Rejected",
                 description: `You have rejected the request from ${request.requesterProfile.name}.`,

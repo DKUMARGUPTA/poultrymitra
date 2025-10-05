@@ -14,7 +14,6 @@ import { StatCard } from "@/components/stat-card";
 import { TransactionHistory } from "./transaction-history";
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { useAuth } from '@/hooks/use-auth';
 import { getFarmerDashboardStats, FarmerStats } from '@/services/dashboard.service';
 import { Skeleton } from './ui/skeleton';
 import { getUserProfile, UserProfile } from '@/services/users.service';
@@ -24,12 +23,17 @@ import { FarmerOverviewChart } from './farmer-overview-chart';
 import { RequestOrderModal } from './request-order-modal';
 import { Order } from '@/services/orders.service';
 import { AddBatchModal } from './add-batch-modal';
-import { Batch } from '@/services/batches.service';
+import { Batch, getBatchesByFarmer } from '@/services/batches.service';
 import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 
 export function FarmerDashboard() {
-  const { user, userProfile } = useAuth();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { toast } = useToast();
   const [stats, setStats] = useState<FarmerStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,22 +41,33 @@ export function FarmerDashboard() {
   const [batches, setBatches] = useState<Batch[]>([]);
 
   useEffect(() => {
-    if (user) {
-      if (userProfile?.dealerCode) {
-        getUserProfile(userProfile.dealerCode).then(setDealerProfile);
-      }
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+        if(currentUser) {
+            setUser(currentUser);
+            const profile = await getUserProfile(currentUser.uid);
+            setUserProfile(profile);
 
-      const unsubStats = getFarmerDashboardStats(user.uid, (newStats) => {
-        setStats(newStats);
-        setBatches(prev => prev.length > newStats.activeBatches ? [] : prev); // crude way to refresh batches
-        setLoading(false);
-      });
+            if (profile?.dealerCode) {
+                getUserProfile(profile.dealerCode).then(setDealerProfile);
+            }
 
-      return () => { 
-        unsubStats();
-      };
-    }
-  }, [user, userProfile]);
+            const unsubStats = getFarmerDashboardStats(currentUser.uid, (newStats) => {
+              setStats(newStats);
+            });
+            
+            const userBatches = await getBatchesByFarmer(currentUser.uid);
+            setBatches(userBatches);
+
+            setLoading(false);
+
+            return () => unsubStats();
+        } else {
+          router.push('/auth');
+        }
+    });
+
+    return () => unsubscribeAuth();
+  }, [router]);
   
   const handleOrderCreated = (newOrder: Order) => {
     // Optionally, you can update some state here to reflect the new order
@@ -244,7 +259,7 @@ export function FarmerDashboard() {
           <CardDescription>Recent payments made to your dealer.</CardDescription>
         </CardHeader>
         <CardContent>
-          <TransactionHistory />
+          <TransactionHistory userId={user.uid} />
         </CardContent>
       </Card>
     </div>

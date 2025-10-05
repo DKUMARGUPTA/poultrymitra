@@ -455,7 +455,7 @@ export const deleteUserAccount = async (uid: string): Promise<void> => {
     );
 };
 
-export const updateUserProfile = async (db: any, uid: string, data: { name?: string; phoneNumber?: string; aboutMe?: string; }): Promise<void> => {
+export const updateUserProfile = async (uid: string, data: { name?: string; phoneNumber?: string; aboutMe?: string; }): Promise<void> => {
     if(!uid) throw new Error("User not authenticated");
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, data);
@@ -471,7 +471,7 @@ export const sendPasswordReset = async (email: string): Promise<void> => {
     await sendPasswordResetEmail(auth, email);
 }
 
-export const deleteCurrentUserAccount = async (db: any, password: string): Promise<void> => {
+export const deleteCurrentUserAccount = async (password: string): Promise<void> => {
     const user = auth.currentUser;
     if (!user || !user.email) throw new Error("No user is currently signed in.");
 

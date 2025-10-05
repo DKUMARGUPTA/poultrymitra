@@ -18,13 +18,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
-import { createBatch, BatchSchema, Batch, BatchInput } from '@/services/batches.service';
+import { createBatch, BatchSchema, Batch } from '@/services/batches.service';
 import { useAuth } from '@/hooks/use-auth';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from './ui/calendar';
+import { BatchInput } from '@/services/batches.service';
 
 const AddBatchFormSchema = BatchSchema.omit({ farmerId: true, createdAt: true });
 type AddBatchFormValues = z.infer<typeof AddBatchFormSchema>;

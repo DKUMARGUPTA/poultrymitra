@@ -165,13 +165,13 @@ export const getDealerDashboardStats = (dealerId: string, callback: (stats: Deal
   };
 };
 
-export const getFarmerDashboardStats = (farmerId: string, callback: (stats: FarmerStats) => void): Unsubscribe => {
+export const getFarmerDashboardStats = async (farmerId: string): Promise<FarmerStats> => {
   const batchesQuery = query(collection(db, 'batches'), where("farmerId", "==", farmerId));
   
   // Also get farmer's own document for outstanding balance
   const farmerDocRef = doc(db, 'farmers', farmerId);
 
-  const unsubBatches = onSnapshot(batchesQuery, async (batchesSnapshot) => {
+  const batchesSnapshot = await getDocs(batchesQuery);
     const activeBatchesCount = batchesSnapshot.size;
     let totalInitialBirds = 0;
     let totalMortality = 0;
@@ -219,10 +219,5 @@ export const getFarmerDashboardStats = (farmerId: string, callback: (stats: Farm
       feedConversionRatio: feedConversionRatio,
       outstandingBalance: outstandingBalance,
     };
-    callback(stats);
-  });
-
-  return () => {
-    unsubBatches();
-  };
+    return stats;
 };

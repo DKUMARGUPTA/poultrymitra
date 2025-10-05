@@ -21,40 +21,34 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Crown, Copy, Bell, BellRing, CreditCard, Moon, Sun, User as UserIcon, Settings } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
-import { getUserProfile, UserProfile } from "@/services/users.service";
+import { UserProfile } from "@/services/users.service";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { getNotifications, markNotificationsAsRead, AppNotification } from "@/services/notifications.service";
 import { formatDistanceToNow } from "date-fns";
-import { useTheme } from "next-themes";
 import { ThemeToggle } from "./theme-toggle";
 import { useSidebar } from "./ui/sidebar";
-import { auth, db } from "@/lib/firebase";
-import { User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 
-interface UserNavProps {
-  user: User;
-  userProfile: UserProfile;
-}
-
-export function UserNav({ user, userProfile }: UserNavProps) {
+export function UserNav() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, userProfile } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { setOpenMobile } = useSidebar();
 
 
   useEffect(() => {
-    async function fetchNotifications() {
-        if(user) {
-            const initialNotifications = await getNotifications(user.uid);
-            setNotifications(initialNotifications);
-            setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
-        }
-    }
-    fetchNotifications();
+    if (!user) return;
+    
+    getNotifications(user.uid).then(initialNotifications => {
+        setNotifications(initialNotifications);
+        setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
+    });
+
   }, [user]);
 
   const handleLogout = async () => {
@@ -82,11 +76,14 @@ export function UserNav({ user, userProfile }: UserNavProps) {
   
   const handleNotificationOpen = async () => {
     if (unreadCount > 0 && user) {
-        await markNotificationsAsRead(db, user.uid);
+        await markNotificationsAsRead(user.uid);
         setUnreadCount(0);
-        setNotifications(prev => prev.map(n => ({...n, isRead: true})));
     }
   };
+  
+  if (!user || !userProfile) {
+    return null;
+  }
 
 
   return (

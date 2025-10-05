@@ -137,16 +137,15 @@ export const createPurchaseOrder = async (
 };
 
 
-export const getInventoryItems = (ownerId: string, callback: (items: InventoryItem[]) => void): Unsubscribe => {
+export const getInventoryItems = async (ownerId: string): Promise<InventoryItem[]> => {
   const q = query(collection(db, 'inventory'), where("ownerId", "==", ownerId));
 
-  return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
+  const querySnapshot = await getDocs(q);
     const items: InventoryItem[] = [];
     querySnapshot.forEach((doc) => {
       items.push({ id: doc.id, ...doc.data() } as InventoryItem);
     });
-    callback(items);
-  });
+    return items;
 };
 
 export const getUniquePurchaseSources = async (ownerId: string): Promise<string[]> => {

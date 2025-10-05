@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import {
@@ -24,43 +23,41 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import { BatchDetails } from '@/components/batch-details';
 import { getBatchesByFarmer, Batch } from '@/services/batches.service';
 import { AddBatchModal } from '@/components/add-batch-modal';
-import { getUserProfile, UserProfile } from '@/services/users.service';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function BatchesPage() {
-  const { user, loading, userProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [batchesLoading, setBatchesLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-  
-  useEffect(() => {
-    if (user) {
-      setBatchesLoading(true);
-      const unsubscribe = getBatchesByFarmer(user.uid, (newBatches) => {
-        setBatches(newBatches);
+    async function fetchBatches() {
+      if (user) {
+        setBatchesLoading(true);
+        const userBatches = await getBatchesByFarmer(user.uid);
+        setBatches(userBatches);
         setBatchesLoading(false);
-      });
-      return () => unsubscribe();
+      }
     }
-  }, [user]);
+    if(!authLoading){
+        if(user){
+            fetchBatches();
+        } else {
+            router.push('/auth');
+        }
+    }
+  }, [user, authLoading, router]);
 
   const handleBatchAdded = (newBatch: Batch) => {
-    setBatches(prevBatches => [...prevBatches, newBatch]);
+    setBatches(prevBatches => [newBatch, ...prevBatches]);
   };
 
   const handleBatchDeleted = (batchId: string) => {
@@ -83,9 +80,9 @@ export default function BatchesPage() {
     return true;
   };
   
-  const isLoading = loading || batchesLoading;
+  const isLoading = authLoading || batchesLoading;
 
-  if (isLoading || !user) {
+  if (isLoading || !user || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -121,7 +118,7 @@ export default function BatchesPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>

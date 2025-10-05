@@ -16,7 +16,7 @@ import { DeleteBatchAlert } from './delete-batch-alert';
 import Link from 'next/link';
 import { LogSaleModal } from './log-sale-modal';
 import { Transaction, getTransactionsForBatch } from '@/services/transactions.service';
-import { db } from '@/lib/firebase';
+import { useFirebase } from '@/firebase/provider';
 
 interface BatchDetailsProps {
     batch: Batch;
@@ -25,6 +25,7 @@ interface BatchDetailsProps {
 }
 
 export function BatchDetails({ batch, onBatchDeleted, onBatchUpdated }: BatchDetailsProps) {
+  const { db } = useFirebase();
   const [dailyEntries, setDailyEntries] = useState<DailyEntry[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(true);
@@ -32,11 +33,11 @@ export function BatchDetails({ batch, onBatchDeleted, onBatchUpdated }: BatchDet
   useEffect(() => {
     if (!db) return;
     setLoadingEntries(true);
-    const unsubscribeEntries = getDailyEntriesForBatch(batch.id, (entries) => {
+    const unsubscribeEntries = getDailyEntriesForBatch(db, batch.id, (entries) => {
         setDailyEntries(entries);
         setLoadingEntries(false);
     });
-     const unsubscribeTransactions = getTransactionsForBatch(batch.id, (trans) => {
+     const unsubscribeTransactions = getTransactionsForBatch(db, batch.id, (trans) => {
         setTransactions(trans);
     });
 

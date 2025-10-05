@@ -28,6 +28,8 @@ function generateVCardString(user: UserProfile): string {
 }
 
 export function VCard({ user }: { user: UserProfile }) {
+    if (!user) return null;
+    
     const vCardString = generateVCardString(user);
 
     const handleDownload = () => {

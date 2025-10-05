@@ -8,34 +8,33 @@ import {
   addDoc,
   serverTimestamp,
   Unsubscribe,
+  getDocs,
 } from 'firebase/firestore';
 import { Message } from 'genkit';
 import { db } from '@/lib/firebase';
 
 /**
- * Subscribes to the chat history for a specific user.
+ * Fetches the chat history for a specific user.
  * @param userId The ID of the user.
- * @param callback A function to call with the updated messages.
- * @returns An unsubscribe function.
+ * @returns A promise that resolves to an array of messages.
  */
-export const getChatHistory = (
-  userId: string,
-  callback: (messages: Message[]) => void
-): Unsubscribe => {
+export const getChatHistory = async (userId: string): Promise<Message[]> => {
   const messagesCol = collection(db, 'chats', userId, 'messages');
   const q = query(messagesCol, orderBy('createdAt', 'asc'));
-
-  return onSnapshot(q, (snapshot) => {
-    const messages = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        // Firestore Timestamps need to be handled carefully.
-        // Genkit's `Message` type doesn't have a `createdAt` field,
-        // so we just reconstruct the message.
-        return data as Message;
-    });
-    callback(messages);
+  const snapshot = await getDocs(q);
+  
+  const messages = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Genkit's `Message` type doesn't have a `createdAt` field,
+      // so we just reconstruct the message, excluding extra fields.
+      return {
+          role: data.role,
+          content: data.content,
+      } as Message;
   });
+  return messages;
 };
+
 
 /**
  * Adds a new message to a user's chat history.

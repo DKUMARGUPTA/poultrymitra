@@ -1,20 +1,11 @@
-
+// src/app/orders/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth';
-import { Bird, ShoppingCart, PlusCircle } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
+import { Bird, ShoppingCart } from "lucide-react";
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
 import {
   Sidebar,
   SidebarProvider,
@@ -22,43 +13,36 @@ import {
   SidebarInset,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserProfile, UserProfile } from '@/services/users.service';
 import { OrderList } from '@/components/order-list';
-import { RequestOrderModal } from '@/components/request-order-modal';
 import { Order } from '@/services/orders.service';
 import { Button } from '@/components/ui/button';
 import { AddTransactionModal } from '@/components/add-transaction-modal';
 import { Transaction } from '@/services/transactions.service';
-
+import { useAuth } from '@/hooks/use-auth';
 
 export default function OrdersPage() {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
+     if (!loading) {
+        if (!user) {
+            router.push('/auth');
+        } else if (userProfile?.role === 'admin') {
+            router.push('/admin');
+        }
+     }
+  }, [user, userProfile, loading, router]);
   
-  const handleOrderCreated = (newOrder: Order) => {
-    // The OrderList component will update automatically via its own listener
-  }
-
   const handleTransactionAdded = (newTransaction: Transaction) => {
     // The transaction list on other pages will update automatically
   };
 
-
   const isLoading = loading || !userProfile;
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -94,10 +78,8 @@ export default function OrdersPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
-        <SidebarFooter>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">

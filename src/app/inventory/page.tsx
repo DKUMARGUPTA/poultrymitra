@@ -1,10 +1,9 @@
-
+// src/app/inventory/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { Bird, PlusCircle } from "lucide-react"
+import { Bird, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,9 +11,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
+} from "@/components/ui/card";
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
 import {
   Sidebar,
   SidebarProvider,
@@ -22,11 +21,7 @@ import {
   SidebarInset,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -39,54 +34,70 @@ import {
 import { getInventoryItems, InventoryItem } from '@/services/inventory.service';
 import { AddStockModal } from '@/components/add-stock-modal';
 import Link from 'next/link';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { UserProfile, getUserProfile } from '@/services/users.service';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InventoryPage() {
-  const { user, loading } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
+
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+        if (profile?.role !== 'dealer') {
+            router.push('/dashboard');
+        } else {
+            fetchInventory(currentUser.uid);
+        }
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        router.push('/auth');
+      }
+      setAuthLoading(false);
+    });
 
-  useEffect(() => {
-    if (user) {
-      const unsubscribe = getInventoryItems(user.uid, (items) => {
+    return () => unsubscribe();
+  }, [router]);
+
+  const fetchInventory = async (uid: string) => {
+      setInventoryLoading(true);
+      try {
+        const items = await getInventoryItems(uid);
         setInventoryItems(items.sort((a,b) => a.name.localeCompare(b.name)));
+      } catch (error) {
+        console.error("Failed to fetch inventory:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory items.' });
+      } finally {
         setInventoryLoading(false);
-      });
-      return () => unsubscribe();
-    }
-  }, [user]);
+      }
+  }
 
   const handleStockAdded = (purchaseOrderId: string) => {
-    // The onSnapshot listener in getInventoryItems will automatically update the state.
+    if (user) {
+        fetchInventory(user.uid);
+    }
   };
 
-  if (loading || !user) {
+  const isLoading = authLoading || !userProfile;
+  if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-            <Skeleton className="h-8 w-32" />
-            <div className="w-full flex-1" />
-            <Skeleton className="h-9 w-9 rounded-full" />
-        </header>
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
         <div className="flex flex-1">
-            <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4">
-                <Skeleton className="h-8 w-40 mb-4" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-            </aside>
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                <Skeleton className="h-8 w-48" />
-                <div className="flex-1 rounded-lg border border-dashed shadow-sm p-6">
-                    <Skeleton className="h-64 w-full" />
-                </div>
-            </main>
+            <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4"><Skeleton className="h-8 w-40 mb-4" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></aside>
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6"><Skeleton className="h-8 w-48" /><div className="flex-1 rounded-lg border border-dashed shadow-sm p-6"><Skeleton className="h-64 w-full" /></div></main>
         </div>
     </div>
     )
@@ -102,17 +113,15 @@ export default function InventoryPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
-        <SidebarFooter>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav />
+            <UserNav user={user} userProfile={userProfile} />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">

@@ -12,25 +12,27 @@ export interface SerializablePost {
   authorName: string;
   coverImage?: string;
   isPublished: boolean;
-  createdAt: string; // Changed from Timestamp to string
+  createdAt: string; 
   metaTitle?: string;
   metaDescription?: string;
 }
 
 export default async function Page() {
-  // We can fetch posts on the server now
   const recentPosts = await getPostsAsync(false, 3);
   
-  const serializablePosts: SerializablePost[] = recentPosts.map(post => ({
-    ...post,
-    id: post.id,
-    authorName: post.authorName || 'Anonymous',
-    slug: post.slug || '',
-    content: post.content || '',
-    authorId: post.authorId,
-    isPublished: post.isPublished,
-    createdAt: (post.createdAt as Timestamp).toDate().toISOString(),
-  }));
+  const serializablePosts: SerializablePost[] = recentPosts.map(post => {
+    const createdAt = post.createdAt instanceof Timestamp ? post.createdAt.toDate() : new Date(post.createdAt);
+    return {
+      ...post,
+      id: post.id,
+      authorName: post.authorName || 'Anonymous',
+      slug: post.slug || '',
+      content: post.content || '',
+      authorId: post.authorId,
+      isPublished: post.isPublished,
+      createdAt: createdAt.toISOString(),
+    }
+  });
 
   return (
       <HomePageClient initialPosts={serializablePosts} />

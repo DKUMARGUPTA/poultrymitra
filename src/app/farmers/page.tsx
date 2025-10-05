@@ -1,9 +1,8 @@
-
+// src/app/farmers/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, PlusCircle, User, Link2 } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import {
@@ -22,10 +21,6 @@ import {
   SidebarInset,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,37 +28,66 @@ import { Badge } from '@/components/ui/badge';
 import { Farmer, getFarmersByDealer } from '@/services/farmers.service';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { getUserProfile, UserProfile } from '@/services/users.service';
+import { UserProfile, getUserProfile } from '@/services/users.service';
 import { AddConnectFarmerModal } from '@/components/add-connect-farmer-modal';
-
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function FarmersPage() {
-  const { user, loading, userProfile } = useAuth();
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
+
   const { toast } = useToast();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmersLoading, setFarmersLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+        if (profile?.role !== 'dealer') {
+          router.push('/dashboard');
+        } else {
+            setFarmersLoading(true);
+            try {
+                const newFarmers = await getFarmersByDealer(currentUser.uid);
+                setFarmers(newFarmers);
+            } catch (error) {
+                console.error("Failed to fetch farmers:", error);
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not load your farmers.' });
+            } finally {
+                setFarmersLoading(false);
+            }
+        }
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        router.push('/auth');
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router, toast]);
   
-  useEffect(() => {
+  const handleFarmerAction = async () => {
+    // The list is now fetched on load, so we just need to re-fetch
     if (user) {
       setFarmersLoading(true);
-      const unsubscribe = getFarmersByDealer(user.uid, (newFarmers) => {
+      try {
+        const newFarmers = await getFarmersByDealer(user.uid);
         setFarmers(newFarmers);
+      } catch (error) {
+        console.error("Failed to fetch farmers:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not reload your farmers.' });
+      } finally {
         setFarmersLoading(false);
-      });
-      return () => unsubscribe();
+      }
     }
-  }, [user]);
-
-  const handleFarmerAction = () => {
-    // The Firestore listener will automatically update the `farmers` state.
-    // No need to manually add the farmer here, as it would cause duplicates.
   };
   
   const handleNewFarmerClick = () => {
@@ -78,10 +102,10 @@ export default function FarmersPage() {
     return true;
   };
   
-  const isLoading = loading || farmersLoading;
+  const isLoading = authLoading || farmersLoading;
 
 
-  if (isLoading || !user) {
+  if (isLoading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -117,17 +141,15 @@ export default function FarmersPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
-        <SidebarFooter>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav />
+            <UserNav user={user} userProfile={userProfile}/>
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">

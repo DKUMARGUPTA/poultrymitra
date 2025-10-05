@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import {
   updateUserProfile,
   updateUserPassword,
   deleteCurrentUserAccount,
+  UserProfile,
 } from '@/services/users.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -35,8 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { moderateContent } from '@/ai/flows/moderate-content';
 import { VCard } from '@/components/v-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { db } from '@/lib/firebase';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useAuth } from '@/hooks/use-auth';
 
 // Schema for updating profile details
 const ProfileFormSchema = z.object({
@@ -67,26 +66,22 @@ type DeleteAccountValues = z.infer<typeof DeleteAccountSchema>;
 
 
 export default function SettingsPage() {
-  const { loading, user } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
-   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
+  useEffect(() => {
+    if(!loading && !user) {
+        router.push('/auth');
     }
   }, [loading, user, router]);
 
-
-  if(loading || !user) return (
+  if(loading || !user || !userProfile) return (
      <div className="flex flex-col h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
-        <div className="flex flex-1">
-            <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4"><Skeleton className="h-8 w-40 mb-4" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></aside>
-            <main className="flex-1 p-6 space-y-6">
-              <Skeleton className="h-96 w-full" />
-              <Skeleton className="h-64 w-full" />
-            </main>
-        </div>
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
+        <main className="flex-1 p-6 space-y-6">
+          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </main>
     </div>
   )
 
@@ -102,15 +97,14 @@ export default function SettingsPage() {
             </div>
         </div>
         <div className="mx-auto grid w-full max-w-2xl items-start gap-6">
-          <SettingsForm />
+          <SettingsForm user={user} userProfile={userProfile} />
         </div>
       </main>
   );
 }
 
 
-export function SettingsForm() {
-  const { user, userProfile } = useAuth();
+export function SettingsForm({ user, userProfile }: { user: NonNullable<ReturnType<typeof useAuth>['user']>, userProfile: NonNullable<ReturnType<typeof useAuth>['userProfile']>}) {
   const { toast } = useToast();
   const router = useRouter();
   const [profileLoading, setProfileLoading] = useState(false);
@@ -128,10 +122,10 @@ export function SettingsForm() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(ProfileFormSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phoneNumber: '',
-      aboutMe: '',
+      name: userProfile.name || '',
+      email: userProfile.email || '',
+      phoneNumber: userProfile.phoneNumber || '',
+      aboutMe: userProfile.aboutMe || '',
     },
   });
 
@@ -150,20 +144,7 @@ export function SettingsForm() {
     }
   });
 
-
-  useEffect(() => {
-    if (userProfile) {
-      profileForm.reset({
-        name: userProfile.name || '',
-        email: userProfile.email || '',
-        phoneNumber: userProfile.phoneNumber || '',
-        aboutMe: userProfile.aboutMe || '',
-      });
-    }
-  }, [userProfile, profileForm]);
-
   const handleProfileSubmit = async (values: ProfileFormValues) => {
-    if (!user) return;
     setProfileLoading(true);
     try {
       // Moderate the 'About Me' content before saving
@@ -174,7 +155,7 @@ export function SettingsForm() {
         }
       }
 
-      await updateUserProfile(db, user.uid, {
+      await updateUserProfile(user.uid, {
         name: values.name,
         phoneNumber: values.phoneNumber,
         aboutMe: values.aboutMe,
@@ -207,7 +188,7 @@ export function SettingsForm() {
   const handleDeleteAccount = async (values: DeleteAccountValues) => {
     setDeleteLoading(true);
     try {
-      await deleteCurrentUserAccount(db, values.password);
+      await deleteCurrentUserAccount(values.password);
       toast({ title: 'Account Deleted', description: 'Your account has been permanently deleted.' });
       router.push('/');
     } catch (error: any) {
@@ -228,8 +209,6 @@ export function SettingsForm() {
         toast({ title: "Copied!", description: `Your ${type} has been copied to the clipboard.`});
     }
   }
-
-  if (!userProfile) return null;
 
   return (
     <div className="space-y-6">

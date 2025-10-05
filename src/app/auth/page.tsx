@@ -16,20 +16,19 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { createUser, getUserProfile } from "@/services/users.service";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ForgotPasswordModal } from "@/components/forgot-password-modal";
 import React from 'react';
 import Link from "next/link";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, Loader } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatedLogo } from "@/components/animated-logo";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
-import { auth } from "@/lib/firebase";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 
 const LoginFormSchema = z.object({
@@ -61,22 +60,22 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
 function AuthenticationPageContent({ searchParams }: { searchParams: ReadonlyURLSearchParams }) {
   const router = useRouter();
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   
   const initialTab = searchParams.get('view') === 'signup' ? 'signup' : 'login';
   const initialDealerCode = searchParams.get('dealerCode');
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!loading && user) {
         if (userProfile?.role === 'admin') {
             router.push('/admin');
         } else {
             router.push('/dashboard');
         }
     }
-  }, [user, userProfile, authLoading, router]);
+  }, [user, userProfile, loading, router]);
 
-  if (authLoading || user) {
+  if (loading || user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
         <div className="w-full max-w-md text-center mb-8">
@@ -141,7 +140,7 @@ function AuthPageWrapper() {
 
 export default function AuthenticationPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader className="h-8 w-8 animate-spin" /></div>}>
             <AuthPageWrapper />
         </Suspense>
     );
@@ -151,6 +150,7 @@ function LoginForm() {
     const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+    const auth = getAuth();
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(LoginFormSchema),
@@ -187,9 +187,7 @@ function LoginForm() {
 
             toast({ title: "Success", description: "Logged in successfully." });
             
-            // The redirection logic is now handled by the main page component
-            // based on the updated auth state.
-
+            // Redirection is handled by the main page based on useAuth hook
         } catch (error: any) {
             console.error(error);
             const errorMessage = error.code === 'auth/invalid-credential' 
@@ -259,6 +257,7 @@ function LoginForm() {
 function SignUpForm({ initialDealerCode }: { initialDealerCode: string | null }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+    const auth = getAuth();
 
     const form = useForm<SignUpFormValues>({
         resolver: zodResolver(SignUpFormSchema),

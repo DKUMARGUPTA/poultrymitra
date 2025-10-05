@@ -1,40 +1,40 @@
-
+// src/app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { FarmerDashboard } from "@/components/farmer-dashboard"
-import { DealerDashboard } from "@/components/dealer-dashboard"
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
+import { FarmerDashboard } from "@/components/farmer-dashboard";
+import { DealerDashboard } from "@/components/dealer-dashboard";
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
 import {
   Sidebar,
+  SidebarProvider,
   SidebarTrigger,
   SidebarInset,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatedLogo } from '@/components/animated-logo';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!loading) {
+      if (!user) {
         router.push('/auth');
+      } else if (userProfile?.role === 'admin') {
+        router.push('/admin');
+      }
     }
-     if (!authLoading && user && userProfile?.role === 'admin') {
-      router.push('/admin');
-    }
-  }, [user, userProfile, authLoading, router]);
+  }, [user, userProfile, loading, router]);
 
-  const isLoading = authLoading || !userProfile;
 
-  if (isLoading) {
+  if (loading || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -61,12 +61,8 @@ export default function DashboardPage() {
     )
   }
 
-  if (!user || !userProfile) {
-    return null; // or redirect, though useEffect handles it
-  }
-
   return (
-    <>
+    <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-2">
@@ -75,10 +71,8 @@ export default function DashboardPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
-        <SidebarFooter>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">
@@ -93,10 +87,10 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <h1 className="text-lg font-semibold md:text-2xl font-headline">Dashboard</h1>
             </div>
-            {userProfile.role === 'dealer' ? <DealerDashboard /> : <FarmerDashboard />}
+            {userProfile?.role === 'dealer' ? <DealerDashboard /> : <FarmerDashboard />}
           </main>
         </div>
       </SidebarInset>
-    </>
+    </SidebarProvider>
   )
 }

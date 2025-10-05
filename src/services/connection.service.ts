@@ -28,7 +28,7 @@ const ConnectionRequestSchema = z.object({
 
 export type ConnectionRequest = z.infer<typeof ConnectionRequestSchema> & {
     id: string;
-    requesterProfile: UserProfile; // We'll enrich the data client-side
+    requesterProfile: UserProfile;
 };
 
 /**
@@ -52,29 +52,27 @@ export const createConnectionRequest = async (requesterId: string, recipientId: 
 };
 
 /**
- * Subscribes to pending connection requests for a dealer.
+ * Fetches pending connection requests for a dealer.
  */
-export const getConnectionRequestsForDealer = (dealerId: string, callback: (requests: ConnectionRequest[]) => void) => {
+export const getConnectionRequestsForDealer = async (dealerId: string): Promise<ConnectionRequest[]> => {
   const q = query(
     collection(db, 'connectionRequests'),
     where('recipientId', '==', dealerId),
     where('status', '==', 'pending')
   );
 
-  return onSnapshot(q, async (snapshot) => {
-    const requestsPromises = snapshot.docs.map(async (docSnap) => {
-      const requestData = docSnap.data() as DocumentData;
-      const requesterProfile = await getUserProfile(requestData.requesterId);
-      return {
-        id: docSnap.id,
-        ...requestData,
-        requesterProfile,
-      } as ConnectionRequest;
-    });
-
-    const requests = (await Promise.all(requestsPromises)).filter(r => r.requesterProfile !== null);
-    callback(requests);
+  const snapshot = await getDocs(q);
+  const requestsPromises = snapshot.docs.map(async (docSnap) => {
+    const requestData = docSnap.data() as DocumentData;
+    const requesterProfile = await getUserProfile(requestData.requesterId);
+    return {
+      id: docSnap.id,
+      ...requestData,
+      requesterProfile,
+    } as ConnectionRequest;
   });
+
+  return (await Promise.all(requestsPromises)).filter(r => r.requesterProfile !== null);
 };
 
 /**

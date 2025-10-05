@@ -10,20 +10,22 @@ import { CreateOfferModal } from '@/components/create-offer-modal';
 import { TicketPercent, PlusCircle } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
-export function OffersList({ initialOffers }: { initialOffers: SubscriptionOffer[] }) {
-    const [offers, setOffers] = useState<SubscriptionOffer[]>(initialOffers);
+export function OffersList() {
+    const [offers, setOffers] = useState<SubscriptionOffer[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = getActiveOffers(newOffers => {
-            setOffers(newOffers);
+        async function fetchOffers() {
+            setLoading(true);
+            const initialOffers = await getActiveOffers();
+            setOffers(initialOffers);
             setLoading(false);
-        });
-        return () => unsubscribe();
+        }
+        fetchOffers();
     }, []);
 
     const handleOfferCreated = (newOffer: SubscriptionOffer) => {
-        setOffers(prev => [newOffer, ...prev]);
+        setOffers(prev => [newOffer, ...prev].sort((a,b) => b.createdAt.seconds - a.createdAt.seconds));
     }
     
     return (
@@ -68,7 +70,6 @@ export function OffersList({ initialOffers }: { initialOffers: SubscriptionOffer
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm text-muted-foreground">Expires on: {format(offer.expiresAt.toDate(), 'PPP')}</p>
-                                    {/* Add edit/deactivate functionality later */}
                                 </CardContent>
                                </Card>
                             ))}

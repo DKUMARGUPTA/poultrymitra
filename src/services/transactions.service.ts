@@ -3,10 +3,6 @@ import {
   collection,
   query,
   where,
-  onSnapshot,
-  DocumentData,
-  QuerySnapshot,
-  Unsubscribe,
   orderBy,
   limit,
   addDoc,
@@ -19,7 +15,6 @@ import {
   deleteDoc,
   getDoc,
   updateDoc,
-  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
@@ -62,7 +57,6 @@ export const createTransaction = async (transactionData: TransactionInput) => {
     await runTransaction(db, async (t) => {
         // --- All READ operations must happen before any WRITE operations ---
         let farmerRef: any;
-        let farmerDoc: any;
         let inventoryRef: any;
         let inventoryDoc: any;
         let costOfGoodsSold: number | undefined = undefined;
@@ -70,7 +64,7 @@ export const createTransaction = async (transactionData: TransactionInput) => {
         // Read farmer doc if it's a farmer-specific transaction (NOT a general business expense)
         if (validatedData.userId && !validatedData.isBusinessExpense && validatedData.userId !== validatedData.dealerId) {
             farmerRef = doc(db, 'farmers', validatedData.userId);
-            farmerDoc = await t.get(farmerRef);
+            const farmerDoc = await t.get(farmerRef);
              if (!farmerDoc.exists()) {
                 throw new Error("Farmer profile could not be found.");
             }
@@ -235,7 +229,7 @@ export const getTransactionsForUser = async (uid: string, isDealerView: boolean 
     }
   
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => processTransactionDoc(doc.data()));
+    return querySnapshot.docs.map(doc => processTransactionDoc(doc));
 };
 
 export const getBusinessExpenses = async (dealerId: string): Promise<Transaction[]> => {
@@ -248,7 +242,7 @@ export const getBusinessExpenses = async (dealerId: string): Promise<Transaction
     );
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => processTransactionDoc(doc.data()));
+    return querySnapshot.docs.map(doc => processTransactionDoc(doc));
 };
 
 
@@ -261,7 +255,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => processTransactionDoc(doc.data()));
+    return querySnapshot.docs.map(doc => processTransactionDoc(doc));
 };
 
 

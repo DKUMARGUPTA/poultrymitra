@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 import { Bird, CheckCircle, CreditCard, Crown, Loader, QrCode, TicketPercent, X } from 'lucide-react';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
@@ -25,12 +25,18 @@ import { createPaymentVerificationRequest } from '@/services/billing.service';
 import QRCode from 'qrcode.react';
 import { getOfferByCode, SubscriptionOffer } from '@/services/offers.service';
 import { getSubscriptionSettings, SubscriptionSettings } from '@/services/settings.service';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { getUserProfile, UserProfile } from '@/services/users.service';
 
 
 export default function BillingPage() {
-  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [referenceNumber, setReferenceNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
@@ -42,6 +48,20 @@ export default function BillingPage() {
   const [settings, setSettings] = useState<SubscriptionSettings | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
 
+   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } else {
+        router.push('/auth');
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   useEffect(() => {
     async function fetchSettings() {
       setSettingsLoading(true);
@@ -51,6 +71,15 @@ export default function BillingPage() {
     }
     fetchSettings();
   }, []);
+
+  if (loading || !user || !userProfile) {
+     return (
+       <div className="flex flex-col h-screen">
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
+        <div className="flex flex-1"><main className="flex-1 p-6"><Skeleton className="h-96 w-full" /></main></div>
+       </div>
+    )
+  }
 
   const plan = userProfile?.role === 'dealer' 
     ? { name: 'Dealer Premium', price: settings?.dealerPlanPrice ?? 499 }
@@ -113,16 +142,6 @@ export default function BillingPage() {
     }
   }
 
-  const pageLoading = loading || !userProfile || settingsLoading;
-
-  if (pageLoading) {
-     return (
-       <div className="flex flex-col h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
-        <div className="flex flex-1"><main className="flex-1 p-6"><Skeleton className="h-96 w-full" /></main></div>
-       </div>
-    )
-  }
 
   return (
     <SidebarProvider>
@@ -130,12 +149,12 @@ export default function BillingPage() {
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-2"><Bird className="w-8 h-8 text-primary" /><h1 className="text-2xl font-headline text-primary">Poultry Mitra</h1></div>
         </SidebarHeader>
-        <SidebarContent><MainNav /></SidebarContent>
+        <SidebarContent><MainNav userProfile={userProfile} /></SidebarContent>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-            <SidebarTrigger className="md:hidden" /><div className="w-full flex-1" /><UserNav />
+            <SidebarTrigger className="md:hidden" /><div className="w-full flex-1" /><UserNav user={user} userProfile={userProfile} />
           </header>
           <main className="flex-1 p-6">
             <div className="flex items-center gap-2 mb-6">

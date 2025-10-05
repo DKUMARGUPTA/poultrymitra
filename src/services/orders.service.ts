@@ -19,6 +19,7 @@ import {
   increment,
   getDoc,
   deleteDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { TransactionInput, TransactionSchema } from './transactions.service';
@@ -152,21 +153,16 @@ export const createOrder = async (
     return orderId;
 };
 
-export const getOrdersForFarmer = (farmerId: string, callback: (orders: Order[]) => void): Unsubscribe => {
+export const getOrdersForFarmer = async (farmerId: string): Promise<Order[]> => {
     const q = query(collection(db, 'orders'), where("farmerId", "==", farmerId), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snapshot) => {
-        const orders: Order[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-        callback(orders);
-    });
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
 };
 
-export const getOrdersForDealer = (dealerId: string, callback: (orders: Order[]) => void): Unsubscribe => {
+export const getOrdersForDealer = async (dealerId: string): Promise<Order[]> => {
     const q = query(collection(db, 'orders'), where("dealerId", "==", dealerId), orderBy("createdAt", "desc"));
-    
-    return onSnapshot(q, async (snapshot) => {
-        const orders: Order[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-        callback(orders);
-    });
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
 };
 
 export const getOrderById = async (orderId: string): Promise<Order | null> => {

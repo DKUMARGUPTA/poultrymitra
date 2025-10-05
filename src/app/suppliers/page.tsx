@@ -15,9 +15,6 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -31,25 +28,29 @@ import { getUniquePurchaseSources } from '@/services/inventory.service';
 import Link from 'next/link';
 
 export default function SuppliersPage() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const [sources, setSources] = useState<string[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    } else if (user) {
+    if (!loading) {
+      if (!user) {
+        router.push('/auth');
+      } else if (userProfile?.role !== 'dealer') {
+        router.push('/dashboard');
+      } else {
         setSourcesLoading(true);
         getUniquePurchaseSources(user.uid).then(uniqueSources => {
-            setSources(uniqueSources.sort());
-            setSourcesLoading(false);
+          setSources(uniqueSources.sort());
+          setSourcesLoading(false);
         });
+      }
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, loading, router]);
 
 
-  if (loading || !user) {
+  if (loading || !user || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -85,7 +86,7 @@ export default function SuppliersPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>

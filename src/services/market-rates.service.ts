@@ -64,20 +64,18 @@ export const deleteMarketRate = async (rateId: string): Promise<void> => {
 };
 
 
-export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubscribe => {
+export const getMarketRates = async (): Promise<MarketRate[]> => {
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
         orderBy("createdAt", "desc")
     );
-    
-    return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
-        const rates: MarketRate[] = [];
-        querySnapshot.forEach((doc) => {
-            rates.push({ id: doc.id, ...doc.data() } as MarketRate);
-        });
-        callback(rates);
+    const querySnapshot = await getDocs(q);
+    const rates: MarketRate[] = [];
+    querySnapshot.forEach((doc) => {
+        rates.push({ id: doc.id, ...doc.data() } as MarketRate);
     });
+    return rates;
 };
 
 export const getLatestMarketRates = async (count: number): Promise<MarketRate[]> => {

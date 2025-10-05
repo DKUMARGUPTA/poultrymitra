@@ -26,47 +26,38 @@ import { Farmer, getFarmersByDealer } from '@/services/farmers.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { getUserProfile, UserProfile } from '@/services/users.service';
 import Link from 'next/link';
 import { AiFeatureCard } from '@/components/ai/ai-feature-card';
 
 
 export default function WhatsappPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmersLoading, setFarmersLoading] = useState(true);
   const [selectedFarmers, setSelectedFarmers] = useState<string[]>([]);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/');
-    } else if (user) {
-        getUserProfile(user.uid).then(profile => {
-            if (profile?.role !== 'dealer') {
-                router.push('/dashboard'); // Only for dealers
-            }
-            setUserProfile(profile);
-            setProfileLoading(false);
-
-            if (profile?.isPremium) {
-                 setFarmersLoading(true);
-                const unsubscribe = getFarmersByDealer(user.uid, (newFarmers) => {
-                    setFarmers(newFarmers);
-                    setFarmersLoading(false);
-                });
-                return () => unsubscribe();
-            } else {
-                setFarmersLoading(false);
-            }
+    if (!authLoading) {
+      if (!user) {
+        router.push('/auth');
+      } else if (userProfile?.role !== 'dealer') {
+        router.push('/dashboard');
+      } else if (userProfile.isPremium) {
+        setFarmersLoading(true);
+        const unsubscribe = getFarmersByDealer(user.uid, (newFarmers) => {
+          setFarmers(newFarmers);
+          setFarmersLoading(false);
         });
+        return () => unsubscribe();
+      } else {
+        setFarmersLoading(false);
+      }
     }
-  }, [user, authLoading, router]);
+  }, [user, userProfile, authLoading, router]);
 
   const handleDraftGenerated = (draft: string) => {
     setMessage(draft);
@@ -117,7 +108,7 @@ export default function WhatsappPage() {
     });
   };
 
-  const isLoading = authLoading || profileLoading;
+  const isLoading = authLoading || !userProfile;
 
   if (isLoading || !user) {
     return (
@@ -155,7 +146,7 @@ export default function WhatsappPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile}/>
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>

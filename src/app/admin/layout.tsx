@@ -1,41 +1,43 @@
 // src/app/admin/layout.tsx
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+"use client";
+
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Bird } from 'lucide-react';
-import React from 'react';
-import { auth } from '@/lib/firebase-admin'; // Using admin auth
-import { getUserProfile } from '@/services/users.service';
+import React, { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// This is now a Server Component
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-    if (!auth) {
-        console.warn("Firebase Admin SDK is not initialized. Admin features are disabled.");
-        redirect('/auth');
-    }
+// This is now a Client Component to use the useAuth hook
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const { user, userProfile, loading } = useAuth();
+    const router = useRouter();
 
-    const cookieStore = cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-
-    let userProfile = null;
-    if (sessionCookie) {
-        try {
-            const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
-            userProfile = await getUserProfile(decodedToken.uid);
-        } catch (error) {
-            // Session cookie is invalid.
-            console.error("Session cookie verification failed:", error);
-            redirect('/auth');
+    useEffect(() => {
+        if (!loading) {
+            if (!user) {
+                router.push('/auth');
+            } else if (userProfile?.role !== 'admin') {
+                router.push('/dashboard');
+            }
         }
-    } else {
-        redirect('/auth');
-    }
+    }, [user, userProfile, loading, router]);
 
-    if (!userProfile || userProfile.role !== 'admin') {
-        redirect('/dashboard');
+
+    if (loading || !userProfile || userProfile.role !== 'admin') {
+         return (
+            <div className="flex flex-col h-screen">
+                <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
+                <div className="flex flex-1">
+                    <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4"><Skeleton className="h-8 w-40 mb-4" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></aside>
+                    <main className="flex flex-1 items-center justify-center"><Skeleton className="h-64 w-full max-w-lg" /></main>
+                </div>
+            </div>
+        );
     }
+    
 
     return (
         <SidebarProvider>
@@ -54,7 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
                         <SidebarTrigger className="md:hidden" />
                         <div className="w-full flex-1" />
-                        <UserNav userProfile={userProfile} />
+                        <UserNav />
                     </header>
                     {children}
                 </div>

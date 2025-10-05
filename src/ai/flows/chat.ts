@@ -15,7 +15,7 @@ import { getBatchesByFarmer, Batch } from '@/services/batches.service';
 import { getDailyEntriesForBatch } from '@/services/daily-entries.service';
 import { getFarmer, getFarmersByDealer, Farmer } from '@/services/farmers.service';
 import {
-  getTransactionsForUserAsync,
+  getTransactionsForUser,
   Transaction,
 } from '@/services/transactions.service';
 import { getUserProfile } from '@/services/users.service';
@@ -40,14 +40,8 @@ const getDealerSummary = ai.defineTool(
     outputSchema: z.string().describe('A summary of the dealer\'s business performance.'),
   },
   async ({ userId }) => {
-    return new Promise((resolve) => {
-        const unsub = getDealerDashboardStats(userId, (stats) => {
-          unsub();
-          resolve(
-            `Dealer Summary: You have ${stats.totalFarmers} farmers, with a total outstanding balance of ₹${stats.pendingPayments}. Your current estimated stock value is ₹${stats.stockValue}.`
-          );
-        });
-      });
+    const stats = await getDealerDashboardStats(userId);
+    return `Dealer Summary: You have ${stats.totalFarmers} farmers, with a total outstanding balance of ₹${stats.pendingPayments}. Your current estimated stock value is ₹${stats.stockValue}.`;
   }
 );
 
@@ -60,12 +54,7 @@ const getFarmersWithOutstandingBalances = ai.defineTool(
     outputSchema: z.string(),
   },
   async ({ userId }) => {
-      const farmers: Farmer[] = await new Promise((res) => {
-        const unsub = getFarmersByDealer(userId, (f) => {
-          unsub();
-          res(f);
-        });
-      });
+      const farmers: Farmer[] = await getFarmersByDealer(userId);
       const owingFarmers = farmers.filter((f) => f.outstanding > 0);
       if (owingFarmers.length === 0)
         return 'All farmers have cleared their balances.';
@@ -87,14 +76,8 @@ const getFarmerSummary = ai.defineTool(
     outputSchema: z.string().describe('A summary of the farmer\'s farm performance.'),
   },
   async ({ userId }) => {
-    return new Promise((resolve) => {
-        const unsub = getFarmerDashboardStats(userId, (stats) => {
-          unsub();
-          resolve(
-            `Farmer Summary: You have ${stats.activeBatches} active batches. Your average mortality rate is ${stats.avgMortalityRate.toFixed(2)}%, and your outstanding balance with your dealer is ₹${stats.outstandingBalance}.`
-          );
-        });
-      });
+    const stats = await getFarmerDashboardStats(userId);
+    return `Farmer Summary: You have ${stats.activeBatches} active batches. Your average mortality rate is ${stats.avgMortalityRate.toFixed(2)}%, and your outstanding balance with your dealer is ₹${stats.outstandingBalance}.`;
   }
 );
 
@@ -111,37 +94,23 @@ const getFarmerBatchDetails = ai.defineTool(
     outputSchema: z.string().describe('A detailed summary of the batch, or a message indicating it was not found.'),
   },
   async ({ userId, batchName }) => {
-    return new Promise(async (resolve) => {
-      const batches: Batch[] = await new Promise((res) => {
-        const unsub = getBatchesByFarmer(userId, (b) => {
-          unsub();
-          res(b);
-        });
-      });
+      const batches: Batch[] = await getBatchesByFarmer(userId);
 
       if (batches.length === 0) {
-        return resolve('No batches found for this farmer.');
+        return 'No batches found for this farmer.';
       }
 
       // Simple logic to find the "latest" batch if no name is given.
       // In a real app, you might match by name more intelligently.
       const batch = batches[0];
 
-      const entries = await new Promise<any[]>((res) => {
-        const unsub = getDailyEntriesForBatch(batch.id, (e) => {
-          unsub();
-          res(e);
-        });
-      });
+      const entries = await getDailyEntriesForBatch(batch.id);
 
       const totalMortality = entries.reduce((sum, entry) => sum + entry.mortality, 0);
       const totalFeed = entries.reduce((sum, entry) => sum + entry.feedConsumedInKg, 0);
       const currentBirdCount = batch.initialBirdCount - totalMortality;
 
-      resolve(
-        `Details for batch "${batch.name}": Started on ${batch.startDate}, initial count was ${batch.initialBirdCount}. Current bird count is ${currentBirdCount}. Total mortality: ${totalMortality}. Total feed consumed: ${totalFeed} kg.`
-      );
-    });
+      return `Details for batch "${batch.name}": Started on ${batch.startDate}, initial count was ${batch.initialBirdCount}. Current bird count is ${currentBirdCount}. Total mortality: ${totalMortality}. Total feed consumed: ${totalFeed} kg.`;
   }
 );
 
@@ -175,7 +144,7 @@ const listRecentTransactions = ai.defineTool(
     outputSchema: z.string(),
   },
   async ({ userId, limit }) => {
-    const transactions = await getTransactionsForUserAsync(userId);
+    const transactions = await getTransactionsForUser(userId);
     if (transactions.length === 0) return 'No transactions found.';
 
     return `Here are your last ${Math.min(limit!, transactions.length)} transactions: ${transactions.slice(0, limit).map((t) => `${t.description} (₹${t.amount})`).join('; ')}.`;
@@ -209,12 +178,7 @@ export async function chat(params: {
   const { message, userId } = params;
 
   // Fetch chat history from Firestore
-  const history: Message[] = await new Promise((resolve) => {
-    const unsub = getChatHistory(userId, (messages) => {
-        unsub();
-        resolve(messages);
-    });
-  });
+  const history: Message[] = await getChatHistory(userId);
 
   const { text } = await ai.generate({
     model: model,

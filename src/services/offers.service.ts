@@ -49,20 +49,7 @@ export const createOffer = async (offerData: Omit<OfferInput, 'createdAt' | 'isA
   return docRef.id;
 };
 
-export const getActiveOffers = (callback: (offers: SubscriptionOffer[]) => void) => {
-    const q = query(
-        collection(db, 'offers'),
-        where('isActive', '==', true),
-        orderBy('createdAt', 'desc')
-    );
-    
-    return onSnapshot(q, (snapshot) => {
-        const offers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionOffer));
-        callback(offers);
-    });
-};
-
-export const getActiveOffersAsync = async (): Promise<SubscriptionOffer[]> => {
+export const getActiveOffers = async (): Promise<SubscriptionOffer[]> => {
     const q = query(
         collection(db, 'offers'),
         where('isActive', '==', true),

@@ -88,10 +88,6 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
   
   const handleUserDeleted = (deletedUserId: string) => {
     setUsers(prevUsers => prevUsers.filter(u => u.uid !== deletedUserId));
-    toast({
-      title: 'User Deleted',
-      description: 'The user account has been removed.'
-    });
   }
 
   return (

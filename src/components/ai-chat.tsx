@@ -2,18 +2,18 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, User, Bot, Loader, Sparkles, Volume2, StopCircle } from 'lucide-react';
+import { Send, User as UserIcon, Bot, Loader, Sparkles, Volume2, StopCircle } from 'lucide-react';
 import { chat } from '@/ai/flows/chat';
 import { textToSpeech } from '@/ai/flows/tts';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { Message, Part } from 'genkit';
 import { getChatHistory, addChatMessage } from '@/services/chat.service';
+import { User } from 'firebase/auth';
 
 
 // Map Genkit's `Message` to a simpler text-based message for display
@@ -34,8 +34,7 @@ const examplePrompts = [
     "What were my last 5 transactions?",
 ]
 
-export function AiChat() {
-  const { user } = useAuth();
+export function AiChat({ user }: { user: User }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,13 +46,15 @@ export function AiChat() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user) {
-      const unsubscribe = getChatHistory(user.uid, (history) => {
+    async function fetchHistory() {
+      if (user) {
+        setHistoryLoading(true);
+        const history = await getChatHistory(user.uid);
         setMessages(history);
         setHistoryLoading(false);
-      });
-      return () => unsubscribe();
+      }
     }
+    fetchHistory();
   }, [user]);
 
   useEffect(() => {
@@ -86,7 +87,8 @@ export function AiChat() {
     const userMessage: Message = { role: 'user', content: [{ text: messageToSend }] };
     
     // Optimistically update UI and save to DB
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     await addChatMessage(user.uid, userMessage);
     
     setInput('');
@@ -97,13 +99,16 @@ export function AiChat() {
 
       const modelMessage: Message = { role: 'model', content: [{ text: responseText }] };
       
-      // Save model response to DB. The UI will update via the snapshot listener.
+      // Save model response to DB and update state
       await addChatMessage(user.uid, modelMessage);
+      setMessages([...newMessages, modelMessage]);
+
 
     } catch (error) {
       console.error('AI chat error:', error);
       const errorMessage: Message = { role: 'model', content: [{ text: 'Sorry, I encountered an error. Please try again.' }] };
       await addChatMessage(user.uid, errorMessage);
+      setMessages([...newMessages, errorMessage]);
     } finally {
       setLoading(false);
     }

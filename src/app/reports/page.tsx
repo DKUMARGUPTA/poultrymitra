@@ -1,9 +1,8 @@
-
+// src/app/reports/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, BarChart } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -19,19 +18,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BatchProfitabilityReport } from '@/components/reports/batch-profitability-report';
 import { SalesReport } from '@/components/reports/sales-report';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ReportsPage() {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
+    if (!loading) {
+        if (!user) {
+            router.push('/auth');
+        } else if (userProfile?.role === 'admin') {
+            router.push('/admin');
+        }
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, loading, router]);
   
-
-  if (loading || !userProfile) {
+  const isLoading = loading || !userProfile;
+  if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -67,7 +71,7 @@ export default function ReportsPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
@@ -104,5 +108,3 @@ export default function ReportsPage() {
     </SidebarProvider>
   )
 }
-
-    

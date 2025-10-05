@@ -1,5 +1,5 @@
 // src/services/daily-entries.service.ts
-import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, orderBy, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
 
@@ -26,18 +26,17 @@ export const createDailyEntry = async (entryData: Omit<DailyEntryInput, 'created
     return docRef.id;
 };
 
-export const getDailyEntriesForBatch = (batchId: string, callback: (entries: DailyEntry[]) => void): Unsubscribe => {
+export const getDailyEntriesForBatch = async (batchId: string): Promise<DailyEntry[]> => {
     const q = query(
         collection(db, 'daily-entries'), 
         where("batchId", "==", batchId),
         orderBy("date", "desc")
     );
     
-    return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
-        const entries: DailyEntry[] = [];
-        querySnapshot.forEach((doc) => {
-            entries.push({ id: doc.id, ...doc.data() } as DailyEntry);
-        });
-        callback(entries);
+    const querySnapshot = await getDocs(q);
+    const entries: DailyEntry[] = [];
+    querySnapshot.forEach((doc) => {
+        entries.push({ id: doc.id, ...doc.data() } as DailyEntry);
     });
+    return entries;
 };

@@ -1,4 +1,3 @@
-
 // src/app/ai-chat/page.tsx
 "use client";
 
@@ -17,36 +16,16 @@ import {
   SidebarContent,
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserProfile, UserProfile } from '@/services/users.service';
+import { UserProfile } from '@/services/users.service';
 import { AiChat } from '@/components/ai-chat';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiFeatureCard } from '@/components/ai/ai-feature-card';
 
 export default function AiChatPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push('/');
-      } else {
-        getUserProfile(user.uid).then((profile) => {
-          if (profile?.role === 'admin') {
-            router.push('/admin'); // Admins don't have a chat page for now
-          }
-          setUserProfile(profile);
-          setProfileLoading(false);
-        });
-      }
-    }
-  }, [user, authLoading, router]);
-
-  const isLoading = authLoading || profileLoading;
-
-  if (isLoading || !user) {
+  if (loading || !user) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -84,7 +63,7 @@ export default function AiChatPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile}/>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
@@ -92,7 +71,7 @@ export default function AiChatPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav />
+            <UserNav user={user} userProfile={userProfile} />
           </header>
            <main className="flex-1 overflow-hidden">
                 {!isPremium ? (

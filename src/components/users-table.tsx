@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { MoreVertical, BookText } from "lucide-react"
+import { MoreVertical, BookText, PlusCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserProfile, updateUserPremiumStatus, RatePermission, getAllUsers } from '@/services/users.service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,14 +19,28 @@ import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DealerList } from '@/components/dealer-list';
 import { ManageRatePermissionsModal } from '@/components/manage-rate-permissions-modal';
+import { AddUserModal } from './add-user-modal';
+import { Skeleton } from './ui/skeleton';
 
-export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
+export function UsersTable() {
   const { toast } = useToast();
-  const [users, setUsers] = useState<UserProfile[]>(initialUsers);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUsers(initialUsers);
-  }, [initialUsers]);
+    async function fetchUsers() {
+        setLoading(true);
+        const allUsers = await getAllUsers();
+        // Filter out admin users from being displayed in the table
+        setUsers(allUsers.filter(u => u.role !== 'admin'));
+        setLoading(false);
+    }
+    fetchUsers();
+  }, []);
+
+  const handleUserAdded = (newUser: UserProfile) => {
+    setUsers(prev => [newUser, ...prev].sort((a,b) => a.name.localeCompare(b.name)));
+  };
 
   const handlePermissionToggle = async (targetUser: UserProfile, permission: 'isPremium', isChecked: boolean) => {
      // Optimistic update
@@ -74,10 +88,17 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
 
   return (
       <Tabs defaultValue="users">
-            <TabsList>
-            <TabsTrigger value="users">All Users</TabsTrigger>
-            <TabsTrigger value="dealers">Dealers</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between mb-4">
+                <TabsList>
+                    <TabsTrigger value="users">All Users</TabsTrigger>
+                    <TabsTrigger value="dealers">Dealers</TabsTrigger>
+                </TabsList>
+                 <AddUserModal onUserAdded={handleUserAdded}>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" /> New User
+                    </Button>
+                </AddUserModal>
+            </div>
             <TabsContent value="users">
             <Card>
                 <CardHeader>
@@ -85,7 +106,11 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                     <CardDescription>View all dealers and farmers, and manage their status and permissions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {users.length === 0 ? (
+                    {loading ? (
+                       <div className="space-y-4">
+                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                       </div>
+                    ) : users.length === 0 ? (
                         <div className="text-center py-12">
                             <p className="text-muted-foreground">No users found.</p>
                         </div>

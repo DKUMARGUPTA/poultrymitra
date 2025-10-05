@@ -1,23 +1,23 @@
 // src/hooks/use-auth.ts
-"use client";
-import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { getUserProfile, UserProfile } from '@/services/users.service';
-import { auth, db } from '@/lib/firebase';
+'use client';
 
-export interface AuthState {
+import React, { useContext } from 'react';
+import { User } from 'firebase/auth';
+import { UserProfile } from '@/services/users.service';
+
+export interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
 }
 
-export const AuthContext = createContext<AuthState>({
+export const AuthContext = React.createContext<AuthContextType>({
   user: null,
   userProfile: null,
   loading: true,
 });
 
-export const useAuth = (): AuthState => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

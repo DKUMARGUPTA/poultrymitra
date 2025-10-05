@@ -32,31 +32,23 @@ export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-        if (scope === 'user' && !user) {
+    async function fetchData() {
+        if (!user && scope !== 'all') {
             setLoading(false);
             return;
         }
 
         setLoading(true);
-        try {
-            let fetchedTransactions: Transaction[];
-            if (scope === 'all') {
-                fetchedTransactions = await getAllTransactions();
-            } else if (user) {
-                const isDealerView = scope === 'dealer';
-                fetchedTransactions = await getTransactionsForUser(user.uid, isDealerView);
-            } else {
-                fetchedTransactions = [];
-            }
-            setTransactions(fetchedTransactions);
-        } catch (error) {
-            console.error("Failed to fetch transactions:", error);
-        } finally {
-            setLoading(false);
+        let fetched: Transaction[];
+        if (scope === 'all') {
+            fetched = await getAllTransactions();
+        } else {
+            const isDealerView = scope === 'dealer';
+            fetched = await getTransactionsForUser(user!.uid, isDealerView);
         }
-    };
-
+        setTransactions(fetched);
+        setLoading(false);
+    }
     fetchData();
   }, [user, scope]);
   

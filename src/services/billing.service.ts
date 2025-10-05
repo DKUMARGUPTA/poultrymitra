@@ -46,7 +46,7 @@ export const createPaymentVerificationRequest = async (
 
 
 /**
- * Gets all pending verification requests for the admin with real-time updates.
+ * Gets all pending verification requests for the admin.
  */
 export const getPendingPaymentVerifications = async (): Promise<PaymentVerificationRequest[]> => {
   const q = query(collection(db, 'paymentVerifications'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));

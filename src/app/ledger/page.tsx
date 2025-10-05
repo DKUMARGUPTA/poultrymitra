@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, FileDown, PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { MainNav } from "@/components/main-nav"
@@ -28,26 +27,43 @@ import Papa from 'papaparse';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { UserProfile, getUserProfile } from '@/services/users.service';
 
 
 export default function LedgerPage() {
-  const { user, loading } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
+
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [exporting, setExporting] = useState(false);
   
-  // This state is needed to trigger a re-render of TransactionHistory
   const [refreshKey, setRefreshKey] = useState(0); 
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+            setUser(currentUser);
+            const profile = await getUserProfile(currentUser.uid);
+            setUserProfile(profile);
+            if (profile?.role === 'admin') {
+                router.push('/admin');
+            }
+        } else {
+            setUser(null);
+            setUserProfile(null);
+            router.push('/auth');
+        }
+        setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const handleTransactionAdded = (newTransaction: Transaction) => {
-    // Trigger a refresh of the transaction history component
     setRefreshKey(prev => prev + 1);
   };
 
@@ -139,7 +155,8 @@ export default function LedgerPage() {
     }
   };
 
-  if (loading || !user) {
+  const isLoading = authLoading || !userProfile;
+  if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
@@ -161,7 +178,7 @@ export default function LedgerPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
@@ -169,7 +186,7 @@ export default function LedgerPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav />
+            <UserNav user={user} userProfile={userProfile} />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">
@@ -201,7 +218,7 @@ export default function LedgerPage() {
                     <CardDescription>View your recent transactions with your dealer.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TransactionHistory key={refreshKey} />
+                    <TransactionHistory key={refreshKey} scope="user"/>
                 </CardContent>
             </Card>
           </main>

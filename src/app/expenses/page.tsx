@@ -1,9 +1,8 @@
-
+// src/app/expenses/page.tsx
 "use client";
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, FileDown, PlusCircle, Wallet, ChevronRight, ChevronDown, User } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { MainNav } from "@/components/main-nav"
@@ -28,29 +27,84 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddExpenseModal } from '@/components/add-expense-modal';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export default function ExpensesPage() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
+
   const { toast } = useToast();
-  const [expenses, setExpenses] = useState<Transaction[]>([]);
+  const [allExpenses, setAllExpenses] = useState<Transaction[]>([]);
+  const [filteredExpenses, setFilteredExpenses] = useState<Transaction[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Filter states
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [referenceQuery, setReferenceQuery] = useState('');
+
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    } else if(user) {
-      fetchExpenses(user.uid);
+    if (!authLoading) {
+      if (user) {
+        if (userProfile?.role !== 'dealer') {
+          router.push('/dashboard');
+        } else {
+          fetchExpenses(user.uid);
+        }
+      } else {
+        router.push('/auth');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, authLoading, router]);
+
+  useEffect(() => {
+    let filtered = allExpenses;
+
+    if (dateRange?.from || dateRange?.to) {
+      filtered = filtered.filter(entry => {
+        const entryDate = new Date(entry.date);
+        if (dateRange.from && entryDate < dateRange.from) return false;
+        if (dateRange.to) {
+            const toDate = new Date(dateRange.to);
+            toDate.setHours(23, 59, 59, 999);
+            if(entryDate > toDate) return false;
+        }
+        return true;
+      });
+    }
+    
+    if (referenceQuery.trim()) {
+        filtered = filtered.filter(entry => entry.referenceNumber?.toLowerCase().includes(referenceQuery.toLowerCase()));
+    }
+
+    setFilteredExpenses(filtered);
+  }, [dateRange, referenceQuery, allExpenses]);
   
   const fetchExpenses = async (uid: string) => {
     setExpensesLoading(true);
-    const newExpenses = await getBusinessExpenses(uid);
-    setExpenses(newExpenses);
-    setExpensesLoading(false);
+    try {
+      const newExpenses = await getBusinessExpenses(uid);
+      setAllExpenses(newExpenses);
+      setFilteredExpenses(newExpenses);
+    } catch (error) {
+      console.error("Failed to fetch expenses:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not load business expenses.' });
+    } finally {
+      setExpensesLoading(false);
+    }
+  }
+  
+  const clearFilters = () => {
+    setDateRange(undefined);
+    setReferenceQuery('');
   }
 
   const handleExpenseAdded = (newExpense: Transaction) => {
@@ -74,11 +128,12 @@ export default function ExpensesPage() {
   const handleExportCSV = () => {
     setExporting(true);
     try {
-      const csvData = expenses.map(t => ({
+      const csvData = filteredExpenses.map(t => ({
         ID: t.id,
         Date: format(new Date(t.date), "yyyy-MM-dd HH:mm:ss"),
         Description: t.description,
         Amount: t.amount,
+        'Paid To': t.userName,
         'Payment Method': t.paymentMethod,
         'Reference': t.referenceNumber,
         'Remarks': t.remarks,
@@ -109,7 +164,7 @@ export default function ExpensesPage() {
         const doc = new jsPDF();
         
         const head = [['Date', 'Description', 'Method', 'Amount']];
-        const body = expenses.map(t => [
+        const body = filteredExpenses.map(t => [
             format(new Date(t.date), 'dd/MM/yy, p'),
             t.description,
             t.paymentMethod || 'N/A',
@@ -145,7 +200,8 @@ export default function ExpensesPage() {
     }
   };
 
-  if (loading || !user) {
+  const isLoading = authLoading || !userProfile;
+  if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
@@ -161,7 +217,7 @@ export default function ExpensesPage() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-4"><div className="flex items-center gap-2"><Bird className="w-8 h-8 text-primary" /><h1 className="text-2xl font-headline text-primary">Poultry Mitra</h1></div></SidebarHeader>
-        <SidebarContent><MainNav /></SidebarContent>
+        <SidebarContent><MainNav userProfile={userProfile} /></SidebarContent>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">
@@ -175,7 +231,7 @@ export default function ExpensesPage() {
                     </AddExpenseModal>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" disabled={exporting || expenses.length === 0}><FileDown className="mr-2 h-4 w-4" />{exporting ? 'Exporting...' : 'Export'}</Button>
+                            <Button variant="outline" disabled={exporting || allExpenses.length === 0}><FileDown className="mr-2 h-4 w-4" />{exporting ? 'Exporting...' : 'Export'}</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                             <DropdownMenuItem onSelect={handleExportCSV}>Export as CSV</DropdownMenuItem>
@@ -188,13 +244,38 @@ export default function ExpensesPage() {
                 <CardHeader>
                     <CardTitle className="font-headline">Expense History</CardTitle>
                     <CardDescription>A log of all your recorded business expenses. Click a row to see more details.</CardDescription>
+                     <div className="flex items-center gap-2 pt-4 flex-wrap">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn("w-full md:w-[260px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (dateRange.to ? (<>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</>) : (format(dateRange.from, "LLL dd, y")) ) : (<span>Filter by date</span>)}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
+                            </PopoverContent>
+                        </Popover>
+                        <Input 
+                            type="search" 
+                            placeholder="Search by Ref..." 
+                            value={referenceQuery} 
+                            onChange={(e) => setReferenceQuery(e.target.value)}
+                            className="w-full md:w-48"
+                        />
+                        <Button variant="ghost" onClick={clearFilters} className="text-muted-foreground w-full md:w-auto"><X className="mr-2 h-4 w-4" />Clear</Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {expensesLoading ? (
                         <div className="space-y-4">
                             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
                         </div>
-                    ) : expenses.length === 0 ? (
+                    ) : filteredExpenses.length === 0 ? (
                         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[200px]">
                             <div className="flex flex-col items-center gap-1 text-center">
                                 <h3 className="text-2xl font-bold tracking-tight">No expenses logged yet</h3>
@@ -216,7 +297,7 @@ export default function ExpensesPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {expenses.map((expense) => (
+                                {filteredExpenses.map((expense) => (
                                 <React.Fragment key={expense.id}>
                                     <TableRow onClick={() => toggleRow(expense.id)} className="cursor-pointer">
                                         <TableCell>

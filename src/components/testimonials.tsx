@@ -17,9 +17,15 @@ export function Testimonials() {
   useEffect(() => {
     async function fetchTestimonials() {
         setLoading(true);
-        const fetchedTestimonials = await getTestimonials();
-        setTestimonials(fetchedTestimonials);
-        setLoading(false);
+        try {
+          const fetchedTestimonials = await getTestimonials();
+          setTestimonials(fetchedTestimonials);
+        } catch (error) {
+          console.error("Failed to fetch testimonials:", error);
+          // Keep default testimonials in case of error
+        } finally {
+          setLoading(false);
+        }
     }
     fetchTestimonials();
   }, []);

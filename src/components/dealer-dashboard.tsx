@@ -1,4 +1,3 @@
-
 // src/components/dealer-dashboard.tsx
 "use client";
 
@@ -41,11 +40,11 @@ export function DealerDashboard() {
 
   useEffect(() => {
     if (user) {
-      const unsubscribe = getDealerDashboardStats(user.uid, (newStats) => {
-        setStats(newStats);
-        setLoading(false);
-      });
-      return () => unsubscribe();
+        setLoading(true);
+        getDealerDashboardStats(user.uid).then(initialStats => {
+            setStats(initialStats);
+            setLoading(false);
+        });
     }
   }, [user]);
   
@@ -79,11 +78,15 @@ export function DealerDashboard() {
   }
 
   const handleFarmerAction = () => {
-    // Stats will refresh automatically via the listener
+    if (user) {
+        getDealerDashboardStats(user.uid).then(setStats);
+    }
   };
   
    const handleOrderCreated = (newOrder: Order) => {
-    // Stats will refresh automatically via the listener
+    if (user) {
+        getDealerDashboardStats(user.uid).then(setStats);
+    }
   }
   
   const handleNewFarmerClick = () => {

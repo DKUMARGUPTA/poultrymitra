@@ -1,9 +1,6 @@
-
-
+// src/app/ai-tools/page.tsx
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Bird, FlaskConical, Calculator, BrainCircuit, Bot, MessageCircle } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
@@ -23,31 +20,12 @@ import { DiseaseDetectionModal } from '@/components/disease-detection-modal';
 import { SmartAdvisoryModal } from '@/components/smart-advisory-modal';
 import { StockAdvisoryModal } from '@/components/stock-advisory-modal';
 import { WhatsappTemplatesModal } from '@/components/whatsapp-templates-modal';
-import { getUserProfile, UserProfile } from '@/services/users.service';
 import { FeedCalculator } from '@/components/feed-calculator';
 
 export default function AiToolsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push('/');
-      } else {
-        getUserProfile(user.uid).then((profile) => {
-          setUserProfile(profile);
-          setProfileLoading(false);
-        });
-      }
-    }
-  }, [user, authLoading, router]);
-
-  const isLoading = authLoading || profileLoading;
-
-  if (isLoading || !user) {
+  const { user, userProfile, loading } = useAuth();
+  
+  if (loading || !user || !userProfile) {
     return (
        <div className="flex flex-col h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -85,7 +63,7 @@ export default function AiToolsPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav />
+          <MainNav userProfile={userProfile} />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>
@@ -95,7 +73,7 @@ export default function AiToolsPage() {
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1" />
-            <UserNav />
+            <UserNav user={user} userProfile={userProfile} />
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center">

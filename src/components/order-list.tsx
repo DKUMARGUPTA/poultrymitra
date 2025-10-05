@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { getOrdersForDealer, getOrdersForFarmer, Order, updateOrderStatus } from '@/services/orders.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Skeleton } from './ui/skeleton';
@@ -15,29 +14,38 @@ import { useToast } from '@/hooks/use-toast';
 import { CancelOrderAlert } from './cancel-order-alert';
 import { DealerInventory } from './dealer-inventory';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { User } from 'firebase/auth';
+import { UserProfile } from '@/services/users.service';
 
-export function OrderList() {
-    const { user, userProfile } = useAuth();
+interface OrderListProps {
+  user: User;
+  userProfile: UserProfile;
+}
+
+export function OrderList({ user, userProfile }: OrderListProps) {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
-        if (user && userProfile) {
-            setLoading(true);
-            const isDealer = userProfile.role === 'dealer';
-            const unsubscribe = isDealer
-                ? getOrdersForDealer(user.uid, setOrders)
-                : getOrdersForFarmer(user.uid, setOrders);
-            
-            setLoading(false);
-            return () => unsubscribe();
+        async function fetchOrders() {
+            if (user && userProfile) {
+                setLoading(true);
+                const isDealer = userProfile.role === 'dealer';
+                const fetchedOrders = isDealer
+                    ? await getOrdersForDealer(user.uid)
+                    : await getOrdersForFarmer(user.uid);
+                setOrders(fetchedOrders);
+                setLoading(false);
+            }
         }
+        fetchOrders();
     }, [user, userProfile]);
 
     const handleStatusUpdate = async (order: Order, status: 'Accepted' | 'Rejected' | 'Shipped' | 'Completed') => {
         try {
             await updateOrderStatus(order, status);
+            setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: status} : o));
             toast({
                 title: `Order ${status}`,
                 description: `Order #${order.id.substring(0,6)} has been ${status.toLowerCase()}.`
