@@ -8,10 +8,16 @@ import { UserNav } from './user-nav';
 import { AnimatedLogo } from './animated-logo';
 import { ThemeToggle } from './theme-toggle';
 import { useUser } from '@/firebase';
+import React from 'react';
 
 
 export function LandingPageHeader() {
   const { user, userProfile, loading } = useUser();
+  const [hasMounted, setHasMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
   
   return (
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
@@ -22,7 +28,7 @@ export function LandingPageHeader() {
             </Link>
         </div>
         <nav className="ml-auto hidden md:flex gap-4 sm:gap-6 items-center">
-          {!user && (
+          {hasMounted && !loading && !user && (
               <>
                   <Link href="/#features" className="text-sm font-medium hover:text-primary" prefetch={false}>
                   Features
@@ -43,8 +49,8 @@ export function LandingPageHeader() {
           )}
         </nav>
         <div className="ml-auto flex gap-2 items-center">
-          {loading ? (
-            <Skeleton className="h-9 w-9 rounded-full" />
+          {loading || !hasMounted ? (
+            <Skeleton className="h-9 w-20" />
           ) : user && userProfile ? (
             <UserNav />
           ) : (
