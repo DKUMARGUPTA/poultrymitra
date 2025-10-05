@@ -6,6 +6,7 @@ import {
   getDocs,
   orderBy,
   limit,
+  Timestamp
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getClientFirestore } from '@/lib/firebase';
@@ -22,15 +23,21 @@ export const TestimonialSchema = z.object({
 export type Testimonial = z.infer<typeof TestimonialSchema> & { id: string };
 
 export const getTestimonials = async (count: number = 5): Promise<Testimonial[]> => {
-  const db = getClientFirestore();
-  const q = query(
-    collection(db, 'testimonials'),
-    orderBy('createdAt', 'desc'),
-    limit(count)
-  );
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) {
-    // Return some default testimonials if the collection is empty
+  try {
+    const db = getClientFirestore();
+    const q = query(
+      collection(db, 'testimonials'),
+      orderBy('createdAt', 'desc'),
+      limit(count)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      throw new Error("No testimonials found in database.");
+    }
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial));
+  } catch (error: any) {
+    console.warn("Testimonials fetch failed, returning default data:", error.message);
+    // Return some default testimonials if the collection is empty or there's an error
     return [
       {
         id: '1',
@@ -39,7 +46,7 @@ export const getTestimonials = async (count: number = 5): Promise<Testimonial[]>
         content:
           "The disease detection tool helped me identify an issue early and saved my flock. It's an incredible feature.",
         rating: 5,
-        createdAt: new Date(),
+        createdAt: new Timestamp(Math.floor(Date.now() / 1000), 0),
         avatarUrl: 'https://picsum.photos/seed/ramesh/100'
       },
       {
@@ -49,7 +56,7 @@ export const getTestimonials = async (count: number = 5): Promise<Testimonial[]>
         content:
           "Managing my farm finances has never been easier. The ledger is simple and the AI advisory is surprisingly accurate.",
         rating: 5,
-        createdAt: new Date(),
+        createdAt: new Timestamp(Math.floor(Date.now() / 1000), 0),
         avatarUrl: 'https://picsum.photos/seed/sunita/100'
       },
       {
@@ -59,10 +66,9 @@ export const getTestimonials = async (count: number = 5): Promise<Testimonial[]>
         content:
           'The AI stock advisory helps me manage my inventory perfectly. I always know what to order and when.',
         rating: 5,
-        createdAt: new Date(),
+        createdAt: new Timestamp(Math.floor(Date.now() / 1000), 0),
         avatarUrl: 'https://picsum.photos/seed/anil/100'
       },
     ];
   }
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial));
 };

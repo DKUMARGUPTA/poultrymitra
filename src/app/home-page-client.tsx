@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
 import { useUser } from '@/firebase';
+import { Testimonial } from '@/services/testimonials.service';
 
 
 const features = [
@@ -89,7 +90,7 @@ const benefits = [
 ];
 
 
-export default function HomePageClient({ initialPosts }: { initialPosts: SerializablePost[]}) {
+export default function HomePageClient({ initialPosts, initialTestimonials }: { initialPosts: SerializablePost[], initialTestimonials: Testimonial[]}) {
   const { user, userProfile } = useUser();
 
   const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
@@ -400,7 +401,7 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
           </div>
         </section>
 
-        <Testimonials />
+        <Testimonials testimonials={initialTestimonials} />
 
          <RecentPosts posts={initialPosts} />
 

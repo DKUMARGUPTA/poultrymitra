@@ -7,28 +7,22 @@ import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getTestimonials, Testimonial } from '@/services/testimonials.service';
+import { Testimonial } from '@/services/testimonials.service';
 import { Skeleton } from './ui/skeleton';
 
-export function Testimonials() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
+export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
+  const [loading, setLoading] = useState(false);
 
+  // If testimonials are passed as props, we assume they are loaded.
+  // The loading state is more for if we were to fetch them client-side.
   useEffect(() => {
-    async function fetchTestimonials() {
-        setLoading(true);
-        try {
-          const fetchedTestimonials = await getTestimonials();
-          setTestimonials(fetchedTestimonials);
-        } catch (error) {
-          console.error("Failed to fetch testimonials:", error);
-          // Keep default testimonials in case of error
-        } finally {
-          setLoading(false);
-        }
+    if (!testimonials || testimonials.length === 0) {
+      setLoading(true); // Show skeleton if no data is passed initially
+    } else {
+      setLoading(false);
     }
-    fetchTestimonials();
-  }, []);
+  }, [testimonials]);
+
 
   const TestimonialSkeleton = () => (
     <Card>

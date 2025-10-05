@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import HomePageClient from './home-page-client';
 import { getPostsAsync } from '@/services/blog.service';
+import { getTestimonials, Testimonial } from '@/services/testimonials.service';
 import { Timestamp } from 'firebase/firestore';
 
 export interface SerializablePost {
@@ -19,6 +20,7 @@ export interface SerializablePost {
 
 export default async function Page() {
   const recentPosts = await getPostsAsync(false, 3);
+  const testimonials = await getTestimonials();
   
   const serializablePosts: SerializablePost[] = recentPosts.map(post => {
     const createdAt = post.createdAt instanceof Timestamp ? post.createdAt.toDate() : new Date(post.createdAt);
@@ -35,6 +37,6 @@ export default async function Page() {
   });
 
   return (
-      <HomePageClient initialPosts={serializablePosts} />
+      <HomePageClient initialPosts={serializablePosts} initialTestimonials={testimonials} />
   )
 }
