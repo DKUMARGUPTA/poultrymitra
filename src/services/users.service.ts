@@ -44,11 +44,12 @@ const isCodeUnique = async (fieldName: 'username' | 'invitationCode' | 'farmerCo
 
 // Function to generate a unique code
 const generateUniqueCode = async (fieldName: 'username' | 'invitationCode' | 'farmerCode' | 'referralCode', length: number, base: string = ''): Promise<string> => {
-    let code = base ? `${base.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}-${generateAlphanumericCode(4)}` : generateAlphanumericCode(length);
-    while (!(await isCodeUnique(fieldName, code))) {
-        code = base ? `${base.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}-${generateAlphanumericCode(4)}` : generateAlphanumericCode(length);
+    const code = base ? `${base.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}-${generateAlphanumericCode(4)}` : generateAlphanumericCode(length);
+    if (await isCodeUnique(fieldName, code)) {
+        return code;
     }
-    return code;
+    // If not unique, recurse with a slightly different base or just generate a new random one
+    return generateUniqueCode(fieldName, length, base ? `${base}x` : '');
 };
 
 
@@ -357,7 +358,7 @@ export const connectFarmerToDealer = async (farmerCode: string, dealerId: string
             isPlaceholder: false,
             farmerCode: farmerUserProfile.farmerCode,
         };
-        await createFarmer(newFarmerData);
+        await createFarmer(db, newFarmerData);
         const createdDoc = await getDoc(doc(db, 'farmers', newFarmerData.uid));
         farmerRecord = { id: createdDoc.id, ...createdDoc.data() } as Farmer;
     }
@@ -470,7 +471,6 @@ export const deleteUserAccount = async (uid: string): Promise<void> => {
 
 export const updateUserProfile = async (uid: string, data: { name?: string; phoneNumber?: string; aboutMe?: string; }): Promise<void> => {
     const db = getClientFirestore();
-    const auth = getClientAuth();
     if(!uid) throw new Error("User not authenticated");
     const userDocRef = doc(db, 'users', uid);
     await updateDoc(userDocRef, data);

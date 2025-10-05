@@ -1,7 +1,7 @@
 // src/services/settings.service.ts
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
+import { getClientFirestore } from '@/lib/firebase';
 
 export const SubscriptionSettingsSchema = z.object({
   farmerPlanPrice: z.number().min(0, "Price must be non-negative."),
@@ -17,6 +17,7 @@ export type SubscriptionSettings = z.infer<typeof SubscriptionSettingsSchema>;
  * If no settings exist, it creates and returns default values.
  */
 export const getSubscriptionSettings = async (): Promise<SubscriptionSettings> => {
+  const db = getClientFirestore();
   const settingsDocRef = doc(db, 'appSettings', 'subscriptions');
   const docSnap = await getDoc(settingsDocRef);
 
@@ -39,6 +40,7 @@ export const getSubscriptionSettings = async (): Promise<SubscriptionSettings> =
  * Updates the subscription settings. Only for admins.
  */
 export const updateSubscriptionSettings = async (settings: SubscriptionSettings): Promise<void> => {
+  const db = getClientFirestore();
   const settingsDocRef = doc(db, 'appSettings', 'subscriptions');
   const validatedSettings = SubscriptionSettingsSchema.parse(settings);
   await updateDoc(settingsDocRef, validatedSettings);

@@ -8,9 +8,6 @@ import { Transaction } from './transactions.service';
 import { UserProfile, getAllUsers } from './users.service';
 import { Farmer, getAllFarmers } from './farmers.service';
 
-
-const db = getClientFirestore();
-
 export interface DealerStats {
   totalFarmers: number;
   pendingPayments: number;
@@ -36,6 +33,7 @@ export interface AdminStats {
 }
 
 export const getAdminDashboardStats = async (): Promise<AdminStats> => {
+    const db = getClientFirestore();
     const usersCollection = collection(db, 'users');
     
     const farmersQuery = query(usersCollection, where('role', '==', 'farmer'));
@@ -64,6 +62,7 @@ export const getAdminDashboardStats = async (): Promise<AdminStats> => {
 };
 
 export const getDealerDashboardStats = async (dealerId: string): Promise<DealerStats> => {
+  const db = getClientFirestore();
   // This is a simplified implementation for demonstration.
   // A real-world scenario would likely use Cloud Functions for aggregation for performance.
 

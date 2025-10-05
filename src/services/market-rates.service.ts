@@ -33,7 +33,8 @@ export const createMarketRate = async (db: Firestore, rateData: Omit<MarketRateI
     return docRef.id;
 };
 
-export const createMarketRatesInBatch = async (db: Firestore, ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
+export const createMarketRatesInBatch = async (ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
+    const db = getClientFirestore();
     const batch = writeBatch(db);
     
     ratesData.forEach(rateData => {
@@ -64,7 +65,8 @@ export const deleteMarketRate = async (db: Firestore, rateId: string): Promise<v
 };
 
 
-export const getMarketRates = (db: Firestore, callback: (rates: MarketRate[]) => void): Unsubscribe => {
+export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubscribe => {
+    const db = getClientFirestore();
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),

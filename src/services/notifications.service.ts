@@ -90,11 +90,10 @@ export const createAnnouncement = async (title: string, message: string, link?: 
 /**
  * Fetches notifications for a specific user.
  */
-export const getNotifications = (
-  db: Firestore,
+export const getNotifications = async (
   userId: string,
-  callback: (notifications: AppNotification[]) => void,
-): Unsubscribe => {
+): Promise<AppNotification[]> => {
+  const db = getClientFirestore();
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),
@@ -102,19 +101,19 @@ export const getNotifications = (
     limit(20)
   );
   
-  return onSnapshot(q, (snapshot) => {
-    const notifications: AppNotification[] = [];
-    snapshot.forEach((doc) => {
-        notifications.push({ id: doc.id, ...doc.data() } as AppNotification);
-    });
-    callback(notifications);
+  const snapshot = await getDocs(q);
+  const notifications: AppNotification[] = [];
+  snapshot.forEach((doc) => {
+      notifications.push({ id: doc.id, ...doc.data() } as AppNotification);
   });
+  return notifications;
 };
 
 /**
  * Marks all unread notifications for a user as read.
  */
-export const markNotificationsAsRead = async (db: Firestore, userId: string): Promise<void> => {
+export const markNotificationsAsRead = async (userId: string): Promise<void> => {
+  const db = getClientFirestore();
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),
