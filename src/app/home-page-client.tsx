@@ -133,15 +133,15 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
             {!user && <BreakingNewsTicker />}
-          <div className="container grid md:grid-cols-2 gap-8 items-center px-4 md:px-6">
-            <div className="flex flex-col items-start space-y-6 text-left">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-6 text-center">
                <div className="inline-block rounded-full bg-green-100 dark:bg-green-900/50 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300">
                 Trusted by 10,000+ Farmers & Dealers
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-headline">
                 The Future of Poultry Farming is Digital
               </h1>
-              <p className="max-w-xl text-muted-foreground md:text-xl">
+              <p className="max-w-3xl text-muted-foreground md:text-xl">
                 Digitize your poultry business. From FCR calculation and AI-powered disease prediction to complete financial management - everything in one place.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -153,29 +153,37 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
                 </Button>
               </div>
             </div>
-            <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <ul className="space-y-4 text-lg">
-                      <li className="flex items-center gap-3">
-                        <Check className="h-6 w-6 text-green-500" />
-                        <span>Track FCR, Mortality, and Growth</span>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <Check className="h-6 w-6 text-green-500" />
-                        <span>Manage Financial Ledgers Effortlessly</span>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <Check className="h-6 w-6 text-green-500" />
-                        <span>Get AI-Powered Disease Detection</span>
-                      </li>
-                       <li className="flex items-center gap-3">
-                        <Check className="h-6 w-6 text-green-500" />
-                        <span>Full Inventory and Order Management</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+             <div className="max-w-4xl mx-auto mt-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
+                    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
+                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
+                        <div>
+                            <h3 className="font-semibold">Track Performance</h3>
+                            <p className="text-sm text-muted-foreground">Monitor FCR, Mortality, and Growth</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
+                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
+                        <div>
+                            <h3 className="font-semibold">Effortless Ledgers</h3>
+                            <p className="text-sm text-muted-foreground">Manage your finances without the hassle</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
+                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
+                         <div>
+                            <h3 className="font-semibold">AI Disease Detection</h3>
+                            <p className="text-sm text-muted-foreground">Get instant analysis of potential diseases</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
+                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
+                        <div>
+                            <h3 className="font-semibold">Inventory & Orders</h3>
+                            <p className="text-sm text-muted-foreground">Full stock and order management system</p>
+                        </div>
+                    </div>
+                </div>
             </div>
           </div>
         </section>
