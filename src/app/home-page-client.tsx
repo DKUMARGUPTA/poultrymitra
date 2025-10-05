@@ -57,13 +57,7 @@ const faqItems = [
 ];
 
 export default function HomePageClient({ initialPosts, initialTestimonials }: { initialPosts: SerializablePost[], initialTestimonials: SerializableTestimonial[]}) {
-  const { user, userProfile, loading } = useUser();
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
+  const { userProfile } = useUser();
   const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
   
   const showFarmerPlan = !userProfile || userProfile.role === 'farmer';
@@ -71,31 +65,10 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
 
   const numPlans = [showFarmerPlan, showDealerPlan].filter(Boolean).length;
   const gridColsClass = numPlans === 2 ? 'md:grid-cols-3' : 'md:grid-cols-2';
-
-  if (!hasMounted || loading) {
-    return (
-       <div className="flex flex-col h-screen">
-        <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
-           <Skeleton className="h-8 w-40" />
-           <div className="ml-auto flex gap-2 items-center">
-             <Skeleton className="h-9 w-20" />
-           </div>
-        </header>
-        <main className="flex-1 pt-16">
-          <section className="w-full py-12 md:py-16 lg:py-20">
-            <div className="container px-4 md:px-6 text-center">
-              <Skeleton className="h-12 w-3/4 mx-auto" />
-              <Skeleton className="h-6 w-1/2 mx-auto mt-4" />
-            </div>
-          </section>
-        </main>
-      </div>
-    );
-  }
   
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <LandingPageHeader isLoggedIn={!!user} />
+        <LandingPageHeader />
          <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
@@ -110,7 +83,7 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-shadow">
-                  <Link href={user ? dashboardUrl : "/auth?view=signup"}>Get Started for Free <ArrowRight className="ml-2" /></Link>
+                  <Link href={userProfile ? dashboardUrl : "/auth?view=signup"}>Get Started for Free <ArrowRight className="ml-2" /></Link>
                 </Button>
                  <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md transition-shadow">
                     <Link href="/#features">Explore Features</Link>
@@ -264,8 +237,8 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
             </div>
             <div className="mt-6">
               <Button asChild size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-shadow">
-                <Link href={user ? dashboardUrl : "/auth?view=signup"}>
-                  {user ? "Go to Your Dashboard" : "Register for Free"}
+                <Link href={userProfile ? dashboardUrl : "/auth?view=signup"}>
+                  {userProfile ? "Go to Your Dashboard" : "Register for Free"}
                 </Link>
               </Button>
             </div>
