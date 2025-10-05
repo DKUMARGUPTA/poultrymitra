@@ -1,28 +1,26 @@
 // src/components/testimonials.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
 import Autoplay from "embla-carousel-autoplay";
 import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Testimonial, SerializableTestimonial } from '@/services/testimonials.service';
 import { Skeleton } from './ui/skeleton';
 
+// Keep the types in the same file for simplicity
+export type SerializableTestimonial = {
+  id: string;
+  name: string;
+  role: string;
+  avatarUrl?: string;
+  content: string;
+  rating: number;
+  createdAt: string; // Changed from Timestamp
+};
+
 export function Testimonials({ testimonials }: { testimonials: SerializableTestimonial[] }) {
-  const [loading, setLoading] = useState(false);
-
-  // If testimonials are passed as props, we assume they are loaded.
-  // The loading state is more for if we were to fetch them client-side.
-  useEffect(() => {
-    if (!testimonials || testimonials.length === 0) {
-      setLoading(true); // Show skeleton if no data is passed initially
-    } else {
-      setLoading(false);
-    }
-  }, [testimonials]);
-
+  const loading = !testimonials || testimonials.length === 0;
 
   const TestimonialSkeleton = () => (
     <Card>
@@ -48,7 +46,7 @@ export function Testimonials({ testimonials }: { testimonials: SerializableTesti
           <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">
             Loved by Farmers & Dealers Alike
           </h2>
-          <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed mx-auto">
+          <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed mx-auto">
             See what our users are saying about how Poultry Mitra has transformed their business.
           </p>
         </div>
@@ -69,7 +67,7 @@ export function Testimonials({ testimonials }: { testimonials: SerializableTesti
                 {testimonials.map((testimonial) => (
                 <CarouselItem key={testimonial.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
                     <div className="p-1 h-full">
-                    <Card className="h-full flex flex-col justify-between">
+                    <Card className="h-full flex flex-col justify-between transform hover:-translate-y-2 transition-transform duration-300">
                         <CardContent className="p-6 flex flex-col flex-grow">
                             <div className="flex items-center gap-0.5 mb-4 text-accent">
                                 {Array.from({ length: 5 }).map((_, i) => (

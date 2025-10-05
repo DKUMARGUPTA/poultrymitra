@@ -33,8 +33,9 @@ import {
 } from "@/components/ui/table";
 import { getInventoryItems, InventoryItem } from '@/services/inventory.service';
 import { AddStockModal } from '@/components/add-stock-modal';
-import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 import { useUser, useFirebase } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InventoryPage() {
   const { user, userProfile, loading: authLoading } = useUser();
@@ -46,32 +47,38 @@ export default function InventoryPage() {
   const [inventoryLoading, setInventoryLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (user && db) {
+    if (!authLoading && user && db) {
         if (userProfile?.role !== 'dealer') {
-          router.push('/dashboard');
+            router.push('/dashboard');
         } else {
-          const unsubscribe = getInventoryItems(db, user.uid, (items) => {
-            setInventoryItems(items.sort((a,b) => a.name.localeCompare(b.name)));
-            setInventoryLoading(false);
-          });
-          return () => unsubscribe();
+            fetchInventory(user.uid);
         }
-      } else {
+    } else if (!authLoading && !user) {
         router.push('/auth');
-      }
     }
   }, [user, userProfile, authLoading, router, db]);
 
+  const fetchInventory = async (uid: string) => {
+      if (!db) return;
+      setInventoryLoading(true);
+      // Using a listener to get real-time updates.
+      const unsubscribe = getInventoryItems(db, uid, (items) => {
+          setInventoryItems(items.sort((a,b) => a.name.localeCompare(b.name)));
+          setInventoryLoading(false);
+      });
+      return unsubscribe;
+  }
+
   const handleStockAdded = (purchaseOrderId: string) => {
-    // The listener will automatically update the state.
+    // The real-time listener will automatically update the state.
+    // No need to manually fetch here.
   };
 
-  const isLoading = authLoading || !userProfile;
+  const isLoading = authLoading || !userProfile || inventoryLoading;
   if (isLoading) {
     return (
        <div className="flex flex-col h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6"><SidebarTrigger className="md:hidden" /><Skeleton className="h-8 w-32" /><div className="w-full flex-1" /><Skeleton className="h-9 w-9 rounded-full" /></header>
         <div className="flex flex-1">
             <aside className="hidden md:flex flex-col w-64 border-r p-4 gap-4"><Skeleton className="h-8 w-40 mb-4" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></aside>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6"><Skeleton className="h-8 w-48" /><div className="flex-1 rounded-lg border border-dashed shadow-sm p-6"><Skeleton className="h-64 w-full" /></div></main>
@@ -118,18 +125,7 @@ export default function InventoryPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {inventoryLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-8 w-1/4" />
-                        <Skeleton className="h-8 w-1/4" />
-                        <Skeleton className="h-8 w-1/4" />
-                        <Skeleton className="h-8 w-1/4" />
-                      </div>
-                    ))}
-                  </div>
-                ) : inventoryItems.length === 0 ? (
+                {inventoryItems.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">No inventory items found.</p>
                      <AddStockModal onStockAdded={handleStockAdded}>

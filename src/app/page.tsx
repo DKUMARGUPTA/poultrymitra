@@ -1,8 +1,9 @@
 // src/app/page.tsx
 import HomePageClient from './home-page-client';
 import { getPostsAsync } from '@/services/blog.service';
-import { getTestimonials, Testimonial, SerializableTestimonial } from '@/services/testimonials.service';
+import { getTestimonials } from '@/services/testimonials.service';
 import { Timestamp } from 'firebase/firestore';
+import type { SerializableTestimonial } from '@/components/testimonials';
 
 export interface SerializablePost {
   id: string;
@@ -36,15 +37,15 @@ export default async function Page() {
     }
   });
 
-  const serializableTestimonials: SerializableTestimonial[] = testimonials.map(testimonial => {
-    const createdAt = testimonial.createdAt instanceof Timestamp ? testimonial.createdAt.toDate() : new Date(testimonial.createdAt);
-    return {
-      ...testimonial,
-      id: testimonial.id,
-      createdAt: createdAt.toISOString(),
-    }
-  });
-
+  const serializableTestimonials: SerializableTestimonial[] = testimonials.map(testimonial => ({
+    id: testimonial.id,
+    name: testimonial.name,
+    role: testimonial.role,
+    avatarUrl: testimonial.avatarUrl,
+    content: testimonial.content,
+    rating: testimonial.rating,
+    createdAt: (testimonial.createdAt as Timestamp).toDate().toISOString(),
+  }));
 
   return (
       <HomePageClient initialPosts={serializablePosts} initialTestimonials={serializableTestimonials} />
