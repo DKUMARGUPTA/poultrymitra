@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { createUser, getUserProfile } from "@/services/users.service";
+import { createUser } from "@/services/users.service";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ForgotPasswordModal } from "@/components/forgot-password-modal";
 import React from 'react';
@@ -29,6 +29,7 @@ import { AnimatedLogo } from "@/components/animated-logo";
 import Image from "next/image";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
 import { useUser } from "@/firebase";
+import { getUserProfile } from "@/services/users.service";
 
 
 const LoginFormSchema = z.object({
@@ -60,9 +61,7 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
 function AuthenticationPageContent({ searchParams }: { searchParams: ReadonlyURLSearchParams }) {
   const router = useRouter();
-  const { user, userProfile, loading } = useUser();
-  const auth = getAuth();
-  
+  const { userProfile, loading } = useUser();
   const initialTab = searchParams.get('view') === 'signup' ? 'signup' : 'login';
   const initialDealerCode = searchParams.get('dealerCode');
 
@@ -76,7 +75,7 @@ function AuthenticationPageContent({ searchParams }: { searchParams: ReadonlyURL
     }
   }, [userProfile, loading, router]);
 
-  if (loading || user) {
+  if (loading || userProfile) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
         <div className="w-full max-w-md text-center mb-8">

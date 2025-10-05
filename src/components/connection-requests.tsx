@@ -7,32 +7,33 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useUser } from '@/firebase';
+import { useUser, useFirebase } from '@/firebase';
 import { ConnectionRequest, getConnectionRequestsForDealer, acceptConnectionRequest, rejectConnectionRequest } from "@/services/connection.service";
 import { Check, UserPlus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function ConnectionRequests() {
     const { user } = useUser();
+    const { db } = useFirebase();
     const { toast } = useToast();
     const [requests, setRequests] = useState<ConnectionRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
 
     useEffect(() => {
-        if (user) {
+        if (user && db) {
             setLoading(true);
-            getConnectionRequestsForDealer(user.uid).then(newRequests => {
+            getConnectionRequestsForDealer(db, user.uid).then(newRequests => {
                 setRequests(newRequests);
                 setLoading(false);
             });
         }
-    }, [user]);
+    }, [user, db]);
 
     const handleAccept = async (request: ConnectionRequest) => {
         setUpdating(request.id);
         try {
-            await acceptConnectionRequest(request.id, request.requesterId, request.recipientId);
+            await acceptConnectionRequest(db, request.id, request.requesterId, request.recipientId);
             setRequests(prev => prev.filter(r => r.id !== request.id));
             toast({
                 title: "Connection Accepted",
@@ -48,7 +49,7 @@ export function ConnectionRequests() {
     const handleReject = async (request: ConnectionRequest) => {
         setUpdating(request.id);
         try {
-            await rejectConnectionRequest(request.id, request.requesterId);
+            await rejectConnectionRequest(db, request.id, request.requesterId);
             setRequests(prev => prev.filter(r => r.id !== request.id));
             toast({
                 title: "Connection Rejected",

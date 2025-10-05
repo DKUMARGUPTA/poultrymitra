@@ -12,12 +12,13 @@ import {
   Timestamp,
   getDoc,
   DocumentData,
-  getDocs
+  getDocs,
+  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { createNotification } from './notifications.service';
 import { getUserProfile, UserProfile } from './users.service';
-import { db } from '@/lib/firebase';
+import { getClientFirestore } from '@/lib/firebase';
 
 const ConnectionRequestSchema = z.object({
   requesterId: z.string(),
@@ -34,7 +35,7 @@ export type ConnectionRequest = z.infer<typeof ConnectionRequestSchema> & {
 /**
  * Creates a connection request from a farmer to a dealer.
  */
-export const createConnectionRequest = async (requesterId: string, recipientId: string): Promise<void> => {
+export const createConnectionRequest = async (db: Firestore, requesterId: string, recipientId: string): Promise<void> => {
   await addDoc(collection(db, 'connectionRequests'), {
     requesterId,
     recipientId,
@@ -54,7 +55,7 @@ export const createConnectionRequest = async (requesterId: string, recipientId: 
 /**
  * Fetches pending connection requests for a dealer.
  */
-export const getConnectionRequestsForDealer = async (dealerId: string): Promise<ConnectionRequest[]> => {
+export const getConnectionRequestsForDealer = async (db: Firestore, dealerId: string): Promise<ConnectionRequest[]> => {
   const q = query(
     collection(db, 'connectionRequests'),
     where('recipientId', '==', dealerId),
@@ -78,7 +79,7 @@ export const getConnectionRequestsForDealer = async (dealerId: string): Promise<
 /**
  * Accepts a connection request.
  */
-export const acceptConnectionRequest = async (requestId: string, farmerId: string, dealerId: string): Promise<void> => {
+export const acceptConnectionRequest = async (db: Firestore, requestId: string, farmerId: string, dealerId: string): Promise<void> => {
   const dealerProfile = await getUserProfile(dealerId);
   const farmerProfile = await getUserProfile(farmerId);
   
@@ -120,7 +121,7 @@ export const acceptConnectionRequest = async (requestId: string, farmerId: strin
 /**
  * Rejects a connection request.
  */
-export const rejectConnectionRequest = async (requestId: string, farmerId: string): Promise<void> => {
+export const rejectConnectionRequest = async (db: Firestore, requestId: string, farmerId: string): Promise<void> => {
     const requestRef = doc(db, 'connectionRequests', requestId);
     await updateDoc(requestRef, { status: 'rejected' });
 

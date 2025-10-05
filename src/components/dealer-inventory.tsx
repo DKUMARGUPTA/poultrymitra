@@ -2,14 +2,14 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getInventoryItems, InventoryItem, InventoryCategories, getUniquePurchaseSources } from '@/services/inventory.service';
+import { getInventoryItems, InventoryItem, InventoryCategories } from '@/services/inventory.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Skeleton } from './ui/skeleton';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { PlusCircle, Warehouse, Filter, X } from 'lucide-react';
-import { RequestOrderModal } from './request-order-modal';
+import { CreateOrderModal } from './create-order-modal';
 import { Order } from '@/services/orders.service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
@@ -36,7 +36,8 @@ export function DealerInventory() {
                 setInventoryLoading(false);
             });
             
-            getUniquePurchaseSources(userProfile.dealerCode).then(setSuppliers);
+            // This is incorrect, a farmer should not see suppliers, only the dealer's inventory
+            // getUniquePurchaseSources(userProfile.dealerCode).then(setSuppliers);
 
             return () => unsubscribe();
         } else {
@@ -51,15 +52,13 @@ export function DealerInventory() {
     const filteredInventory = useMemo(() => {
         return inventory.filter(item => {
             const categoryMatch = !selectedCategory || selectedCategory === 'ALL_CATEGORIES' || item.category === selectedCategory;
-            const supplierMatch = !selectedSupplier || selectedSupplier === 'ALL_SUPPLIERS' || item.purchaseSource === selectedSupplier;
             const searchMatch = !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase());
-            return categoryMatch && supplierMatch && searchMatch;
+            return categoryMatch && searchMatch;
         });
-    }, [inventory, selectedCategory, selectedSupplier, searchQuery]);
+    }, [inventory, selectedCategory, searchQuery]);
     
     const clearFilters = () => {
         setSelectedCategory('');
-        setSelectedSupplier('');
         setSearchQuery('');
     }
 
@@ -87,12 +86,12 @@ export function DealerInventory() {
                         </CardTitle>
                         <CardDescription>Items available for order from your dealer.</CardDescription>
                     </div>
-                     <RequestOrderModal onOrderCreated={handleOrderCreated}>
+                     <CreateOrderModal onOrderCreated={handleOrderCreated}>
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Place New Order
                         </Button>
-                    </RequestOrderModal>
+                    </CreateOrderModal>
                 </div>
                  <div className="flex flex-wrap items-center gap-2 pt-4">
                     <Filter className="w-5 h-5 text-muted-foreground" />
@@ -109,15 +108,6 @@ export function DealerInventory() {
                         <SelectContent>
                             <SelectItem value="ALL_CATEGORIES">All Categories</SelectItem>
                             {InventoryCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                     <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Filter by Supplier" />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="ALL_SUPPLIERS">All Suppliers</SelectItem>
-                            {suppliers.map(sup => <SelectItem key={sup} value={sup}>{sup}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Button variant="ghost" size="icon" onClick={clearFilters}>

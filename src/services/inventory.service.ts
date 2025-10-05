@@ -1,9 +1,9 @@
 // src/services/inventory.service.ts
-import { getFirestore } from 'firebase/firestore';
-import { app, db } from '@/lib/firebase';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { collection, addDoc, query, where, onSnapshot, DocumentData, QuerySnapshot, Unsubscribe, serverTimestamp, getDocs, orderBy, runTransaction, doc, Timestamp, writeBatch, deleteDoc } from 'firebase/firestore';
 import { z } from 'zod';
-import { TransactionInput } from './transactions.service';
+import { TransactionInput, TransactionSchema, createTransaction } from './transactions.service';
+import { getClientFirestore } from '@/lib/firebase';
 
 export const InventoryCategories = ['Feed', 'Vaccine', 'Medicine', 'Chicks', 'Other'] as const;
 export type InventoryCategory = typeof InventoryCategories[number];
@@ -27,6 +27,7 @@ export type InventoryItem = z.infer<typeof InventoryItemSchema> & { id: string, 
 export type InventoryItemInput = z.infer<typeof InventoryItemSchema>;
 
 export const createPurchaseOrder = async (
+    db: Firestore,
     itemsData: Omit<InventoryItemInput, 'createdAt' | 'purchaseOrderId' | 'ownerId' | 'originalQuantity'>[],
     orderDate: Date,
     paymentDetails?: {
@@ -137,19 +138,21 @@ export const createPurchaseOrder = async (
 };
 
 
-export const getInventoryItems = async (ownerId: string): Promise<InventoryItem[]> => {
-  const q = query(collection(db, 'inventory'), where("ownerId", "==", ownerId));
-
-  const querySnapshot = await getDocs(q);
-    const items: InventoryItem[] = [];
-    querySnapshot.forEach((doc) => {
-      items.push({ id: doc.id, ...doc.data() } as InventoryItem);
+export const getInventoryItems = (db: Firestore, ownerId: string, callback: (items: InventoryItem[]) => void): Unsubscribe => {
+    const q = query(collection(db, 'inventory'), where("ownerId", "==", ownerId));
+  
+    return onSnapshot(q, (querySnapshot) => {
+      const items: InventoryItem[] = [];
+      querySnapshot.forEach((doc) => {
+        items.push({ id: doc.id, ...doc.data() } as InventoryItem);
+      });
+      callback(items);
     });
-    return items;
 };
 
-export const getUniquePurchaseSources = async (ownerId: string): Promise<string[]> => {
-    const q = query(collection(db, 'inventory'), where("ownerId", "==", ownerId));
+export const getUniquePurchaseSources = async (dealerId: string): Promise<string[]> => {
+    const db = getClientFirestore();
+    const q = query(collection(db, 'inventory'), where("ownerId", "==", dealerId));
     const snapshot = await getDocs(q);
     const sources = new Set<string>();
     snapshot.forEach(doc => {
@@ -161,7 +164,7 @@ export const getUniquePurchaseSources = async (ownerId: string): Promise<string[
     return Array.from(sources);
 }
 
-export const getInventoryItemsByPurchaseSource = async (ownerId: string, purchaseSource: string): Promise<InventoryItem[]> => {
+export const getInventoryItemsByPurchaseSource = async (db: Firestore, ownerId: string, purchaseSource: string): Promise<InventoryItem[]> => {
     const q = query(
         collection(db, 'inventory'), 
         where("ownerId", "==", ownerId),
@@ -176,7 +179,7 @@ export const getInventoryItemsByPurchaseSource = async (ownerId: string, purchas
     return items;
 };
 
-export const deletePurchaseOrder = async (purchaseOrderId: string) => {
+export const deletePurchaseOrder = async (db: Firestore, purchaseOrderId: string) => {
     const batch = writeBatch(db);
 
     // 1. Delete the Purchase Order document

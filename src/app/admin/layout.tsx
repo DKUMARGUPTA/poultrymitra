@@ -1,8 +1,7 @@
 // src/app/admin/layout.tsx
 "use client";
 
-import { cookies } from 'next/headers';
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';

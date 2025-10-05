@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,13 +11,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader, UserPlus, Link2, Copy } from 'lucide-react';
 import { createFarmer, FarmerSchema, FarmerInput, Farmer } from '@/services/farmers.service';
 import { connectFarmerToDealer } from '@/services/users.service';
-import { useUser } from '@/firebase';
+import { useUser, useFirebase } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { doc, getDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 // Schema for creating a new farmer
 const AddFarmerFormSchema = FarmerSchema.pick({ name: true, location: true, batchSize: true });
@@ -39,6 +39,7 @@ export function AddConnectFarmerModal({ children, onFarmerAction, onNewFarmerCli
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
+  const { db } = useFirebase();
   const [activeTab, setActiveTab] = useState('create');
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
 
@@ -53,7 +54,7 @@ export function AddConnectFarmerModal({ children, onFarmerAction, onNewFarmerCli
   });
 
   const handleCreateSubmit = async (values: AddFarmerFormValues) => {
-    if (!user) {
+    if (!user || !db) {
       toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
       return;
     }
@@ -66,7 +67,7 @@ export function AddConnectFarmerModal({ children, onFarmerAction, onNewFarmerCli
         dealerId: user.uid,
         outstanding: 0,
       };
-      const farmerId = await createFarmer(farmerInput, true); // Create a placeholder farmer
+      const farmerId = await createFarmer(db, farmerInput, true); // Create a placeholder farmer
       const createdFarmerDoc = await getDoc(doc(db, 'farmers', farmerId));
       const createdFarmer = { id: createdFarmerDoc.id, ...createdFarmerDoc.data() } as Farmer;
 
@@ -83,14 +84,14 @@ export function AddConnectFarmerModal({ children, onFarmerAction, onNewFarmerCli
   };
 
   const handleConnectSubmit = async (values: ConnectFarmerValues) => {
-     if (!user) {
+     if (!user || !db) {
       toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
       return;
     }
 
     setLoading(true);
     try {
-      const connectedFarmer = await connectFarmerToDealer(values.farmerCode, user.uid);
+      const connectedFarmer = await connectFarmerToDealer(db, values.farmerCode, user.uid);
       toast({ title: 'Farmer Connected', description: `${connectedFarmer.name} has been successfully added to your network.` });
       onFarmerAction(connectedFarmer);
       handleOpenChange(false);

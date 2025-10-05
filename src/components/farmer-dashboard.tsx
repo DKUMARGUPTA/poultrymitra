@@ -1,3 +1,4 @@
+// src/components/farmer-dashboard.tsx
 
 "use client";
 
@@ -45,7 +46,7 @@ export function FarmerDashboard() {
     setLoading(true);
 
     if (userProfile?.dealerCode) {
-        getUserProfile(db, userProfile.dealerCode).then(setDealerProfile);
+        getUserProfile(userProfile.dealerCode).then(setDealerProfile);
     }
     
     getFarmerDashboardStats(user.uid).then(setStats);
