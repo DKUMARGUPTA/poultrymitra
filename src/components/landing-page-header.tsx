@@ -7,7 +7,6 @@ import { UserNav } from './user-nav';
 import { AnimatedLogo } from './animated-logo';
 import { ThemeToggle } from './theme-toggle';
 import React from 'react';
-import { SidebarTrigger } from './ui/sidebar';
 
 interface LandingPageHeaderProps {
   isLoggedIn: boolean;
@@ -17,7 +16,6 @@ export function LandingPageHeader({ isLoggedIn }: LandingPageHeaderProps) {
   return (
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center">
-           {isLoggedIn && <SidebarTrigger className="md:hidden mr-2" />}
            <Link href="/" className="flex items-center justify-center" prefetch={false}>
               <AnimatedLogo className="h-8 w-8 text-green-600" />
               <span className="ml-2 text-xl font-headline font-bold">Poultry Mitra</span>

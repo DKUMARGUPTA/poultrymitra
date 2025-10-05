@@ -16,9 +16,6 @@ import { cn } from '@/lib/utils';
 import { Testimonials, SerializableTestimonial } from '@/components/testimonials';
 import { useUser } from '@/firebase';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { MainNav } from '@/components/main-nav';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -95,45 +92,10 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
       </div>
     );
   }
-
-  // If user is logged in, show a simple layout with sidebar
-  if (user && userProfile) {
-    return (
-       <SidebarProvider>
-         <Sidebar>
-            <SidebarHeader className="p-4">
-                <Link href="/" className="flex items-center gap-2">
-                    <AnimatedLogo className="h-8 w-8" />
-                    <span className="text-xl font-headline font-bold">Poultry Mitra</span>
-                </Link>
-            </SidebarHeader>
-            <SidebarContent>
-              <MainNav />
-            </SidebarContent>
-          </Sidebar>
-          <SidebarInset>
-             <div className="flex flex-col">
-                <LandingPageHeader isLoggedIn={true} />
-                {/* Render main content directly without extra sections */}
-                <main className="flex-1 p-6">
-                   <div className="flex flex-col items-center justify-center text-center space-y-4">
-                        <h1 className="text-3xl font-bold font-headline">Welcome back, {userProfile.name}!</h1>
-                        <p className="text-muted-foreground">What would you like to do today?</p>
-                        <Button asChild size="lg">
-                            <Link href={dashboardUrl}>Go to Your Dashboard <ArrowRight className="ml-2" /></Link>
-                        </Button>
-                   </div>
-                </main>
-             </div>
-          </SidebarInset>
-        </SidebarProvider>
-    );
-  }
   
-  // Default landing page for logged-out users
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <LandingPageHeader isLoggedIn={false} />
+        <LandingPageHeader isLoggedIn={!!user} />
          <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
@@ -148,7 +110,7 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-shadow">
-                  <Link href="/auth?view=signup">Get Started for Free <ArrowRight className="ml-2" /></Link>
+                  <Link href={user ? dashboardUrl : "/auth?view=signup"}>Get Started for Free <ArrowRight className="ml-2" /></Link>
                 </Button>
                  <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md transition-shadow">
                     <Link href="/#features">Explore Features</Link>
