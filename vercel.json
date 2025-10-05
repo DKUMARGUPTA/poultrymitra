@@ -1,9 +1,7 @@
+
 {
   "functions": {
-    "src/app/**/*.ts": {
-      "maxDuration": 30
-    },
-    "src/ai/flows/**/*.ts": {
+    "api/**/*.ts": {
       "maxDuration": 30
     }
   }
