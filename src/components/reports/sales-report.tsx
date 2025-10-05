@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { getTransactionsForUser, Transaction } from '@/services/transactions.service';
 import { Skeleton } from '../ui/skeleton';
@@ -13,10 +12,12 @@ import { Download } from 'lucide-react';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirebase } from '@/firebase';
 
 
 export function SalesReport() {
-    const { user } = useAuth();
+    const { user } = useUser();
+    const { db } = useFirebase();
     const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
     const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,9 +29,9 @@ export function SalesReport() {
     });
 
     useEffect(() => {
-        if (user) {
+        if (user && db) {
             setLoading(true);
-            const unsubscribe = getTransactionsForUser(user.uid, (transactions) => {
+            const unsubscribe = getTransactionsForUser(db, user.uid, (transactions) => {
                 // Filter for sales to farmers, excluding general business expenses
                 const sales = transactions.filter(t => 
                     t.description.toLowerCase().includes('sale') && 
@@ -41,7 +42,7 @@ export function SalesReport() {
             }, true); // isDealerView = true
             return () => unsubscribe();
         }
-    }, [user]);
+    }, [user, db]);
 
     useEffect(() => {
         let filtered = allTransactions;

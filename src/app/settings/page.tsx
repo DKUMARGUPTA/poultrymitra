@@ -35,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { moderateContent } from '@/ai/flows/moderate-content';
 import { VCard } from '@/components/v-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 
 // Schema for updating profile details
 const ProfileFormSchema = z.object({
@@ -66,7 +66,7 @@ type DeleteAccountValues = z.infer<typeof DeleteAccountSchema>;
 
 
 export default function SettingsPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function SettingsPage() {
 }
 
 
-export function SettingsForm({ user, userProfile }: { user: NonNullable<ReturnType<typeof useAuth>['user']>, userProfile: NonNullable<ReturnType<typeof useAuth>['userProfile']>}) {
+export function SettingsForm({ user, userProfile }: { user: NonNullable<ReturnType<typeof useUser>['user']>, userProfile: NonNullable<ReturnType<typeof useUser>['userProfile']>}) {
   const { toast } = useToast();
   const router = useRouter();
   const [profileLoading, setProfileLoading] = useState(false);

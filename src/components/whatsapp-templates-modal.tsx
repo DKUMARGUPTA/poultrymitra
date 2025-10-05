@@ -29,9 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuth } from '@/hooks/use-auth';
 import { Farmer, getFarmersByDealer } from '@/services/farmers.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { useUser, useFirebase } from '@/firebase';
 
 interface WhatsappTemplatesModalProps {
   children: React.ReactNode;
@@ -43,7 +43,8 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateWhatsAppDraftOutput | null>(null);
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile } = useUser();
+  const { db } = useFirebase();
   
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmersLoading, setFarmersLoading] = useState(true);
@@ -58,15 +59,15 @@ export function WhatsappTemplatesModal({ children, onDraftGenerated }: WhatsappT
   const isPremium = !!userProfile?.isPremium;
 
   useEffect(() => {
-    if (open && user) {
+    if (open && user && db) {
       setFarmersLoading(true);
-      const unsubscribe = getFarmersByDealer(user.uid, (newFarmers) => {
+      const unsubscribe = getFarmersByDealer(db, user.uid, (newFarmers) => {
         setFarmers(newFarmers);
         setFarmersLoading(false);
       });
       return () => unsubscribe();
     }
-  }, [open, user]);
+  }, [open, user, db]);
   
   useEffect(() => {
     if (selectedFarmerId) {

@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { getBatchesByFarmer, Batch } from '@/services/batches.service';
@@ -11,6 +10,7 @@ import { getDailyEntriesForBatch } from '@/services/daily-entries.service';
 import { Skeleton } from '../ui/skeleton';
 import { DonutChart, BarChart, Title } from "@tremor/react";
 import { format } from 'date-fns';
+import { useUser, useFirebase } from '@/firebase';
 
 type ReportData = {
     revenue: number;
@@ -22,21 +22,22 @@ type ReportData = {
 };
 
 export function BatchProfitabilityReport() {
-    const { user } = useAuth();
+    const { user } = useUser();
+    const { db } = useFirebase();
     const [batches, setBatches] = useState<Batch[]>([]);
     const [selectedBatchId, setSelectedBatchId] = useState<string>('');
     const [reportData, setReportData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (user) {
-            getBatchesByFarmer(user.uid, setBatches);
+        if (user && db) {
+            getBatchesByFarmer(db, user.uid).then(setBatches);
         }
-    }, [user]);
+    }, [user, db]);
 
     useEffect(() => {
         const generateReport = async () => {
-            if (!selectedBatchId) {
+            if (!selectedBatchId || !db) {
                 setReportData(null);
                 return;
             }
@@ -48,8 +49,18 @@ export function BatchProfitabilityReport() {
                 return;
             }
 
-            const transactions = await getTransactionsForBatch(batch.id);
-            const entries = await getDailyEntriesForBatch(batch.id, () => {});
+            const transactions = await new Promise<any[]>(res => {
+                const unsub = getTransactionsForBatch(db, batch.id, data => {
+                    unsub();
+                    res(data);
+                });
+            });
+            const entries = await new Promise<any[]>(res => {
+                const unsub = getDailyEntriesForBatch(db, batch.id, data => {
+                    unsub();
+                    res(data);
+                });
+            });
 
             const revenue = Math.abs(transactions.filter(t => t.description.toLowerCase().includes('sale')).reduce((sum, t) => sum + t.amount, 0));
             const cogs = transactions.filter(t => t.costOfGoodsSold).reduce((sum, t) => sum + t.costOfGoodsSold!, 0);
@@ -90,7 +101,7 @@ export function BatchProfitabilityReport() {
         };
 
         generateReport();
-    }, [selectedBatchId, batches]);
+    }, [selectedBatchId, batches, db]);
 
     const valueFormatter = (number: number) => `₹${new Intl.NumberFormat("en-IN").format(number).toString()}`;
 

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
-import { useAuth } from "@/hooks/use-auth"
+import { useUser, useFirebase } from "@/firebase"
 import { getBatchesByFarmer, Batch } from "@/services/batches.service"
 import { getDailyEntriesForBatch, DailyEntry } from "@/services/daily-entries.service"
 import { Skeleton } from "./ui/skeleton"
@@ -37,50 +37,53 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function FarmerOverviewChart() {
-  const { user } = useAuth()
+  const { user } = useUser()
+  const { db } = useFirebase();
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !db) return
 
     setLoading(true)
-    const unsubscribeBatches = getBatchesByFarmer(user.uid, async (batches) => {
-      const dataPromises = batches.map(async (batch) => {
-        return new Promise<ChartData>((resolve) => {
-          const unsubscribeEntries = getDailyEntriesForBatch(batch.id, (entries) => {
-            unsubscribeEntries() // We only need the final state of entries for this chart
+    const fetchBatchData = async () => {
+        const batches = await getBatchesByFarmer(db, user.uid);
+        const dataPromises = batches.map(async (batch) => {
+            return new Promise<ChartData | null>((resolve) => {
+                const unsubscribeEntries = getDailyEntriesForBatch(db, batch.id, (entries) => {
+                    unsubscribeEntries(); // We only need the final state of entries for this chart
 
-            const totalMortality = entries.reduce((sum, entry) => sum + entry.mortality, 0)
-            const totalFeedConsumed = entries.reduce((sum, entry) => sum + entry.feedConsumedInKg, 0)
-            const finalBirdCount = batch.initialBirdCount - totalMortality
-            const mortalityRate = (totalMortality / batch.initialBirdCount) * 100
+                    const totalMortality = entries.reduce((sum, entry) => sum + entry.mortality, 0);
+                    const totalFeedConsumed = entries.reduce((sum, entry) => sum + entry.feedConsumedInKg, 0);
+                    const finalBirdCount = batch.initialBirdCount - totalMortality;
+                    const mortalityRate = (totalMortality / batch.initialBirdCount) * 100;
 
-            const lastEntry = entries[0] // Entries are sorted by date desc
-            const finalAvgWeightInGrams = lastEntry ? lastEntry.averageWeightInGrams : 0
-            const finalAvgWeightInKg = finalAvgWeightInGrams / 1000
+                    const lastEntry = entries[0]; // Entries are sorted by date desc
+                    const finalAvgWeightInGrams = lastEntry ? lastEntry.averageWeightInGrams : 0;
+                    const finalAvgWeightInKg = finalAvgWeightInGrams / 1000;
 
-            const totalWeightGain = finalBirdCount * finalAvgWeightInKg
-            const fcr = totalWeightGain > 0 ? totalFeedConsumed / totalWeightGain : 0
+                    const totalWeightGain = finalBirdCount * finalAvgWeightInKg;
+                    const fcr = totalWeightGain > 0 ? totalFeedConsumed / totalWeightGain : 0;
 
-            resolve({
-              name: batch.name,
-              mortalityRate: parseFloat(mortalityRate.toFixed(2)),
-              fcr: parseFloat(fcr.toFixed(2)),
-              avgWeight: parseFloat(finalAvgWeightInKg.toFixed(2)),
-            })
-          })
-        })
-      })
+                    resolve({
+                        name: batch.name,
+                        mortalityRate: parseFloat(mortalityRate.toFixed(2)),
+                        fcr: parseFloat(fcr.toFixed(2)),
+                        avgWeight: parseFloat(finalAvgWeightInKg.toFixed(2)),
+                    });
+                });
+            });
+        });
 
-      const allChartData = await Promise.all(dataPromises)
-      // Sort by batch start date if possible, otherwise by name as fallback
-      setChartData(allChartData.reverse().slice(-5)) // Show last 5 batches
-      setLoading(false)
-    })
+        const allChartData = (await Promise.all(dataPromises)).filter(d => d !== null) as ChartData[];
+        // Sort by batch start date if possible, otherwise by name as fallback
+        setChartData(allChartData.reverse().slice(-5)); // Show last 5 batches
+        setLoading(false);
+    };
+    
+    fetchBatchData();
 
-    return () => unsubscribeBatches()
-  }, [user])
+  }, [user, db])
 
   if (loading) {
     return <Skeleton className="w-full h-[350px]" />

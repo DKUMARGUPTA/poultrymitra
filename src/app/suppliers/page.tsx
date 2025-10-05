@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, Building, ChevronRight } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -26,28 +25,30 @@ import {
 } from "@/components/ui/card"
 import { getUniquePurchaseSources } from '@/services/inventory.service';
 import Link from 'next/link';
+import { useUser, useFirebase } from '@/firebase';
 
 export default function SuppliersPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const [sources, setSources] = useState<string[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(true);
 
   useEffect(() => {
     if (!loading) {
-      if (!user) {
+      if (!user || !db) {
         router.push('/auth');
       } else if (userProfile?.role !== 'dealer') {
         router.push('/dashboard');
       } else {
         setSourcesLoading(true);
-        getUniquePurchaseSources(user.uid).then(uniqueSources => {
+        getUniquePurchaseSources(db, user.uid).then(uniqueSources => {
           setSources(uniqueSources.sort());
           setSourcesLoading(false);
         });
       }
     }
-  }, [user, userProfile, loading, router]);
+  }, [user, userProfile, loading, router, db]);
 
 
   if (loading || !user || !userProfile) {
@@ -86,7 +87,7 @@ export default function SuppliersPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>

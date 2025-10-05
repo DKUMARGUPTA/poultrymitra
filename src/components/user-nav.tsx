@@ -29,44 +29,29 @@ import { getNotifications, markNotificationsAsRead, AppNotification } from "@/se
 import { formatDistanceToNow } from "date-fns";
 import { ThemeToggle } from "./theme-toggle";
 import { useSidebar } from "./ui/sidebar";
-import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { getUserProfile } from '@/services/users.service';
-
+import { useUser } from "@/firebase";
 
 export function UserNav() {
   const router = useRouter();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, userProfile, auth, loading } = useUser();
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { setOpenMobile } = useSidebar();
 
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        if (currentUser) {
-            setUser(currentUser);
-            const profile = await getUserProfile(currentUser.uid);
-            setUserProfile(profile);
-
-             getNotifications(currentUser.uid).then(initialNotifications => {
-                setNotifications(initialNotifications);
-                setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
-            });
-        } else {
-            setUser(null);
-            setUserProfile(null);
-        }
-        setLoading(false);
+    if (!user) return;
+    
+    getNotifications(user.uid).then(initialNotifications => {
+        setNotifications(initialNotifications);
+        setUnreadCount(initialNotifications.filter(n => !n.isRead).length);
     });
-    return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
       toast({ title: "Logged out", description: "You have been successfully logged out." });
@@ -99,7 +84,6 @@ export function UserNav() {
   if (loading || !user || !userProfile) {
     return null;
   }
-
 
   return (
     <div className="flex items-center gap-2">

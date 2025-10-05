@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, MessageCircle, Paperclip, Send, Copy, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { MainNav } from "@/components/main-nav"
@@ -28,10 +27,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { AiFeatureCard } from '@/components/ai/ai-feature-card';
+import { useUser, useFirebase } from '@/firebase';
 
 
 export default function WhatsappPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -42,21 +43,22 @@ export default function WhatsappPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (!user) {
+      if (!user || !db) {
         router.push('/auth');
       } else if (userProfile?.role !== 'dealer') {
         router.push('/dashboard');
       } else if (userProfile.isPremium) {
         setFarmersLoading(true);
-        getFarmersByDealer(user.uid).then(newFarmers => {
+        const unsubscribe = getFarmersByDealer(db, user.uid, (newFarmers) => {
           setFarmers(newFarmers);
           setFarmersLoading(false);
         });
+        return () => unsubscribe();
       } else {
         setFarmersLoading(false);
       }
     }
-  }, [user, userProfile, authLoading, router]);
+  }, [user, userProfile, authLoading, router, db]);
 
   const handleDraftGenerated = (draft: string) => {
     setMessage(draft);
@@ -145,7 +147,7 @@ export default function WhatsappPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile}/>
+          <MainNav />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>

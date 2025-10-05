@@ -18,15 +18,15 @@ import { dealerAiAdvisory, DealerAiAdvisoryOutput } from '@/ai/flows/dealer-ai-a
 import { Loader, Bot, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Badge } from './ui/badge';
-import { useAuth } from '@/hooks/use-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { useUser } from '@/firebase';
 
 export function StockAdvisoryModal({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DealerAiAdvisoryOutput | null>(null);
   const { toast } = useToast();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile } = useUser();
 
   const [businessSummary, setBusinessSummary] = useState('');
   const [marketTrends, setMarketTrends] = useState('');

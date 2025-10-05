@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Megaphone, ArrowRight } from 'lucide-react';
 import { getLatestMarketRates, MarketRate } from '@/services/market-rates.service';
-import { useAuth } from '@/hooks/use-auth';
 import { format, parseISO } from 'date-fns';
-import { db } from '@/lib/firebase';
+import { useUser, useFirebase } from '@/firebase';
 
 export function BreakingNewsTicker() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { db } = useFirebase();
   const [latestRates, setLatestRates] = useState<MarketRate[]>([]);
 
   useEffect(() => {

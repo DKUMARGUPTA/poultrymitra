@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, Building, IndianRupee, PlusCircle, Filter, X, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -40,6 +39,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirebase } from '@/firebase';
 
 type PurchaseGroup = {
     purchaseOrderId: string;
@@ -57,7 +57,8 @@ type LedgerEntry = {
 };
 
 export default function SupplierLedgerPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
@@ -73,12 +74,12 @@ export default function SupplierLedgerPage() {
 
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && db) {
         fetchData();
     } else if (!authLoading && !user) {
         router.push('/');
     }
-  }, [user, authLoading, router, supplierName]);
+  }, [user, authLoading, router, supplierName, db]);
 
   useEffect(() => {
     let filtered = allLedgerEntries;
@@ -108,11 +109,11 @@ export default function SupplierLedgerPage() {
   }, [dateRange, referenceQuery, allLedgerEntries]);
   
   const fetchData = async () => {
-    if (!user) return;
+    if (!user || !db) return;
     setLoading(true);
 
-    const purchases = await getInventoryItemsByPurchaseSource(user.uid, supplierName);
-    const payments = await getSupplierPayments(user.uid, supplierName);
+    const purchases = await getInventoryItemsByPurchaseSource(db, user.uid, supplierName);
+    const payments = await getSupplierPayments(db, user.uid, supplierName);
 
     // Group purchases by purchaseOrderId
     const purchaseGroups: { [key: string]: PurchaseGroup } = purchases.reduce((acc, item) => {
@@ -166,8 +167,9 @@ export default function SupplierLedgerPage() {
   }
   
   const handlePurchaseOrderDeleted = async (purchaseOrderId: string) => {
+    if (!db) return;
     try {
-      await deletePurchaseOrder(purchaseOrderId);
+      await deletePurchaseOrder(db, purchaseOrderId);
       toast({
         title: "Purchase Order Deleted",
         description: "The PO and its associated items have been removed.",

@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatedLogo } from '@/components/animated-logo';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 
 export default function DashboardPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function DashboardPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>

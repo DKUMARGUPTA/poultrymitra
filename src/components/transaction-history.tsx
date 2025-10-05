@@ -20,19 +20,22 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 
 interface TransactionHistoryProps {
   scope?: 'user' | 'all' | 'dealer';
 }
 
 export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { db } = useFirebase();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    if (!db) return;
+
+    const fetchAndSetTransactions = async () => {
         if (!user && scope !== 'all') {
             setLoading(false);
             return;
@@ -44,13 +47,19 @@ export function TransactionHistory({ scope = 'user' }: TransactionHistoryProps) 
             fetched = await getAllTransactions();
         } else {
             const isDealerView = scope === 'dealer';
-            fetched = await getTransactionsForUser(user!.uid, isDealerView);
+            fetched = await new Promise<Transaction[]>(resolve => {
+                const unsub = getTransactionsForUser(db, user!.uid, (data) => {
+                    unsub();
+                    resolve(data);
+                }, isDealerView);
+            });
         }
         setTransactions(fetched);
         setLoading(false);
-    }
-    fetchData();
-  }, [user, scope]);
+    };
+
+    fetchAndSetTransactions();
+  }, [user, scope, db]);
   
   if (loading) {
     return (

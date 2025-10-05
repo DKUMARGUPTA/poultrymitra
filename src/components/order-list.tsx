@@ -14,49 +14,42 @@ import { useToast } from '@/hooks/use-toast';
 import { CancelOrderAlert } from './cancel-order-alert';
 import { DealerInventory } from './dealer-inventory';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getUserProfile, UserProfile } from '@/services/users.service';
+import { UserProfile } from '@/services/users.service';
 import { useRouter } from 'next/navigation';
+import { useUser, useFirebase } from '@/firebase';
 
 export function OrderList() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const [user, setUser] = useState<User | null>(null);
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const { user, userProfile } = useUser();
+    const { db } = useFirebase();
     const router = useRouter();
 
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                const profile = await getUserProfile(currentUser.uid);
-                setUserProfile(profile);
+        if (!db || !user) return;
+        
+        const fetchOrders = async () => {
+            setLoading(true);
+            const isDealer = userProfile?.role === 'dealer';
+            const fetchedOrders = isDealer
+                ? await getOrdersForDealer(db, user.uid)
+                : await getOrdersForFarmer(db, user.uid);
+            setOrders(fetchedOrders);
+            setLoading(false);
+        };
+        
+        fetchOrders();
+    }, [user, userProfile, db]);
 
-                setLoading(true);
-                const isDealer = profile?.role === 'dealer';
-                const fetchedOrders = isDealer
-                    ? await getOrdersForDealer(currentUser.uid)
-                    : await getOrdersForFarmer(currentUser.uid);
-                setOrders(fetchedOrders);
-                setLoading(false);
-            } else {
-                router.push('/auth');
-            }
-        });
-
-        return () => unsubscribe();
-    }, [router]);
-
-    const handleStatusUpdate = async (order: Order, status: 'Accepted' | 'Rejected' | 'Shipped' | 'Completed') => {
+    const handleStatusUpdate = async (order: Order, newStatus: 'Accepted' | 'Rejected' | 'Shipped' | 'Completed') => {
         try {
-            await updateOrderStatus(order, status);
-            setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: status} : o));
+            await updateOrderStatus(db, order, newStatus);
+            setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: newStatus} : o));
             toast({
-                title: `Order ${status}`,
-                description: `Order #${order.id.substring(0,6)} has been ${status.toLowerCase()}.`
+                title: `Order ${newStatus}`,
+                description: `Order #${order.id.substring(0,6)} has been ${newStatus.toLowerCase()}.`
             });
         } catch (error: any) {
             toast({

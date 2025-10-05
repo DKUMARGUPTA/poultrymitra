@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, PencilRuler, PlusCircle, Edit, Trash2, Eye, ExternalLink } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -20,7 +19,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getPosts, deletePost, Post } from '@/services/blog.service';
+import { deletePost, Post } from '@/services/blog.service';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import {
@@ -37,10 +36,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useFirebase } from '@/firebase/provider';
+import { useFirebase, useUser } from '@/firebase';
 
 export default function AdminBlogPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useUser();
   const { db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -62,6 +61,7 @@ export default function AdminBlogPage() {
   }, [user, authLoading, router, db]);
 
   const handleDeletePost = async (postId: string) => {
+    if (!db) return;
     try {
         await deletePost(db, postId);
         toast({ title: "Post Deleted", description: "The blog post has been successfully removed." });

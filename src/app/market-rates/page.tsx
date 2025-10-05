@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, TrendingUp, PlusCircle, Upload } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -18,6 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarProvider,
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,10 +30,11 @@ import { MarketRateDisplay } from '@/components/market-rate-display';
 import { LandingPageHeader } from '@/components/landing-page-header';
 import { BulkUploadMarketRatesModal } from '@/components/bulk-upload-market-rates-modal';
 import { AnimatedLogo } from '@/components/animated-logo';
+import { useUser } from '@/firebase';
 
 
 export default function MarketRatesPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useUser();
   const router = useRouter();
 
   const handleRatesAdded = () => {
@@ -59,7 +60,7 @@ export default function MarketRatesPage() {
   return (
     <div>
         {user && canAddRates ? (
-            <>
+            <SidebarProvider>
                 <Sidebar>
                     <SidebarHeader className="p-4">
                     <div className="flex items-center gap-2">
@@ -112,7 +113,7 @@ export default function MarketRatesPage() {
                     </main>
                     </div>
                 </SidebarInset>
-            </>
+            </SidebarProvider>
         ) : (
             // Public View
             <div className="flex flex-col min-h-screen bg-background text-foreground">

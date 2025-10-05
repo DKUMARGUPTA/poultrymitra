@@ -17,9 +17,6 @@ import { TransactionHistory } from "./transaction-history";
 import { Button } from "./ui/button";
 import { getDealerDashboardStats, DealerStats } from "@/services/dashboard.service";
 import { Skeleton } from "./ui/skeleton";
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { UserProfile, getUserProfile } from '@/services/users.service';
 import { MarketRateDisplay } from "./market-rate-display";
 import { AiFeatureCard } from "./ai/ai-feature-card";
 import { MyFarmers } from "./my-farmers";
@@ -31,31 +28,24 @@ import { CreateOrderModal } from "./create-order-modal";
 import { Order } from "@/services/orders.service";
 import { StockAdvisoryModal } from "./stock-advisory-modal";
 import { WhatsappTemplatesModal } from "./whatsapp-templates-modal";
+import { useUser } from "@/firebase";
 
 
 export function DealerDashboard() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { user, userProfile, loading: authLoading } = useUser();
   const [stats, setStats] = useState<DealerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        if(currentUser) {
-            setUser(currentUser);
-            const profile = await getUserProfile(currentUser.uid);
-            setUserProfile(profile);
-            
-            getDealerDashboardStats(currentUser.uid).then(initialStats => {
-                setStats(initialStats);
-                setLoading(false);
-            });
-        }
-    });
-
-    return () => unsubscribe();
-  }, []);
+    if (user) {
+        setLoading(true);
+        getDealerDashboardStats(user.uid).then(initialStats => {
+            setStats(initialStats);
+            setLoading(false);
+        });
+    }
+  }, [user]);
   
   const handleCopyCode = () => {
     if (userProfile?.invitationCode) {
@@ -123,7 +113,7 @@ export function DealerDashboard() {
     </Card>
   )
   
-  const isLoading = loading || !userProfile || !stats;
+  const isLoading = authLoading || loading || !userProfile || !stats;
 
   if (isLoading) {
      return (

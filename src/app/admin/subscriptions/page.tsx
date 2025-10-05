@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, Settings, Save, Loader } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -24,9 +23,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getSubscriptionSettings, updateSubscriptionSettings, SubscriptionSettingsSchema, SubscriptionSettings } from '@/services/settings.service';
+import { useUser } from '@/firebase';
 
 export default function AdminSubscriptionsPage() {
-  const { userProfile, loading: authLoading } = useAuth();
+  const { userProfile, loading: authLoading } = useUser();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

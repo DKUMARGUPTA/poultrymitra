@@ -30,10 +30,11 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile, getUserProfile } from '@/services/users.service';
 import { AddConnectFarmerModal } from '@/components/add-connect-farmer-modal';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirebase } from '@/firebase';
 
 export default function FarmersPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
 
   const { toast } = useToast();
@@ -42,36 +43,25 @@ export default function FarmersPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (user) {
+      if (user && db) {
         if (userProfile?.role !== 'dealer') {
           router.push('/dashboard');
         } else {
           setFarmersLoading(true);
-          getFarmersByDealer(user.uid).then(newFarmers => {
+          const unsubscribe = getFarmersByDealer(db, user.uid, (newFarmers) => {
             setFarmers(newFarmers);
             setFarmersLoading(false);
           });
+          return () => unsubscribe();
         }
       } else {
         router.push('/auth');
       }
     }
-  }, [user, userProfile, authLoading, router]);
+  }, [user, userProfile, authLoading, router, db]);
   
   const handleFarmerAction = async () => {
-    // The list is now fetched on load, so we just need to re-fetch
-    if (user) {
-      setFarmersLoading(true);
-      try {
-        const newFarmers = await getFarmersByDealer(user.uid);
-        setFarmers(newFarmers);
-      } catch (error) {
-        console.error("Failed to fetch farmers:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not reload your farmers.' });
-      } finally {
-        setFarmersLoading(false);
-      }
-    }
+    // The listener will handle the update automatically.
   };
   
   const handleNewFarmerClick = () => {
@@ -125,7 +115,7 @@ export default function FarmersPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>

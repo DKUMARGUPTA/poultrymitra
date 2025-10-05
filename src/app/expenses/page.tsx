@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Transaction, getBusinessExpenses } from '@/services/transactions.service';
+import { Transaction } from '@/services/transactions.service';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
@@ -27,16 +27,18 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddExpenseModal } from '@/components/add-expense-modal';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth';
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useFirebase, useUser } from '@/firebase';
+import { getBusinessExpenses } from '@/services/transactions.service';
 
 export default function ExpensesPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useUser();
+  const { db } = useFirebase();
   const router = useRouter();
 
   const { toast } = useToast();
@@ -53,7 +55,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (user) {
+      if (user && db) {
         if (userProfile?.role !== 'dealer') {
           router.push('/dashboard');
         } else {
@@ -63,7 +65,7 @@ export default function ExpensesPage() {
         router.push('/auth');
       }
     }
-  }, [user, userProfile, authLoading, router]);
+  }, [user, userProfile, authLoading, router, db]);
 
   useEffect(() => {
     let filtered = allExpenses;
@@ -89,9 +91,10 @@ export default function ExpensesPage() {
   }, [dateRange, referenceQuery, allExpenses]);
   
   const fetchExpenses = async (uid: string) => {
+    if (!db) return;
     setExpensesLoading(true);
     try {
-      const newExpenses = await getBusinessExpenses(uid);
+      const newExpenses = await getBusinessExpenses(db, uid);
       setAllExpenses(newExpenses);
       setFilteredExpenses(newExpenses);
     } catch (error) {
@@ -217,7 +220,7 @@ export default function ExpensesPage() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-4"><div className="flex items-center gap-2"><Bird className="w-8 h-8 text-primary" /><h1 className="text-2xl font-headline text-primary">Poultry Mitra</h1></div></SidebarHeader>
-        <SidebarContent><MainNav userProfile={userProfile} /></SidebarContent>
+        <SidebarContent><MainNav /></SidebarContent>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col">

@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, Megaphone } from "lucide-react"
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
@@ -28,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { createAnnouncement } from '@/services/notifications.service';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 
 const AnnouncementSchema = z.object({
@@ -40,7 +40,7 @@ type AnnouncementFormValues = z.infer<typeof AnnouncementSchema>;
 
 
 export default function AdminNotificationsPage() {
-  const { userProfile, loading } = useAuth();
+  const { userProfile, loading } = useUser();
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
 

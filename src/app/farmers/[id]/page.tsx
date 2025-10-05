@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Bird, FileDown, PlusCircle, ShoppingCart, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { MainNav } from "@/components/main-nav"
@@ -19,9 +18,10 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { FarmerLedger } from '@/components/farmer-ledger';
 import Link from 'next/link';
+import { useUser } from '@/firebase';
 
 export default function FarmerDetailPage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useUser();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;

@@ -20,10 +20,10 @@ import { Order } from '@/services/orders.service';
 import { Button } from '@/components/ui/button';
 import { AddTransactionModal } from '@/components/add-transaction-modal';
 import { Transaction } from '@/services/transactions.service';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 
 export default function OrdersPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading } = useUser();
   const router = useRouter();
   
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function OrdersPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>

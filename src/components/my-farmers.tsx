@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import {
@@ -22,27 +21,29 @@ import { AddConnectFarmerModal } from '@/components/add-connect-farmer-modal';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile, getUserProfile } from '@/services/users.service';
+import { useUser, useFirebase } from '@/firebase';
 
 
 export function MyFarmers() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile } = useUser();
+  const { db } = useFirebase();
   const { toast } = useToast();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmersLoading, setFarmersLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && db) {
       setFarmersLoading(true);
-      const unsubscribe = getFarmersByDealer(user.uid, (newFarmers) => {
+      const unsubscribe = getFarmersByDealer(db, user.uid, (newFarmers) => {
         setFarmers(newFarmers);
         setFarmersLoading(false);
       });
       return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, db]);
 
   const handleFarmerAction = (newFarmer: Farmer) => {
-    setFarmers(prevFarmers => [...prevFarmers, newFarmer]);
+    // Listener will handle update
   };
   
   const handleNewFarmerClick = () => {

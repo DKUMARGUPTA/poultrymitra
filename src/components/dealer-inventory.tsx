@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { getInventoryItems, InventoryItem, InventoryCategories, getUniquePurchaseSources } from '@/services/inventory.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Skeleton } from './ui/skeleton';
@@ -14,10 +13,12 @@ import { RequestOrderModal } from './request-order-modal';
 import { Order } from '@/services/orders.service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
+import { useUser, useFirebase } from '@/firebase';
 
 
 export function DealerInventory() {
-    const { userProfile } = useAuth();
+    const { userProfile } = useUser();
+    const { db } = useFirebase();
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [inventoryLoading, setInventoryLoading] = useState(true);
     const [suppliers, setSuppliers] = useState<string[]>([]);
@@ -28,9 +29,9 @@ export function DealerInventory() {
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
-        if (userProfile?.dealerCode) {
+        if (userProfile?.dealerCode && db) {
             setInventoryLoading(true);
-            const unsubscribe = getInventoryItems(userProfile.dealerCode, (items) => {
+            const unsubscribe = getInventoryItems(db, userProfile.dealerCode, (items) => {
                 setInventory(items.filter(item => (item.salesPrice ?? 0) > 0 && item.quantity > 0));
                 setInventoryLoading(false);
             });
@@ -41,7 +42,7 @@ export function DealerInventory() {
         } else {
             setInventoryLoading(false);
         }
-    }, [userProfile]);
+    }, [userProfile, db]);
     
     const handleOrderCreated = (order: Order) => {
         // The order list will update automatically on the page

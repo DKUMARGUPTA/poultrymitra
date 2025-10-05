@@ -6,14 +6,12 @@ import { usePathname } from 'next/navigation';
 import { Bird, Users, Warehouse, BookText, LineChart, Bot, MessageCircle, Briefcase, Shield, Settings, TrendingUp, Building, ShoppingCart, PencilRuler, Megaphone, BrainCircuit, CreditCard, TicketPercent, BarChart, Wallet, Image as ImageIcon } from "lucide-react";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarSeparator, useSidebar } from "./ui/sidebar";
 import { UserProfile } from '@/services/users.service';
+import { useUser } from '@/firebase';
 
-interface MainNavProps {
-  userProfile: UserProfile | null;
-}
-
-export function MainNav({ userProfile }: MainNavProps) {
+export function MainNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const { userProfile } = useUser();
   const userRole = userProfile?.role;
 
   const handleLinkClick = () => {
@@ -209,6 +207,16 @@ export function MainNav({ userProfile }: MainNavProps) {
         case 'farmer': return renderFarmerNav();
         default: return null;
     }
+  }
+
+  if (!userProfile) {
+    return (
+        <div className="p-4 space-y-4">
+            <Skeleton className="h-8" />
+            <Skeleton className="h-8" />
+            <Skeleton className="h-8" />
+        </div>
+    )
   }
 
   return (

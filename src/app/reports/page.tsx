@@ -18,10 +18,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BatchProfitabilityReport } from '@/components/reports/batch-profitability-report';
 import { SalesReport } from '@/components/reports/sales-report';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 
 export default function ReportsPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function ReportsPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <MainNav userProfile={userProfile} />
+          <MainNav />
         </SidebarContent>
       </Sidebar>
       <SidebarInset>

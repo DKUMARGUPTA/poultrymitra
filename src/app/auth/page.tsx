@@ -27,7 +27,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatedLogo } from "@/components/animated-logo";
 import Image from "next/image";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
+import { useUser } from "@/firebase";
 
 
 const LoginFormSchema = z.object({
@@ -59,32 +60,21 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
 function AuthenticationPageContent({ searchParams }: { searchParams: ReadonlyURLSearchParams }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, userProfile, loading } = useUser();
   const auth = getAuth();
   
   const initialTab = searchParams.get('view') === 'signup' ? 'signup' : 'login';
   const initialDealerCode = searchParams.get('dealerCode');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser);
-        setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth]);
-
-  useEffect(() => {
-    if (!loading && user) {
-        getUserProfile(user.uid).then(profile => {
-            if (profile?.role === 'admin') {
-                router.push('/admin');
-            } else {
-                router.push('/dashboard');
-            }
-        });
+    if (!loading && userProfile) {
+        if (userProfile.role === 'admin') {
+            router.push('/admin');
+        } else {
+            router.push('/dashboard');
+        }
     }
-  }, [user, loading, router]);
+  }, [userProfile, loading, router]);
 
   if (loading || user) {
     return (
