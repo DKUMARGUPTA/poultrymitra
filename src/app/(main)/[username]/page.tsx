@@ -12,7 +12,7 @@ import { SerializablePost } from '../../page';
 import { RecentPosts } from '@/components/recent-posts';
 import { MarketRateDisplay } from '@/components/market-rate-display';
 import { Timestamp, collection, query, where, orderBy, limit, getDocs, getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
+import { getClientApp } from '@/lib/firebase';
 import { Farmer } from '@/services/farmers.service';
 import { InventoryItem } from '@/services/inventory.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,28 +23,28 @@ import { Batch } from '@/services/batches.service';
 export const revalidate = 3600; // Revalidate every hour
 
 async function getRecentFarmers(dealerId: string, count: number): Promise<Farmer[]> {
-    const db = getFirestore(app);
+    const db = getFirestore(getClientApp());
     const q = query(collection(db, 'farmers'), where('dealerId', '==', dealerId), orderBy('createdAt', 'desc'), limit(count));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Farmer));
 }
 
 async function getRecentInventory(dealerId: string, count: number): Promise<InventoryItem[]> {
-    const db = getFirestore(app);
+    const db = getFirestore(getClientApp());
     const q = query(collection(db, 'inventory'), where('ownerId', '==', dealerId), orderBy('createdAt', 'desc'), limit(count));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
 }
 
 async function getRecentBatches(farmerId: string, count: number): Promise<Batch[]> {
-    const db = getFirestore(app);
+    const db = getFirestore(getClientApp());
     const q = query(collection(db, 'batches'), where('farmerId', '==', farmerId), orderBy('startDate', 'desc'), limit(count));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Batch));
 }
 
 
-export default async function UserVCardPage({ params }: { params: { username: string } }) {
+export default async function UserVCardPage({ params }) {
   const user = await getUserByUsername(params.username);
 
   if (!user || user.status === 'suspended') {
@@ -56,7 +56,10 @@ export default async function UserVCardPage({ params }: { params: { username: st
   let recentInventory: InventoryItem[] = [];
   let recentBatches: Batch[] = [];
 
-  if (user.role === 'admin' || user.role === 'dealer') {
+  const canHavePosts = user.role === 'admin' || user.role === 'dealer';
+  const canHaveRates = user.role === 'admin' || user.role === 'dealer' || user.role === 'farmer';
+
+  if (canHavePosts) {
      const authorPosts = await getPostsByAuthor(user.uid, 3);
      posts = authorPosts.map(post => ({
         ...post,
@@ -73,7 +76,7 @@ export default async function UserVCardPage({ params }: { params: { username: st
       recentBatches = await getRecentBatches(user.uid, 5);
   }
 
-  const contributedRates = (user.role === 'dealer' || user.role === 'admin' || user.role === 'farmer') ? await getRatesByUser(user.uid, 5) : [];
+  const contributedRates = canHaveRates ? await getRatesByUser(user.uid, 5) : [];
 
   const roleDescription = user.role === 'dealer' ? 'Poultry Dealer' : user.role === 'admin' ? 'Administrator' : 'Poultry Farmer';
 
