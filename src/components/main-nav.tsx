@@ -68,7 +68,6 @@ export function MainNav() {
         ],
         content: [
             { href: "/admin/blog", icon: <PencilRuler />, label: "Blog" },
-            { href: "/admin/notifications", icon: <Megaphone />, label: "Announcements" },
         ]
     }
   };
