@@ -10,25 +10,20 @@ import { auth as adminAuth } from '@/lib/firebase-admin';
 import { getUserProfile, UserProfile } from '@/services/users.service';
 
 
-async function getSession(): Promise<{ user: UserProfile | null }> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) {
-        return { user: null };
-    }
-    try {
-        const decodedClaims = await adminAuth!.verifySessionCookie(sessionCookie, true);
-        const userProfile = await getUserProfile(decodedClaims.uid);
-        return { user: userProfile };
-    } catch (error) {
-        console.error("Session verification failed:", error);
-        return { user: null };
-    }
-}
-
-
 // This is now a Server Component for robust auth checking
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user } = await getSession();
+    const sessionCookie = cookies().get('session')?.value;
+    let user: UserProfile | null = null;
+
+    if (sessionCookie) {
+        try {
+            const decodedClaims = await adminAuth!.verifySessionCookie(sessionCookie, true);
+            user = await getUserProfile(decodedClaims.uid);
+        } catch (error) {
+            console.error("Session verification failed:", error);
+            user = null;
+        }
+    }
 
     if (!user || user.role !== 'admin') {
         redirect('/auth');
