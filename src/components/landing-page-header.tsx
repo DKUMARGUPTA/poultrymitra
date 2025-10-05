@@ -45,9 +45,7 @@ export function LandingPageHeader() {
             </Link>
         </div>
         <nav className="ml-auto hidden md:flex gap-4 sm:gap-6 items-center">
-          {user && userProfile ? (
-              <MainNav userProfile={userProfile} />
-          ) : (
+          {!user && (
               <>
                   <Link href="/#features" className="text-sm font-medium hover:text-primary" prefetch={false}>
                   Features
