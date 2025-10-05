@@ -6,26 +6,10 @@ import { Button } from '@/components/ui/button';
 import { UserNav } from './user-nav';
 import { AnimatedLogo } from './animated-logo';
 import { ThemeToggle } from './theme-toggle';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useUser } from '@/firebase';
 
-export function LandingPageHeader() {
-  const { user, loading } = useUser();
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  const isLoggedIn = !!user;
-
-  // Don't render anything until mounted on the client to avoid hydration mismatch
-  if (!hasMounted) {
-    return (
-       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm" />
-    );
-  }
-
+export function LandingPageHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center">
@@ -34,7 +18,7 @@ export function LandingPageHeader() {
               <span className="ml-2 text-xl font-headline font-bold">Poultry Mitra</span>
             </Link>
         </div>
-        {!loading && !isLoggedIn && (
+        {!isLoggedIn && (
            <nav className="ml-auto hidden md:flex gap-4 sm:gap-6 items-center">
                 <Link href="/#features" className="text-sm font-medium hover:text-primary" prefetch={false}>Features</Link>
                 <Link href="/tools" className="text-sm font-medium hover:text-primary" prefetch={false}>Tools</Link>
@@ -44,7 +28,7 @@ export function LandingPageHeader() {
            </nav>
         )}
         <div className="ml-auto flex gap-2 items-center">
-          {loading ? null : isLoggedIn ? (
+          {isLoggedIn ? (
             <UserNav />
           ) : (
             <>

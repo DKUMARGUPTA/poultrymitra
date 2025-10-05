@@ -11,12 +11,11 @@ import { AnimatedLogo } from '@/components/animated-logo';
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker';
 import { RecentPosts } from '@/components/recent-posts';
 import { SerializablePost } from '../app/page';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { Testimonials, SerializableTestimonial } from '@/components/testimonials';
 import { useUser } from '@/firebase';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Skeleton } from '@/components/ui/skeleton';
 
 
 const features = [
@@ -57,8 +56,9 @@ const faqItems = [
 ];
 
 export default function HomePageClient({ initialPosts, initialTestimonials }: { initialPosts: SerializablePost[], initialTestimonials: SerializableTestimonial[]}) {
-  const { userProfile } = useUser();
+  const { user, userProfile, loading } = useUser();
   const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
+  const isLoggedIn = !loading && !!user;
   
   const showFarmerPlan = !userProfile || userProfile.role === 'farmer';
   const showDealerPlan = !userProfile || userProfile.role === 'dealer';
@@ -68,11 +68,11 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
   
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <LandingPageHeader />
+        <LandingPageHeader isLoggedIn={isLoggedIn} />
          <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
-            <BreakingNewsTicker />
+            {!user && <BreakingNewsTicker />}
           <div className="container px-4 md:px-6 text-center">
             <div className="flex flex-col items-center space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-headline">
@@ -83,7 +83,7 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-shadow">
-                  <Link href={userProfile ? dashboardUrl : "/auth?view=signup"}>Get Started for Free <ArrowRight className="ml-2" /></Link>
+                  <Link href={user ? dashboardUrl : "/auth?view=signup"}>Get Started for Free <ArrowRight className="ml-2" /></Link>
                 </Button>
                  <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md transition-shadow">
                     <Link href="/#features">Explore Features</Link>
@@ -237,8 +237,8 @@ export default function HomePageClient({ initialPosts, initialTestimonials }: { 
             </div>
             <div className="mt-6">
               <Button asChild size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-shadow">
-                <Link href={userProfile ? dashboardUrl : "/auth?view=signup"}>
-                  {userProfile ? "Go to Your Dashboard" : "Register for Free"}
+                <Link href={user ? dashboardUrl : "/auth?view=signup"}>
+                  {user ? "Go to Your Dashboard" : "Register for Free"}
                 </Link>
               </Button>
             </div>
