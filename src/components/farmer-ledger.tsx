@@ -69,7 +69,7 @@ export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
                 const userProfile = await getUserProfile(farmerData.uid);
                 setFarmerUserProfile(userProfile);
             }
-            getTransactionsForFarmer(db, farmerId, (transactionData) => {
+            const unsub = getTransactionsForFarmer(db, farmerId, (transactionData) => {
               setTransactions(transactionData);
             });
         }
@@ -413,16 +413,25 @@ export function FarmerLedger({ farmerId }: FarmerLedgerProps) {
                                         )}
                                     </TableCell>
                                     <TableCell className="hidden sm:table-cell">
-                                    <Badge
-                                        variant={transaction.status === 'Paid' ? 'secondary' : 'destructive'}
-                                        className={
-                                        transaction.status === 'Paid'
-                                            ? 'text-green-700 border-green-500/50'
-                                            : ''
-                                        }
-                                    >
-                                        {transaction.status}
-                                    </Badge>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <Badge
+                                                variant={transaction.status === 'Paid' ? 'secondary' : 'destructive'}
+                                                className={
+                                                transaction.status === 'Paid'
+                                                    ? 'text-green-700 border-green-500/50'
+                                                    : ''
+                                                }
+                                            >
+                                                {transaction.status}
+                                            </Badge>
+                                        </TooltipTrigger>
+                                        {transaction.status === 'Pending' && (
+                                            <TooltipContent>
+                                                <p>This amount is due to be paid.</p>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
                                     </TableCell>
                                     <TableCell className={`text-right font-medium`}>
                                         <div className={`${transaction.amount > 0 ? 'text-destructive' : 'text-green-600'}`}>

@@ -47,14 +47,6 @@ const SignUpFormSchema = z.object({
     phoneNumber: z.string().min(10, { message: "Phone number must be at least 10 digits."}),
     dealerCode: z.string().optional(),
     referralCode: z.string().optional(),
-}).refine(data => {
-    if (data.role === 'farmer' && !data.dealerCode) {
-        return false;
-    }
-    return true;
-}, {
-    message: "A code from your dealer is required to sign up.",
-    path: ["dealerCode"],
 });
 type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
@@ -265,7 +257,7 @@ function SignUpForm({ initialDealerCode }: { initialDealerCode: string | null })
             name: "", 
             email: "", 
             password: "", 
-            role: initialDealerCode ? 'farmer' : undefined, 
+            role: undefined, 
             phoneNumber: "", 
             dealerCode: initialDealerCode || "", 
             referralCode: "" 
@@ -383,7 +375,7 @@ function SignUpForm({ initialDealerCode }: { initialDealerCode: string | null })
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>I am a...</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!initialDealerCode}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select your role" />
@@ -405,9 +397,9 @@ function SignUpForm({ initialDealerCode }: { initialDealerCode: string | null })
                             name="dealerCode"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Dealer's Invitation or Farmer Code</FormLabel>
+                                    <FormLabel>Dealer's Invitation Code (Optional)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter code from your dealer" {...field} disabled={!!initialDealerCode} />
+                                        <Input placeholder="Enter code from your dealer" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

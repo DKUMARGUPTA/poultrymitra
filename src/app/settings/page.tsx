@@ -11,8 +11,9 @@ import {
   updateUserPassword,
   deleteCurrentUserAccount,
   UserProfile,
+  connectFarmerToDealer,
 } from '@/services/users.service';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { moderateContent } from '@/ai/flows/moderate-content';
 import { VCard } from '@/components/v-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
+import { useUser, useFirebase } from '@/firebase';
 
 // Schema for updating profile details
 const ProfileFormSchema = z.object({
@@ -63,6 +64,12 @@ const DeleteAccountSchema = z.object({
   password: z.string().min(1, 'Password is required to delete your account'),
 });
 type DeleteAccountValues = z.infer<typeof DeleteAccountSchema>;
+
+// Schema for dealer connection
+const DealerConnectionSchema = z.object({
+  dealerCode: z.string().min(1, 'Dealer code is required.'),
+});
+type DealerConnectionValues = z.infer<typeof DealerConnectionSchema>;
 
 
 export default function SettingsPage() {
@@ -105,12 +112,14 @@ export default function SettingsPage() {
 
 
 export function SettingsForm({ user, userProfile }: { user: NonNullable<ReturnType<typeof useUser>['user']>, userProfile: NonNullable<ReturnType<typeof useUser>['userProfile']>}) {
+  const { db } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [dealerConnectLoading, setDealerConnectLoading] = useState(false);
   const [origin, setOrigin] = useState('');
 
   useEffect(() => {
@@ -144,10 +153,30 @@ export function SettingsForm({ user, userProfile }: { user: NonNullable<ReturnTy
     }
   });
 
+   const dealerConnectionForm = useForm<DealerConnectionValues>({
+    resolver: zodResolver(DealerConnectionSchema),
+    defaultValues: {
+      dealerCode: userProfile.dealerCode || '',
+    }
+  });
+
+  const handleDealerConnectSubmit = async (values: DealerConnectionValues) => {
+    if (!db) return;
+    setDealerConnectLoading(true);
+    try {
+        await connectFarmerToDealer(db, values.dealerCode, user.uid);
+        toast({ title: 'Success', description: 'You have successfully connected to your new dealer.' });
+        // The useUser hook will automatically update the profile with the new dealerCode
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'Connection Failed', description: e.message });
+    } finally {
+        setDealerConnectLoading(false);
+    }
+  }
+
   const handleProfileSubmit = async (values: ProfileFormValues) => {
     setProfileLoading(true);
     try {
-      // Moderate the 'About Me' content before saving
       if (values.aboutMe && values.aboutMe.trim()) {
         const moderationResult = await moderateContent(values.aboutMe);
         if (!moderationResult.isSafe) {
@@ -281,6 +310,38 @@ export function SettingsForm({ user, userProfile }: { user: NonNullable<ReturnTy
           </Form>
         </CardContent>
       </Card>
+
+       {userProfile?.role === 'farmer' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className='font-headline'>Dealer Connection</CardTitle>
+            <CardDescription>Connect with a dealer using their invitation code to view their inventory and place orders.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...dealerConnectionForm}>
+                <form onSubmit={dealerConnectionForm.handleSubmit(handleDealerConnectSubmit)} className="space-y-4">
+                    <FormField
+                        control={dealerConnectionForm.control}
+                        name="dealerCode"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Dealer Invitation Code</FormLabel>
+                            <FormControl>
+                            <Input placeholder="Enter your dealer's code" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <Button type="submit" disabled={dealerConnectLoading}>
+                        {dealerConnectLoading && <Loader className="mr-2 animate-spin" />}
+                        {userProfile.dealerCode ? 'Change Dealer' : 'Connect to Dealer'}
+                    </Button>
+                </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
       
       {userProfile?.username && (
         <Card>

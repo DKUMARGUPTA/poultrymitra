@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bird, DollarSign, Activity, BarChart, ArrowRight, ShoppingCart, Briefcase, Clock, PlusCircle } from "lucide-react";
+import { Bird, DollarSign, Activity, BarChart, ArrowRight, ShoppingCart, Briefcase, Clock, PlusCircle, Link as LinkIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -111,6 +111,29 @@ export function FarmerDashboard() {
            </div>
        </div>
      )
+  }
+  
+  if (!userProfile?.dealerCode) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline text-2xl">Welcome, {userProfile?.name}!</CardTitle>
+                <CardDescription>To get the most out of Poultry Mitra, connect with your dealer.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[200px] p-8">
+                    <div className="flex flex-col items-center gap-2 text-center">
+                        <LinkIcon className="h-12 w-12 text-primary" />
+                        <h3 className="text-xl font-bold tracking-tight mt-4">Connect with Your Dealer</h3>
+                        <p className="text-sm text-muted-foreground max-w-sm">Connect with your dealer to view their inventory, place orders, and manage your ledger seamlessly. Go to your settings to add your dealer's code.</p>
+                        <Button className="mt-4" asChild>
+                            <Link href="/settings">Go to Settings <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
   }
 
   if (stats.activeBatches === 0) {
