@@ -15,10 +15,11 @@ import {
   deleteDoc,
   onSnapshot,
   Unsubscribe,
+  Firestore,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getUserProfile } from './users.service';
-import { db } from '@/lib/firebase';
+import { getClientFirestore } from '@/lib/firebase';
 
 const createSlug = (title: string) => {
   if (!title) return '';
@@ -50,7 +51,7 @@ export type SerializablePost = Omit<Post, 'createdAt'> & {
   createdAt: string;
 };
 
-export const createPost = async (postData: Omit<PostInput, 'createdAt' | 'authorName'>): Promise<string> => {
+export const createPost = async (db: Firestore, postData: Omit<PostInput, 'createdAt' | 'authorName'>): Promise<string> => {
   const userProfile = await getUserProfile(postData.authorId);
   if (!userProfile) throw new Error("Author profile not found.");
 
@@ -65,7 +66,7 @@ export const createPost = async (postData: Omit<PostInput, 'createdAt' | 'author
   return docRef.id;
 };
 
-export const updatePost = async (postId: string, postData: Partial<Omit<PostInput, 'createdAt' | 'authorId' | 'authorName'>>) => {
+export const updatePost = async (db: Firestore, postId: string, postData: Partial<Omit<PostInput, 'createdAt' | 'authorId' | 'authorName'>>) => {
   const postRef = doc(db, 'posts', postId);
   const updateData: any = { ...postData };
   
@@ -79,7 +80,7 @@ export const updatePost = async (postId: string, postData: Partial<Omit<PostInpu
   await updateDoc(postRef, updateData);
 };
 
-export const getPost = async (db: any, postId: string): Promise<Post | null> => {
+export const getPost = async (db: Firestore, postId: string): Promise<Post | null> => {
   const docRef = doc(db, 'posts', postId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
@@ -89,6 +90,7 @@ export const getPost = async (db: any, postId: string): Promise<Post | null> => 
 };
 
 export const getPostBySlug = async (slug: string): Promise<Post | null> => {
+  const db = getClientFirestore();
   const q = query(collection(db, 'posts'), where('slug', '==', slug), limit(1));
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
@@ -102,6 +104,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
  * Fetches all posts, including drafts.
  */
 export const getAllPosts = async (): Promise<Post[]> => {
+    const db = getClientFirestore();
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
@@ -112,6 +115,7 @@ export const getAllPosts = async (): Promise<Post[]> => {
  * Fetches posts once for server-side rendering.
  */
 export const getPostsAsync = async (includeDrafts = false, postLimit?: number): Promise<Post[]> => {
+    const db = getClientFirestore();
     let q;
     if (includeDrafts) {
         q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -128,6 +132,7 @@ export const getPostsAsync = async (includeDrafts = false, postLimit?: number): 
 };
 
 export const getPostsByAuthor = async (authorId: string, postLimit?: number): Promise<Post[]> => {
+    const db = getClientFirestore();
     let q = query(
         collection(db, 'posts'), 
         where('authorId', '==', authorId), 
@@ -144,7 +149,7 @@ export const getPostsByAuthor = async (authorId: string, postLimit?: number): Pr
 };
 
 
-export const deletePost = async (db: any, postId: string): Promise<void> => {
+export const deletePost = async (db: Firestore, postId: string): Promise<void> => {
     const postRef = doc(db, 'posts', postId);
     await deleteDoc(postRef);
 };

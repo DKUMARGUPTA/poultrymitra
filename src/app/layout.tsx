@@ -5,6 +5,7 @@ import '@/components/animated-logo.css';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
 import { belleza, alegreya } from '@/lib/fonts';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Poultry Mitra',
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-body antialiased", belleza.variable, alegreya.variable)} suppressHydrationWarning>
-        <Providers>
-            {children}
-        </Providers>
+        <FirebaseClientProvider>
+          <Providers>
+              {children}
+          </Providers>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

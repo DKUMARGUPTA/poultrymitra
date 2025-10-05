@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence, initializeFirestore } from "firebase/firestore";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   projectId: "studio-3437887095-bb50a",
@@ -12,34 +12,30 @@ const firebaseConfig = {
   messagingSenderId: "956762008755",
 };
 
-// Initialize Firebase
-const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
 
-// Initialize Firestore with offline persistence handling
-let db;
 if (typeof window !== 'undefined') {
-  try {
-    db = getFirestore(app);
-    enableIndexedDbPersistence(db);
-  } catch (error: any) {
-    if (error.code === 'failed-precondition') {
-      // This error happens on hot-reloads in dev. It's safe to ignore.
-      console.warn('Firestore persistence failed to enable. This is expected on hot reloads.');
-      db = getFirestore(app);
-    } else if (error.code === 'unimplemented') {
-      // Some browsers may not support IndexedDB at all.
-      console.warn('Firestore persistence not supported in this browser.');
-      db = getFirestore(app);
-    } else {
-      console.error("Firebase persistence error:", error);
-      db = getFirestore(app); // Fallback to memory persistence
-    }
-  }
-} else {
-  // For server-side rendering, just initialize Firestore without persistence
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
   db = getFirestore(app);
 }
 
-const auth = getAuth(app);
+// These functions are for server-side usage, ensuring we don't re-initialize.
+function getClientApp() {
+    if (getApps().length === 0) {
+        return initializeApp(firebaseConfig);
+    }
+    return getApp();
+}
 
-export { app, db, auth };
+function getClientAuth() {
+    return getAuth(getClientApp());
+}
+
+function getClientFirestore() {
+    return getFirestore(getClientApp());
+}
+
+export { app, auth, db, getClientApp, getClientAuth, getClientFirestore };
