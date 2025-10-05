@@ -13,6 +13,19 @@ export function MainNav() {
   const { setOpenMobile } = useSidebar();
   const { userProfile } = useUser();
   const userRole = userProfile?.role;
+
+  const handleLinkClick = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setOpenMobile(false);
+    }
+  }
+
+  const isNavItemActive = (href: string) => {
+    if (href === '/dashboard' || href === '/admin') {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
+  };
   
   const isHomepage = pathname === '/';
   
@@ -40,19 +53,6 @@ export function MainNav() {
         </SidebarGroup>
      );
   }
-
-  const handleLinkClick = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setOpenMobile(false);
-    }
-  }
-
-  const isNavItemActive = (href: string) => {
-    if (href === '/dashboard' || href === '/admin') {
-      return pathname === href;
-    }
-    return pathname.startsWith(href);
-  };
   
   const navItems = {
     farmer: [
