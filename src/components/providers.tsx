@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "next-themes";
 import { SidebarProvider } from './ui/sidebar';
 import { TooltipProvider } from './ui/tooltip';
-import { AuthProvider } from '@/hooks/use-auth';
+import { AuthProvider } from '@/components/auth-provider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
