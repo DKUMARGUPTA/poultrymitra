@@ -28,18 +28,49 @@ export function MainNav() {
     return pathname.startsWith(href);
   };
   
+  // Conditionally show main navigation items based on the path
+  const showMainNavigation = pathname !== '/';
+
   const navItems = {
-    farmer: [],
+    farmer: [
+        { href: '/dashboard', label: 'Dashboard', icon: <LineChart /> },
+        { href: '/batches', label: 'My Batches', icon: <Bird /> },
+        { href: '/orders', label: 'My Orders', icon: <ShoppingCart /> },
+        { href: '/ledger', label: 'My Ledger', icon: <BookText /> },
+        { href: '/reports', label: 'Reports', icon: <BarChart /> },
+    ],
     dealer: {
-      main: [],
-      management: [],
-      financials: [],
+      main: [
+        { href: '/dashboard', label: 'Dashboard', icon: <LineChart /> },
+      ],
+      management: [
+        { href: '/farmers', label: 'My Farmers', icon: <Users /> },
+        { href: '/inventory', label: 'Inventory', icon: <Warehouse /> },
+        { href: '/orders', label: 'Manage Orders', icon: <ShoppingCart /> },
+        { href: '/suppliers', label: 'Suppliers', icon: <Building /> },
+      ],
+      financials: [
+        { href: '/expenses', label: 'Business Expenses', icon: <Wallet />},
+        { href: '/reports', label: 'Sales Reports', icon: <BarChart /> },
+      ],
     },
     admin: {
-        platform: [],
-        subscription: [],
-        management: [],
-        content: []
+        platform: [
+            { href: '/admin', label: 'Admin Panel', icon: <Shield /> },
+            { href: '/admin/users', label: 'User Management', icon: <Users /> },
+            { href: '/admin/transactions', label: 'All Transactions', icon: <Briefcase /> },
+        ],
+        subscription: [
+            { href: '/admin/billing', label: 'Payment Verification', icon: <CreditCard />},
+            { href: '/admin/offers', label: 'Subscription Offers', icon: <TicketPercent />},
+            { href: '/admin/subscriptions', label: 'Subscription Settings', icon: <Settings />},
+        ],
+        management: [
+            { href: '/admin/market-rates', label: 'Market Rates', icon: <TrendingUp />},
+        ],
+        content: [
+            { href: '/admin/blog', label: 'Blog', icon: <PencilRuler /> },
+        ]
     }
   };
 
@@ -192,7 +223,7 @@ export function MainNav() {
 
   return (
     <>
-    {renderCoreNav()}
+    {showMainNavigation && renderCoreNav()}
     {userRole !== 'admin' && (
       <>
         <SidebarGroup>

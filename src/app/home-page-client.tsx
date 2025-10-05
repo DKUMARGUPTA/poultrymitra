@@ -17,9 +17,9 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Testimonials } from '@/components/testimonials';
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { UserProfile, getUserProfile } from '@/services/users.service';
+import { useUser } from '@/firebase';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarInset } from '@/components/ui/sidebar';
+import { MainNav } from '@/components/main-nav';
 
 
 const features = [
@@ -92,24 +92,7 @@ const benefits = [
 
 
 export default function HomePageClient({ initialPosts }: { initialPosts: SerializablePost[]}) {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const profile = await getUserProfile(currentUser.uid);
-        setUserProfile(profile);
-      } else {
-        setUserProfile(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { user, userProfile } = useUser();
 
   const dashboardUrl = userProfile?.role === 'admin' ? '/admin' : '/dashboard';
   const [hasMounted, setHasMounted] = React.useState(false);
@@ -124,24 +107,20 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
   const numPlans = [showFarmerPlan, showDealerPlan].filter(Boolean).length;
   const gridColsClass = numPlans === 2 ? 'md:grid-cols-3' : 'md:grid-cols-2';
   
-
-  return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <LandingPageHeader />
-
+  const HomePageContent = () => (
       <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section className="w-full py-12 md:py-16 lg:py-20 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
             {!user && <BreakingNewsTicker />}
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-6 text-center">
+          <div className="container grid md:grid-cols-2 gap-8 items-center px-4 md:px-6">
+            <div className="flex flex-col items-start space-y-6 text-left">
                <div className="inline-block rounded-full bg-green-100 dark:bg-green-900/50 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300">
                 Trusted by 10,000+ Farmers & Dealers
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-headline">
                 The Future of Poultry Farming is Digital
               </h1>
-              <p className="max-w-3xl text-muted-foreground md:text-xl">
+              <p className="max-w-xl text-muted-foreground md:text-xl">
                 Digitize your poultry business. From FCR calculation and AI-powered disease prediction to complete financial management - everything in one place.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -153,37 +132,29 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
                 </Button>
               </div>
             </div>
-             <div className="max-w-4xl mx-auto mt-12">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
-                    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
-                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
-                        <div>
-                            <h3 className="font-semibold">Track Performance</h3>
-                            <p className="text-sm text-muted-foreground">Monitor FCR, Mortality, and Growth</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
-                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
-                        <div>
-                            <h3 className="font-semibold">Effortless Ledgers</h3>
-                            <p className="text-sm text-muted-foreground">Manage your finances without the hassle</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
-                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
-                         <div>
-                            <h3 className="font-semibold">AI Disease Detection</h3>
-                            <p className="text-sm text-muted-foreground">Get instant analysis of potential diseases</p>
-                        </div>
-                    </div>
-                     <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50">
-                        <Check className="h-6 w-6 text-green-500 mt-1 shrink-0" />
-                        <div>
-                            <h3 className="font-semibold">Inventory & Orders</h3>
-                            <p className="text-sm text-muted-foreground">Full stock and order management system</p>
-                        </div>
-                    </div>
-                </div>
+            <div className="space-y-4">
+                <Card>
+                  <CardContent className="p-6">
+                    <ul className="space-y-4 text-lg">
+                      <li className="flex items-center gap-3">
+                        <Check className="h-6 w-6 text-green-500" />
+                        <span>Track FCR, Mortality, and Growth</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <Check className="h-6 w-6 text-green-500" />
+                        <span>Manage Financial Ledgers Effortlessly</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <Check className="h-6 w-6 text-green-500" />
+                        <span>Get AI-Powered Disease Detection</span>
+                      </li>
+                       <li className="flex items-center gap-3">
+                        <Check className="h-6 w-6 text-green-500" />
+                        <span>Full Inventory and Order Management</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
             </div>
           </div>
         </section>
@@ -453,44 +424,61 @@ export default function HomePageClient({ initialPosts }: { initialPosts: Seriali
           </div>
         </section>
       </main>
+  );
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white">
-        <div className="container px-4 md:px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-                <div className="flex items-center gap-2 mb-4">
-                    <AnimatedLogo className="h-8 w-8" />
-                    <span className="text-xl font-headline font-bold">Poultry Mitra</span>
-                </div>
-                <p className="text-sm text-gray-400">India's #1 Poultry Farm Management and Advisory company.</p>
-            </div>
-            <div>
-                <h4 className="font-semibold mb-4">Quick Links</h4>
-                <nav className="flex flex-col gap-2 text-sm">
-                    <Link href="/#features" className="text-gray-400 hover:text-white">Features</Link>
-                    <Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link>
-                    <Link href="/#faq" className="text-gray-400 hover:text-white">FAQ</Link>
-                </nav>
-            </div>
-             <div>
-                <h4 className="font-semibold mb-4">Support</h4>
-                <nav className="flex flex-col gap-2 text-sm">
-                    <Link href="#" className="text-gray-400 hover:text-white">Help</Link>
-                    <Link href="#" className="text-gray-400 hover:text-white">Privacy Policy</Link>
-                </nav>
-            </div>
-            <div>
-                <h4 className="font-semibold mb-4">Contact</h4>
-                <div className="text-sm text-gray-400">
-                    <p>+91 9123456789</p>
-                    <p>help@poultrymitra.com</p>
-                </div>
-            </div>
-        </div>
-        <div className="py-6 border-t border-gray-800">
-             <p className="text-center text-xs text-gray-500">&copy; 2024 Poultry Mitra. All rights reserved.</p>
-        </div>
-      </footer>
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <SidebarProvider>
+            <Sidebar>
+                <SidebarHeader>
+                    {/* Header content can go here if needed */}
+                </SidebarHeader>
+                <SidebarContent>
+                    <MainNav />
+                </SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+                <LandingPageHeader />
+                <HomePageContent />
+                {/* Footer */}
+                <footer className="bg-gray-900 text-white">
+                    <div className="container px-4 md:px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <AnimatedLogo className="h-8 w-8" />
+                                <span className="text-xl font-headline font-bold">Poultry Mitra</span>
+                            </div>
+                            <p className="text-sm text-gray-400">India's #1 Poultry Farm Management and Advisory company.</p>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Quick Links</h4>
+                            <nav className="flex flex-col gap-2 text-sm">
+                                <Link href="/#features" className="text-gray-400 hover:text-white">Features</Link>
+                                <Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link>
+                                <Link href="/#faq" className="text-gray-400 hover:text-white">FAQ</Link>
+                            </nav>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Support</h4>
+                            <nav className="flex flex-col gap-2 text-sm">
+                                <Link href="#" className="text-gray-400 hover:text-white">Help</Link>
+                                <Link href="#" className="text-gray-400 hover:text-white">Privacy Policy</Link>
+                            </nav>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Contact</h4>
+                            <div className="text-sm text-gray-400">
+                                <p>+91 9123456789</p>
+                                <p>help@poultrymitra.com</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="py-6 border-t border-gray-800">
+                        <p className="text-center text-xs text-gray-500">&copy; 2024 Poultry Mitra. All rights reserved.</p>
+                    </div>
+                </footer>
+            </SidebarInset>
+        </SidebarProvider>
     </div>
   );
 }
