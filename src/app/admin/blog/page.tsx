@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { deletePost, Post } from '@/services/blog.service';
+import { deletePost, Post, getPosts } from '@/services/blog.service';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import {
