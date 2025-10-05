@@ -15,7 +15,7 @@ export function BreakingNewsTicker() {
 
   useEffect(() => {
     if (db) {
-      getLatestMarketRates(5).then(setLatestRates);
+      getLatestMarketRates(db, 5).then(setLatestRates);
     }
   }, [db]);
 

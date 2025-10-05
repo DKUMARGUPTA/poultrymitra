@@ -33,8 +33,7 @@ export const createMarketRate = async (db: Firestore, rateData: Omit<MarketRateI
     return docRef.id;
 };
 
-export const createMarketRatesInBatch = async (ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
-    const db = getClientFirestore();
+export const createMarketRatesInBatch = async (db: Firestore, ratesData: Omit<MarketRateInput, 'createdAt'>[], addedBy: 'admin' | 'dealer' = 'dealer', addedByUid?: string): Promise<void> => {
     const batch = writeBatch(db);
     
     ratesData.forEach(rateData => {
@@ -65,8 +64,7 @@ export const deleteMarketRate = async (db: Firestore, rateId: string): Promise<v
 };
 
 
-export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubscribe => {
-    const db = getClientFirestore();
+export const getMarketRates = (db: Firestore, callback: (rates: MarketRate[]) => void): Unsubscribe => {
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
@@ -82,8 +80,7 @@ export const getMarketRates = (callback: (rates: MarketRate[]) => void): Unsubsc
     });
 };
 
-export const getLatestMarketRates = async (count: number): Promise<MarketRate[]> => {
-    const db = getClientFirestore();
+export const getLatestMarketRates = async (db: Firestore, count: number): Promise<MarketRate[]> => {
     const q = query(
         collection(db, 'market-rates'),
         orderBy("date", "desc"),
@@ -97,8 +94,7 @@ export const getLatestMarketRates = async (count: number): Promise<MarketRate[]>
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MarketRate));
 };
 
-export const getRatesByUser = async (userId: string, rateLimit?: number): Promise<MarketRate[]> => {
-    const db = getClientFirestore();
+export const getRatesByUser = async (db: Firestore, userId: string, rateLimit?: number): Promise<MarketRate[]> => {
     if (typeof userId !== 'string') {
         console.error("getRatesByUser called with invalid userId:", userId);
         return [];
