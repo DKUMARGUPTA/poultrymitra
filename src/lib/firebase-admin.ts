@@ -27,7 +27,8 @@ function getAdminApp(): App | null {
         });
         return adminApp;
     } catch (e: any) {
-        console.warn('Firebase Admin SDK initialization error:', e.message, 'Admin features will be disabled.');
+        // This will catch JSON.parse errors if the env var is empty or invalid
+        console.warn('Firebase Admin SDK initialization error (likely due to empty env var):', e.message, 'Admin features will be disabled.');
         return null;
     }
 }
